@@ -3,21 +3,20 @@
 (require "gui.ss"
          htdp/world)
 
-;; Airline reservation.  Errors are handled explicitly.
 
+;; Airline reservation.  Errors are handled as a part of the framework.
 
 
 ;; The world consists of a
-(define-struct world (title name arrival departure submitted? error-message))
+(define-struct world (title name arrival departure submitted?))
 ;; where title is a string, name is a string, arrival and departure are strings within
-;; TIMES, and submitted? is a boolean.  Error-message is either #f or a string.
+;; TIMES, and submitted? is a boolean.
 (define-updaters world)
 
 (define initial-world (make-world "Unknown"
                                   ""
                                   "Unknown"
                                   "Unknown"
-                                  #f
                                   #f))
 
 
@@ -43,37 +42,12 @@
 
 ;; on-submit: world -> world
 ;; When the user tries to submit, we see if the form is complete.  If it isn't,
-;; show an error message on the next scene rendering.
+;; raises an error that will show up
 (define (on-submit a-world)
   (cond [(incomplete-submission? a-world)
-         (update-world-error-message a-world "Submission isn't complete.")]
+         (notify-error a-world "Submission isn't complete" a-world)]
         [else
          (update-world-submitted? a-world #t)]))
-
-
-;; on-update-title: world string -> world
-(define (on-update-title a-world a-val)
-  (update-world-error-message (update-world-title a-world a-val)
-                              #f))
-
-
-;; on-update-name: world string -> world
-(define (on-update-name a-world a-val)
-  (update-world-error-message (update-world-name a-world a-val)
-                              #f))
-
-
-;; on-update-departure: world string -> world
-(define (on-update-departure a-world a-val)
-  (update-world-error-message (update-world-departure a-world a-val)
-                              #f))
-
-
-;; on-update-arrival: world string -> world
-(define (on-update-arrival a-world a-val)
-  (update-world-error-message (update-world-arrival a-world a-val)
-                              #f))
-
 
 
 (define (world->form-scene a-world)
@@ -87,23 +61,21 @@
                 "has been submitted")]
     [else 
      (make-form
-      (maybe-make-error (world-error-message a-world))
       (make-row "Title" (make-drop-down (world-title a-world) 
                                         (list "Unknown"
                                               "Mr."
                                               "Ms."
                                               "Mrs.")
-                                        on-update-title))
-
+                                        update-world-title))
       (make-row "Name" (make-text-field (world-name a-world)
-                                        on-update-name))
+                                        update-world-name))
  
       (make-row "Departure" (make-drop-down (world-departure a-world)
                                             TIMES
-                                            on-update-departure))
+                                            update-world-departure))
       
       (make-row "Arrival" (make-drop-down (world-arrival a-world)
                                           TIMES
-                                          on-update-arrival))
+                                          update-world-arrival))
       
       (make-button "Submit" on-submit))]))

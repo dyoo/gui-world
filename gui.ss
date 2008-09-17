@@ -21,12 +21,30 @@
   ...)
 
 
+(define (make-disabled-button label)
+  ...)
+
+
 (define (make-drop-down default-value choices callback)
   ...)
 
 
 (define (make-text-field default-value callback)
   ...)
+
+
+(define (maybe-make-error msg)
+  ...)
+
+
+
+;; notify-error: world string -> world
+;; For some period of time, every make-form after a notify-error will
+;; Show some notification at the top of the form.
+(define (notify-error world msg)
+  ...)
+
+
 
 
 ;; random-choice: X+ -> X
@@ -86,8 +104,11 @@
 (provide make-form
          make-row
          make-button
+         make-disabled-button
          make-drop-down
          make-text-field
+         maybe-make-error
+         notify-error
          random-choice
          
          define-updaters)
