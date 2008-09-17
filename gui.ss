@@ -50,7 +50,8 @@
 ;; random-choice: X+ -> X
 ;; Given a sequence of elements, chooses one of them randomly.
 (define (random-choice first-elt . rest-elts)
-  ...)
+  (list-ref (cons first-elt rest-elts)
+            (random (add1 (length rest-elts)))))
 
 
 

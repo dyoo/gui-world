@@ -25,5 +25,5 @@
 
 
 
-(big-bang 0 300 1/20 initial-world)
+(big-bang 100 300 1/20 initial-world)
 (on-redraw world->form-scene)
