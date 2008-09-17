@@ -8,9 +8,9 @@
 ;; (make-mm c1 c2 g1 g2)
 ;; where c1, c2 are elements in '("red" "blue" "green")
 ;; and g1, g2 are elements in '("red" "blue" "green" "blank")
-(define-struct mm (c1 c2 g1 g2) #:transparent)
+(define-struct mm (c1 c2 g1 g2))
 
-(define-replacers mm)
+(define-updaters mm)
 
 (define COLORS (list "red" "blue" "green"))
 (define COLORS+BLANK (cons "blank" COLORS))
@@ -26,13 +26,13 @@
 ;; on-g1-change: world string -> world
 ;; When the user changes the value of g1, we recompute the world.
 (define (on-g1-change a-world a-val) 
-  (replace-mm-g1 a-world a-val))
+  (update-mm-g1 a-world a-val))
 
 
 ;; on-g2-change: world string -> world
 ;; When the user changes the value of g2, we recompute the world.
 (define (on-g2-change a-world a-val) 
-  (replace-mm-g2 a-world a-val))
+  (update-mm-g2 a-world a-val))
 
 
 ;; form-filled?: world -> boolean

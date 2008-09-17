@@ -46,7 +46,7 @@
 ;;     (define-replacers posn)
 ;; will expand out to definitions for replace-posn-x, replace-posn-y, replace-posn-z.
 ;; Each replacer takes the struct val and an attribute value, and produces a new struct val.
-(define-syntax (define-replacers stx)
+(define-syntax (define-updaters stx)
   (syntax-case stx ()
     [(_ a-struct-type)
      (let* ([info (extract-struct-info (syntax-local-value #'a-struct-type))]
@@ -66,7 +66,7 @@
                                           (datum->syntax 
                                            stx
                                            (string->symbol
-                                            (string-append "replace-"
+                                            (string-append "update-"
                                                            (symbol->string (syntax-e #'a-struct-type))
                                                            "-"
                                                            (symbol->string (syntax-e id))))))
@@ -90,4 +90,4 @@
          make-text-field
          random-choice
          
-         define-replacers)
+         define-updaters)
