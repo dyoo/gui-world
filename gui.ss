@@ -25,6 +25,10 @@
   ...)
 
 
+(define (make-text-field default-value callback)
+  ...)
+
+
 ;; random-choice: X+ -> X
 ;; Given a sequence of elements, chooses one of them randomly.
 (define (random-choice first-elt . rest-elts)
@@ -32,7 +36,16 @@
 
 
 
-
+;; Not really a part of GUI.
+;; Convenient syntax for defining all the replacing-attribute functions,
+;; given a structure id.
+;; Usage:
+;; If we have a
+;;     (define-struct posn (x y z))
+;; then
+;;     (define-replacers posn)
+;; will expand out to definitions for replace-posn-x, replace-posn-y, replace-posn-z.
+;; Each replacer takes the struct val and an attribute value, and produces a new struct val.
 (define-syntax (define-replacers stx)
   (syntax-case stx ()
     [(_ a-struct-type)
@@ -74,6 +87,7 @@
          make-row
          make-button
          make-drop-down
+         make-text-field
          random-choice
          
          define-replacers)

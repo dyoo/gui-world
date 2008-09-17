@@ -42,6 +42,13 @@
        (not (string=? (mm-g2 a-world) "blank"))))
 
 
+;; win?: world -> boolean
+;; Returns true if the world is in winning state.
+(define (win? a-world)
+  (string=? (mm-c1 a-world) (mm-g1 a-world))
+  (string=? (mm-c2 a-world) (mm-g2 a-world)))
+
+
 
 ;; world->form-scene: world -> scene
 ;; Either shows an editable form if the game is still being played, or
@@ -49,7 +56,12 @@
 (define (world->form-scene a-world)
   (cond
     [(form-filled? a-world)
-     'ok]
+     (make-form (make-row (mm-c1 a-world) (mm-c2 a-world))
+                (make-row (mm-g1 a-world) (mm-g2 a-world))
+                (cond [(win? a-world)
+                       "You win!"]
+                      [else
+                       "You didn't win."]))]
     [else
      (make-form
       (make-row "???" "???")
