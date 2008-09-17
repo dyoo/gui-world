@@ -37,6 +37,9 @@
       (string=? (world-arrival a-world) "Unknown")
       (string=? (world-departure a-world) "Unknown")))
 
+(define (complete-submission? a-world)
+  (not (incomplete-submission? a-world)))
+
 
 ;; on-submit: world -> world
 (define (on-submit a-world)
@@ -53,7 +56,7 @@
                           (world-arrival a-world)
                           (world-departure a-world))
                 "has been submitted")]
-
+    
     [else
      (make-form
       (make-row "Title" (make-drop-down (world-title a-world) 
@@ -65,7 +68,7 @@
       
       (make-row "Name" (make-text-field (world-name a-world)
                                         update-world-name))
- 
+      
       (make-row "Departure" (make-drop-down (world-departure a-world)
                                             TIMES
                                             update-world-departure))
@@ -74,7 +77,4 @@
                                           TIMES
                                           update-world-arrival))
       
-      (cond [(incomplete-submission? a-world)
-             (make-disabled-button "Submit")]
-            [else
-             (make-button "Submit" on-submit)]))]))
+      (make-button "Submit" on-submit (complete-submission? a-world)))]))

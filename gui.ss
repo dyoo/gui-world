@@ -16,8 +16,8 @@
   ...)
 
 
-;; make-button: string (world -> world) -> element
-(define (make-button label callback)
+;; make-button: string (world -> world) [enabled? boolean] -> element
+(define (make-button label callback [enabled? #t])
   ...)
 
 
