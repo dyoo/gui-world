@@ -3,6 +3,7 @@
 (require scheme/gui/base
          scheme/match
          scheme/class
+         scheme/async-channel
          (planet "calm-evt.ss" ("dyoo" "calm-evt.plt" 1 0))
          (only-in srfi/1 list-index))
 (require (for-syntax scheme/base
@@ -166,21 +167,26 @@
     [(struct text-field-elt (v callback))
      (let* ([a-text (new (class text%
                            (inherit get-text)
-                           (define notify-channel (make-async-channel))
-                           (define/public (get-notify-channel)
-                             notify-channel)
-                           (define/augment (after-insert start len)
-                             (inner (void) after-insert start len)
-                             (async-channel-put notify-channel (get-text)))
-                           (define/augment (after-delete start len)
-                             (inner (void) after-delete start len)
-                             (async-channel-put notify-channel (get-text)))
+                           #;(define notify-channel (make-async-channel))
+                           #;(define/public (get-notify-channel)
+                               notify-channel)
+                           (define/override (on-focus on?)
+                             (super on-focus on?)
+                             #;(printf "on-focus ~s~n" on?)
+                             #;(unless on?
+                                 (callback *world* (get-text))))
+                           #;(define/augment (after-insert start len)
+                               (inner (void) after-insert start len)
+                               (async-channel-put notify-channel (get-text)))
+                           #;(define/augment (after-delete start len)
+                               (inner (void) after-delete start len)
+                               (async-channel-put notify-channel (get-text)))
                            (super-new)))]
             [canvas (new editor-canvas%
                          [parent a-container]
                          [editor a-text])])
        (send a-text insert v)
-       (thread (lambda ()
+       #;(thread (lambda ()
                  (let ([evt (make-calm-evt (send a-text get-notify-channel))])
                    (let loop ()
                      (sync (handle-evt evt (lambda (val)
