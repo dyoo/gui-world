@@ -112,7 +112,8 @@
 ;; on-redraw: (world -> form) -> void
 ;; Initializes the redrawing callback.
 (define (on-redraw callback)
-  (set! *on-redraw-callback* callback))
+  (set! *on-redraw-callback* callback)
+  (refresh!))
 
 
 ;; change-world!: world -> void
@@ -129,10 +130,12 @@
 ;; render-form-to-frame: form frame -> void
 ;; Clears out the contents of the frame, and adds the form elements in.
 (define (render-form-to-frame a-form a-frame)
-  (send a-frame remove-children)
-  (let ([a-pane (new vertical-panel%)])
+  ;; Remove all children
+  (send a-frame change-children (lambda (subareas) '()))
+  ;; Add a new child
+  (let ([a-panel (new vertical-panel% [parent a-frame])])
     (for ([an-elt (form-elts a-form)])
-      (render-elt! an-elt a-pane))))
+      (render-elt! an-elt a-panel))))
 
 
 ;; render-elt!: elt container% -> void
