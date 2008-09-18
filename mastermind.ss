@@ -1,6 +1,5 @@
 #lang scheme
-(require htdp/world
-         "gui.ss")
+(require "gui-world.ss")
 
 ;; Mastermind
 
@@ -67,3 +66,6 @@
       (make-row "???" "???")
       (make-row (make-drop-down (mm-g1 a-world) COLORS+BLANK on-g1-change)
                 (make-drop-down (mm-g2 a-world) COLORS+BLANK on-g2-change)))]))
+
+(big-bang 200 200 initial-world)
+(on-redraw world->form-scene)

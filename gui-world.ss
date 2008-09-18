@@ -2,7 +2,8 @@
 
 (require scheme/gui/base
          scheme/match
-         scheme/class)
+         scheme/class
+         (only-in srfi/1 list-index))
 (require (for-syntax scheme/base
                      scheme/list
                      scheme/struct-info))
@@ -64,6 +65,7 @@
 (define-struct (string-elt elt) (s))
 (define-struct (button-elt elt) (label callback enabled?))
 (define-struct (row-elt elt) (elts))
+(define-struct (drop-down-elt elt) (value choices callback))
 
 
 ;; big-bang: number number world -> void
@@ -157,7 +159,19 @@
           [parent a-container]
           [callback (lambda (b e)
                       (change-world! (callback *world*)))]
-          [enabled enabled?])]))
+          [enabled enabled?])]
+    
+    [(struct drop-down-elt (val choices callback))
+     (new choice% 
+          [label #f]
+          [choices choices]
+          [selection (list-index (lambda (x) 
+                                   (string=? x val))
+                                 choices)]
+          [parent a-container]
+          [callback (lambda (c e)
+                      (change-world! (callback *world*
+                                               (send c get-string-selection))))])]))
 
 
 
@@ -169,8 +183,11 @@
 
 
 
-(define (make-drop-down default-value choices callback)
-  ...)
+(define (-make-drop-down default-value choices callback)
+  (unless (member default-value choices)
+    (error 'make-drop-down "Value ~s not in the choices ~s" default-value choices))
+  (make-drop-down-elt default-value choices callback))
+
 
 
 (define (make-text-field default-value callback)
@@ -220,11 +237,11 @@
 
 
 
-;; random-choice: X+ -> X
-;; Given a sequence of elements, chooses one of them randomly.
-(define (random-choice first-elt . rest-elts)
-  (list-ref (cons first-elt rest-elts)
-            (random (add1 (length rest-elts)))))
+;; random-choice: (listof X) -> X
+;; Given a list of elements, chooses one of them randomly.
+(define (random-choice elts)
+  (list-ref elts
+            (random (length elts))))
 
 
 
@@ -282,11 +299,11 @@
  
  (rename-out [-make-form make-form]
              [-make-button make-button]
-             [-make-row make-row])
+             [-make-row make-row]
+             [-make-drop-down make-drop-down])
 
  
 
- make-drop-down
  make-text-field
  maybe-make-error
  notify-error
