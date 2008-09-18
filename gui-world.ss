@@ -3,7 +3,6 @@
 (require scheme/gui/base
          scheme/match
          scheme/class
-         scheme/async-channel
          (only-in srfi/1 list-index))
 (require (for-syntax scheme/base
                      scheme/list
@@ -34,6 +33,7 @@
 (define *width* #f)
 (define *height* #f)
 (define *frame* #f)
+(define *form* #f)
 
 (define *on-redraw-callback* #f)
 
@@ -58,10 +58,10 @@
 
 
 
-(define-struct form (elts))
+(define-struct form (elts) #:transparent)
 
 
-(define-struct elt ())
+(define-struct elt () #:transparent)
 ;; An element is one of the following:
 (define-struct (string-elt elt) (s) #:transparent)
 (define-struct (button-elt elt) (label callback enabled?) #:transparent)
@@ -129,7 +129,9 @@
 (define (refresh!)
   (when *on-redraw-callback*
     (let ([new-form (*on-redraw-callback* *world*)])
-      (render-form-to-frame new-form *frame*))))
+      (unless (equal? *form* new-form)
+        (set! *form* new-form)
+        (render-form-to-frame new-form *frame*)))))
 
 
 ;; render-form-to-frame: form frame -> void
@@ -164,24 +166,7 @@
           [enabled enabled?])]
     
     [(struct text-field-elt (v callback))
-     (let* ([a-text (new (class text%
-                           (inherit get-text)
-                           #;(define notify-channel (make-async-channel))
-                           #;(define/public (get-notify-channel)
-                               notify-channel)
-                           #;(define/override (on-focus on?)
-                               (super on-focus on?)
-                               (unless on?
-                                 (printf "on-focus ~s~n" on?))
-                               #;(unless on?
-                                   (callback *world* (get-text))))
-                           #;(define/augment (after-insert start len)
-                               (inner (void) after-insert start len)
-                               (async-channel-put notify-channel (get-text)))
-                           #;(define/augment (after-delete start len)
-                               (inner (void) after-delete start len)
-                               (async-channel-put notify-channel (get-text)))
-                           (super-new)))]
+     (let* ([a-text (new text%)]
             [canvas (new (class editor-canvas%
                            (define/override (on-focus on?)
                              (super on-focus on?)
@@ -191,12 +176,6 @@
                          [parent a-container]
                          [editor a-text])])
        (send a-text insert v)
-       #;(thread (lambda ()
-                 (let ([evt (make-calm-evt (send a-text get-notify-channel))])
-                   (let loop ()
-                     (sync (handle-evt evt (lambda (val)
-                                             (callback *world* val))))
-                     (loop)))))
        (void))]
     
     [(struct drop-down-elt (val choices callback))
