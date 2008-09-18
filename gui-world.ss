@@ -4,7 +4,6 @@
          scheme/match
          scheme/class
          scheme/async-channel
-         (planet "calm-evt.ss" ("dyoo" "calm-evt.plt" 1 0))
          (only-in srfi/1 list-index))
 (require (for-syntax scheme/base
                      scheme/list
@@ -64,11 +63,11 @@
 
 (define-struct elt ())
 ;; An element is one of the following:
-(define-struct (string-elt elt) (s))
-(define-struct (button-elt elt) (label callback enabled?))
-(define-struct (row-elt elt) (elts))
-(define-struct (drop-down-elt elt) (value choices callback))
-(define-struct (text-field-elt elt) (e callback))
+(define-struct (string-elt elt) (s) #:transparent)
+(define-struct (button-elt elt) (label callback enabled?) #:transparent)
+(define-struct (row-elt elt) (elts) #:transparent)
+(define-struct (drop-down-elt elt) (value choices callback) #:transparent)
+(define-struct (text-field-elt elt) (e callback) #:transparent)
 
 
 ;; big-bang: number number world -> void
@@ -170,11 +169,12 @@
                            #;(define notify-channel (make-async-channel))
                            #;(define/public (get-notify-channel)
                                notify-channel)
-                           (define/override (on-focus on?)
-                             (super on-focus on?)
-                             #;(printf "on-focus ~s~n" on?)
-                             #;(unless on?
-                                 (callback *world* (get-text))))
+                           #;(define/override (on-focus on?)
+                               (super on-focus on?)
+                               (unless on?
+                                 (printf "on-focus ~s~n" on?))
+                               #;(unless on?
+                                   (callback *world* (get-text))))
                            #;(define/augment (after-insert start len)
                                (inner (void) after-insert start len)
                                (async-channel-put notify-channel (get-text)))
@@ -182,7 +182,12 @@
                                (inner (void) after-delete start len)
                                (async-channel-put notify-channel (get-text)))
                            (super-new)))]
-            [canvas (new editor-canvas%
+            [canvas (new (class editor-canvas%
+                           (define/override (on-focus on?)
+                             (super on-focus on?)
+                             (when (not on?)
+                               (change-world! (callback *world* (send a-text get-text)))))
+                           (super-new))
                          [parent a-container]
                          [editor a-text])])
        (send a-text insert v)
