@@ -3,6 +3,7 @@
 (require scheme/gui/base
          scheme/match
          scheme/class
+         mrlib/cache-image-snip
          (only-in srfi/1 list-index))
 (require (for-syntax scheme/base
                      scheme/list
@@ -70,6 +71,7 @@
 (define-struct (drop-down-elt elt) (value choices callback) #:transparent)
 (define-struct (text-field-elt elt) (e callback) #:transparent)
 (define-struct (slider-elt elt) (v min max callback) #:transparent)
+(define-struct (image-elt elt) (img) #:transparent)
 
 
 ;; big-bang: number number world -> void
@@ -179,7 +181,14 @@
           [init-value val]
           [callback (lambda (s e)
                       (change-world! 
-                       (callback *world* (send s get-value))))])]))
+                       (callback *world* (send s get-value))))])]
+    
+    [(struct image-elt (an-image-snip))
+     (let* ([pasteboard (new pasteboard%)]
+            [canvas (new editor-canvas%
+                         [parent a-container]
+                         [editor pasteboard])])
+       (send pasteboard insert (send an-image-snip copy)))]))
 
 
 
@@ -187,14 +196,16 @@
 ;; make-form: element+ -> form
 (define (-make-form first-elt . rest-elements)
   (make-form 
-   (coerse-strings-to-string-elts (cons first-elt rest-elements))))
+   (coerse-primitive-types-to-elts (cons first-elt rest-elements))))
 
-;; coerse-strings-to-string-elts: (listof (or/c elt string)) -> (listof elt)
-;; Helper to turn strings into string-elts.
-(define (coerse-strings-to-string-elts elts)
+;; coerse-primitive-types-to-elts: (listof (or/c elt string)) -> (listof elt)
+;; Helper to turn strings into string-elts, and images into image-elts.
+(define (coerse-primitive-types-to-elts elts)
   (map (lambda (elt)
          (cond [(string? elt)
                 (make-string-elt elt)]
+               [(is-a? elt cache-image-snip%)
+                (make-image-elt elt)]
                [else
                 elt]))
        elts))
@@ -205,11 +216,11 @@
 
 ;; make-row: element+ -> element
 (define (make-row first-elt . rest-elts)
-  (make-row-elt (coerse-strings-to-string-elts (cons first-elt rest-elts))))
+  (make-row-elt (coerse-primitive-types-to-elts (cons first-elt rest-elts))))
 
 ;; make-column: element+ -> element
 (define (make-column first-elt . rest-elts)
-  (make-column-elt (coerse-strings-to-string-elts (cons first-elt rest-elts))))
+  (make-column-elt (coerse-primitive-types-to-elts (cons first-elt rest-elts))))
 
 ;; make-drop-down: string (listof string) (world string -> world) -> element
 (define (make-drop-down default-value choices callback)
@@ -316,6 +327,6 @@
  make-drop-down
  make-text-field
  make-slider
-
+ 
  random-choice
  define-updaters)
