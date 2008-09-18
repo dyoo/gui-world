@@ -1,6 +1,5 @@
 #lang scheme
-(require "gui.ss")
-(require htdp/world)
+(require "gui-world.ss")
 
 ;; Simple counting example.  We show a text field and a button.  When the button is
 ;; pressed, we increment the number.
@@ -23,7 +22,5 @@
    (make-button "Press me!" on-button-click)))
 
 
-
-
-(big-bang 100 300 1/20 initial-world)
+(big-bang 100 300 initial-world)
 (on-redraw world->form-scene)
