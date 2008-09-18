@@ -1,7 +1,6 @@
 #lang scheme
 
-(require "gui.ss"
-         htdp/world)
+(require "gui-world.ss")
 
 ;; Airline reservation.  Program disables the submit bug until we're happy, so the
 ;; submit error can't happen.
@@ -78,3 +77,6 @@
                                           update-world-arrival))
       
       (make-button "Submit" on-submit (complete-submission? a-world)))]))
+
+(big-bang 300 300 initial-world)
+(on-redraw world->form-scene)

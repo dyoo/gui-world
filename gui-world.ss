@@ -3,6 +3,7 @@
 (require scheme/gui/base
          scheme/match
          scheme/class
+         (planet "calm-evt.ss" ("dyoo" "calm-evt.plt" 1 0))
          (only-in srfi/1 list-index))
 (require (for-syntax scheme/base
                      scheme/list
@@ -66,6 +67,7 @@
 (define-struct (button-elt elt) (label callback enabled?))
 (define-struct (row-elt elt) (elts))
 (define-struct (drop-down-elt elt) (value choices callback))
+(define-struct (text-field-elt elt) (e callback))
 
 
 ;; big-bang: number number world -> void
@@ -161,6 +163,31 @@
                       (change-world! (callback *world*)))]
           [enabled enabled?])]
     
+    [(struct text-field-elt (v callback))
+     (let* ([a-text (new (class text%
+                           (inherit get-text)
+                           (define notify-channel (make-async-channel))
+                           (define/public (get-notify-channel)
+                             notify-channel)
+                           (define/augment (after-insert start len)
+                             (inner (void) after-insert start len)
+                             (async-channel-put notify-channel (get-text)))
+                           (define/augment (after-delete start len)
+                             (inner (void) after-delete start len)
+                             (async-channel-put notify-channel (get-text)))
+                           (super-new)))]
+            [canvas (new editor-canvas%
+                         [parent a-container]
+                         [editor a-text])])
+       (send a-text insert v)
+       (thread (lambda ()
+                 (let ([evt (make-calm-evt (send a-text get-notify-channel))])
+                   (let loop ()
+                     (sync (handle-evt evt (lambda (val)
+                                             (callback *world* val))))
+                     (loop)))))
+       (void))]
+    
     [(struct drop-down-elt (val choices callback))
      (new choice% 
           [label #f]
@@ -190,8 +217,9 @@
 
 
 
-(define (make-text-field default-value callback)
-  ...)
+(define (-make-text-field default-value callback)
+  (make-text-field-elt default-value callback))
+
 
 
 (define (maybe-make-error msg)
@@ -300,12 +328,10 @@
  (rename-out [-make-form make-form]
              [-make-button make-button]
              [-make-row make-row]
-             [-make-drop-down make-drop-down])
+             [-make-drop-down make-drop-down]
+             [-make-text-field make-text-field])
 
- 
-
- make-text-field
- maybe-make-error
- notify-error
+  ;maybe-make-error
+ ;notify-error
  random-choice
  define-updaters)
