@@ -1,6 +1,5 @@
 #lang scheme
-(require htdp/world
-         "gui.ss")
+(require "gui-world.ss")
 
 ;; Calculator example.  A world is again a number
 (define initial-world 0)
@@ -61,9 +60,15 @@
   (* a-world a-world))
 
 
+;; key-clear: world -> world
+;; Clear out the world back to zero.
+(define (key-clear a-world)
+  0)
+
 ;; world->form-scene: world -> scene
 (define (world->form-scene a-world)
-  (make-form (make-row (make-button "7" key7)
+  (make-form (number->string a-world)
+             (make-row (make-button "7" key7)
                        (make-button "8" key8)
                        (make-button "9" key9))
              (make-row (make-button "4" key4)
@@ -73,5 +78,8 @@
                        (make-button "2" key2)
                        (make-button "3" key3))
              (make-button "NEG" key-negate)
-             (make-button "SQ" key-square)))
+             (make-button "SQ" key-square)
+             (make-button "C" key-clear)))
 
+(big-bang 300 300 initial-world)
+(on-redraw world->form-scene)

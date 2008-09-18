@@ -63,6 +63,7 @@
 ;; An element is one of the following:
 (define-struct (string-elt elt) (s))
 (define-struct (button-elt elt) (label callback enabled?))
+(define-struct (row-elt elt) (elts))
 
 
 ;; big-bang: number number world -> void
@@ -142,6 +143,11 @@
 ;; Adds an elt to the gui container. 
 (define (render-elt! an-elt a-container)
   (match an-elt
+    [(struct row-elt (elts))
+     (let ([row-container 
+            (new horizontal-panel% [parent a-container])])
+       (for ([sub-elt elts])
+         (render-elt! sub-elt row-container)))]
     [(struct string-elt (s))
      (new message% [label s]
           [parent a-container])]
@@ -156,14 +162,11 @@
 
 
 
-
 ;; make-row: element+ -> element
-(define (make-row first-elt . rest-elt)
-  ...)
+(define (-make-row first-elt . rest-elts)
+  (make-row-elt (coerse-strings-to-string-elts (cons first-elt rest-elts))))
 
 
-(define (make-disabled-button label)
-  ...)
 
 
 (define (make-drop-down default-value choices callback)
@@ -278,11 +281,11 @@
  on-redraw
  
  (rename-out [-make-form make-form]
-             [-make-button make-button])
+             [-make-button make-button]
+             [-make-row make-row])
 
  
- make-row
- make-disabled-button
+
  make-drop-down
  make-text-field
  maybe-make-error
