@@ -63,11 +63,13 @@
 
 (define-struct elt () #:transparent)
 ;; An element is one of the following:
+(define-struct (row-elt elt) (elts) #:transparent)
+(define-struct (column-elt elt) (elts) #:transparent)
 (define-struct (string-elt elt) (s) #:transparent)
 (define-struct (button-elt elt) (label callback enabled?) #:transparent)
-(define-struct (row-elt elt) (elts) #:transparent)
 (define-struct (drop-down-elt elt) (value choices callback) #:transparent)
 (define-struct (text-field-elt elt) (e callback) #:transparent)
+(define-struct (slider-elt elt) (v min max callback) #:transparent)
 
 
 ;; big-bang: number number world -> void
@@ -88,30 +90,6 @@
                      [height *height*]))
   (send *frame* show #t))
 
-
-
-;; make-form: element+ -> form
-(define (-make-form first-elt . rest-elements)
-  (make-form 
-   (coerse-strings-to-string-elts (cons first-elt rest-elements))))
-
-
-
-;; coerse-strings-to-string-elts: (listof (or/c elt string)) -> (listof elt)
-;; Helper to turn strings into string-elts.
-(define (coerse-strings-to-string-elts elts)
-  (map (lambda (elt)
-         (cond [(string? elt)
-                (make-string-elt elt)]
-               [else
-                elt]))
-       elts))
-
-
-
-;; make-button: string (world -> world) [enabled? boolean] -> element
-(define (-make-button label callback [enabled? #t])
-  (make-button-elt label callback enabled?))
 
 
 ;; on-redraw: (world -> form) -> void
@@ -154,6 +132,13 @@
             (new horizontal-panel% [parent a-container])])
        (for ([sub-elt elts])
          (render-elt! sub-elt row-container)))]
+    
+    [(struct column-elt (elts))
+     (let ([column-container
+            (new vertical-panel% [parent a-container])])
+       (for ([sub-elt elts])
+         (render-elt! sub-elt column-container)))]
+    
     [(struct string-elt (s))
      (new message% [label s]
           [parent a-container])]
@@ -166,17 +151,12 @@
           [enabled enabled?])]
     
     [(struct text-field-elt (v callback))
-     (let* ([a-text (new text%)]
-            [canvas (new (class editor-canvas%
-                           (define/override (on-focus on?)
-                             (super on-focus on?)
-                             (when (not on?)
-                               (change-world! (callback *world* (send a-text get-text)))))
-                           (super-new))
-                         [parent a-container]
-                         [editor a-text])])
-       (send a-text insert v)
-       (void))]
+     (new text-field% 
+          [label #f]
+          [parent a-container]
+          [init-value v]
+          [callback (lambda (t e)
+                      (change-world! (callback *world* (send t get-value))))])]
     
     [(struct drop-down-elt (val choices callback))
      (new choice% 
@@ -187,49 +167,63 @@
                                  choices)]
           [parent a-container]
           [callback (lambda (c e)
-                      (change-world! (callback *world*
-                                               (send c get-string-selection))))])]))
+                      (change-world! 
+                       (callback *world* (send c get-string-selection))))])]
+    
+    [(struct slider-elt (val min max callback))
+     (new slider% 
+          [label #f]
+          [parent a-container]
+          [min-value min]
+          [max-value max]
+          [init-value val]
+          [callback (lambda (s e)
+                      (change-world! 
+                       (callback *world* (send s get-value))))])]))
 
 
 
+
+;; make-form: element+ -> form
+(define (-make-form first-elt . rest-elements)
+  (make-form 
+   (coerse-strings-to-string-elts (cons first-elt rest-elements))))
+
+;; coerse-strings-to-string-elts: (listof (or/c elt string)) -> (listof elt)
+;; Helper to turn strings into string-elts.
+(define (coerse-strings-to-string-elts elts)
+  (map (lambda (elt)
+         (cond [(string? elt)
+                (make-string-elt elt)]
+               [else
+                elt]))
+       elts))
+
+;; make-button: string (world -> world) [enabled? boolean] -> element
+(define (make-button label callback [enabled? #t])
+  (make-button-elt label callback enabled?))
 
 ;; make-row: element+ -> element
-(define (-make-row first-elt . rest-elts)
+(define (make-row first-elt . rest-elts)
   (make-row-elt (coerse-strings-to-string-elts (cons first-elt rest-elts))))
 
+;; make-column: element+ -> element
+(define (make-column first-elt . rest-elts)
+  (make-column-elt (coerse-strings-to-string-elts (cons first-elt rest-elts))))
 
-
-
-(define (-make-drop-down default-value choices callback)
+;; make-drop-down: string (listof string) (world string -> world) -> element
+(define (make-drop-down default-value choices callback)
   (unless (member default-value choices)
     (error 'make-drop-down "Value ~s not in the choices ~s" default-value choices))
   (make-drop-down-elt default-value choices callback))
 
-
-
-(define (-make-text-field default-value callback)
+;; make-text-field: string (world string -> world) -> element
+(define (make-text-field default-value callback)
   (make-text-field-elt default-value callback))
 
-
-
-(define (maybe-make-error msg)
-  ...)
-
-
-
-;; notify-error: world string -> world
-;; For some period of time, every make-form after a notify-error will
-;; Show some notification at the top of the form.
-(define (notify-error world msg)
-  ...)
-
-
-
-
-
-
-
-
+;; make-slider: number number number (world number -> world) -> element
+(define (make-slider v min max callback)
+  (make-slider-elt v min max callback))
 
 
 
@@ -315,13 +309,13 @@
  big-bang
  on-redraw
  
- (rename-out [-make-form make-form]
-             [-make-button make-button]
-             [-make-row make-row]
-             [-make-drop-down make-drop-down]
-             [-make-text-field make-text-field])
+ (rename-out [-make-form make-form])
+ make-button
+ make-row
+ make-column
+ make-drop-down
+ make-text-field
+ make-slider
 
-  ;maybe-make-error
- ;notify-error
  random-choice
  define-updaters)
