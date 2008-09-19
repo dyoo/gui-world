@@ -223,17 +223,26 @@
   (make-column-elt (coerse-primitive-types-to-elts (cons first-elt rest-elts))))
 
 ;; make-drop-down: string (listof string) (world string -> world) -> element
-(define (make-drop-down default-value choices callback)
+(define (make-drop-down default-value choices 
+                        [callback 
+                         (lambda (old-world a-str)
+                           a-str)])
   (unless (member default-value choices)
     (error 'make-drop-down "Value ~s not in the choices ~s" default-value choices))
   (make-drop-down-elt default-value choices callback))
 
 ;; make-text-field: string (world string -> world) -> element
-(define (make-text-field default-value callback)
+(define (make-text-field default-value 
+                         [callback
+                          (lambda (world a-string)
+                            a-string)])
   (make-text-field-elt default-value callback))
 
 ;; make-slider: number number number (world number -> world) -> element
-(define (make-slider v min max callback)
+(define (make-slider v min max 
+                     [callback
+                      (lambda (world a-num)
+                        a-num)])
   (make-slider-elt v min max callback))
 
 
