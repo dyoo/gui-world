@@ -159,6 +159,8 @@
     (inherit get-children)
     (define/public (compatible? an-elt)
       (and (row-elt? an-elt)
+           (= (length (get-children))
+              (length (row-elt-elts an-elt)))
            (andmap (lambda (sub-elt gui-elt)
                      (send gui-elt compatible? sub-elt))
                    (row-elt-elts an-elt)
@@ -166,7 +168,7 @@
     
     (define/public (update-with! an-elt)
       (for-each (lambda (sub-elt sub-gui-elt)
-                  (send sub-gui-elt update-with sub-elt))
+                  (send sub-gui-elt update-with! sub-elt))
                 (row-elt-elts an-elt)
                 (get-children)))
     
@@ -178,6 +180,7 @@
 
     (define/public (compatible? an-elt)
       (and (column-elt? an-elt)
+           (= (length (get-children)) (length (column-elt-elts an-elt)))
            (andmap (lambda (sub-elt gui-elt)
                      (send gui-elt compatible? sub-elt))
                    (column-elt-elts an-elt)
@@ -185,7 +188,7 @@
 
     (define/public (update-with! an-elt)
       (for-each (lambda (sub-elt sub-gui-elt)
-                  (send sub-gui-elt update-with sub-elt))
+                  (send sub-gui-elt update-with! sub-elt))
                 (column-elt-elts an-elt)
                 (get-children)))
 
@@ -194,16 +197,16 @@
 
 (define world-gui:string% 
   (class* message% (world-gui<%>)
-    (inherit get-text set-label)
+    (inherit get-label set-label)
     
     (define/public (compatible? an-elt)
       (string-elt? an-elt))
     
     (define/public (update-with! an-elt)
-      (unless (string=? (string-elt-s an-elt) (get-text))
+      (unless (string=? (string-elt-s an-elt) (get-label))
         (set-label (string-elt-s an-elt))))
     
-    (super-new)))
+    (super-new [auto-resize #t])))
 
 
 (define world-gui:button%
@@ -285,16 +288,52 @@
 
 (define world-gui:slider%
   (class* slider% (world-gui<%>)
+    (inherit get-value set-value)
+    (init min-value
+          max-value)
+    (init-field inner-callback)
+    
     (define/public (compatible? an-elt)
-      (slider-elt? an-elt))
-    (super-new)))
+      (and (slider-elt? an-elt)
+           (= -min-value (slider-elt-min an-elt))
+           (= -max-value (slider-elt-max an-elt))))
+    
+    (define/public (update-with! an-elt)
+      (unless (= (slider-elt-v an-elt) (get-value))
+        (set-value (slider-elt-v an-elt)))
+      (unless (eq? inner-callback
+                   (slider-elt-callback an-elt))
+        (set! inner-callback (slider-elt-callback an-elt))))
+   
+    (define -min-value min-value)
+    (define -max-value max-value)
+    (super-new
+     [min-value min-value]
+     [max-value max-value]
+     [callback (lambda (s e)
+                 (change-world! 
+                  (inner-callback *world* (get-value))))])))
 
 
 
 (define world-gui:image%
   (class* editor-canvas% (world-gui<%>)
+    (inherit get-editor)
+    
     (define/public (compatible? an-elt)
       (image-elt? an-elt))
+    
+    (define/public (update-with! an-elt)
+      (let ([editor (get-editor)])
+        (dynamic-wind 
+         (lambda () 
+           (send editor begin-edit-sequence))
+         (lambda () 
+           (send editor erase)
+           (send editor insert (send (image-elt-img an-elt) copy)))
+         (lambda () 
+           (send editor end-edit-sequence)))))
+    
     (super-new)))
 
 
@@ -351,9 +390,7 @@
           [min-value min]
           [max-value max]
           [init-value val]
-          [callback (lambda (s e)
-                      (change-world! 
-                       (callback *world* (send s get-value))))])]
+          [inner-callback callback])]
     
     [(struct image-elt (an-image-snip))
      (let* ([pasteboard (new pasteboard%)]
