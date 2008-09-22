@@ -345,14 +345,18 @@
   (class* editor-canvas% (world-gui<%>)
     (inherit get-editor min-width min-height)
     
+    (define/override (on-char evt)
+      (void))
+
+    (define/override (on-event evt)
+      (void))
+    
     (define/public (compatible? an-elt)
       (image-elt? an-elt))
     
     (define/public (update-with! an-elt)
       (let ([editor (get-editor)]
             [img (send (image-elt-img an-elt) copy)])
-        (min-width (image-width img))
-        (min-height (image-height img))
         (dynamic-wind 
          (lambda () 
            (send editor begin-edit-sequence))
@@ -427,11 +431,21 @@
                          [parent a-container]
                          [min-width (image-width img-snip)]
                          [min-height (image-height img-snip)]
+                         [horizontal-inset INSET]
+                         [vertical-inset INSET]
+                         [horiz-margin 0]
+                         [vert-margin 0]
                          [stretchable-width #f]
                          [stretchable-height #f]
+                         [style '(no-hscroll no-vscroll)]
                          [editor pasteboard])])
+       (send canvas min-client-width (+ (image-width img-snip) INSET INSET))
+       (send canvas min-client-height (+ (image-height img-snip) INSET INSET))
        (send pasteboard insert img-snip 0 0)
+       (send pasteboard set-cursor (make-object cursor% 'arrow))
        canvas)]))
+
+(define INSET 5)
 
 
 

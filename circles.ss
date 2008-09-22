@@ -14,7 +14,9 @@
 
 (define (world->scene a-world)
   (make-form
-   (circle a-world "solid" "red")
+   (place-image (circle a-world "solid" "red")
+                100 100
+                (empty-scene 200 200))
    (make-slider a-world 20 50 update-world-radius)))
 
 
