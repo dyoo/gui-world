@@ -5,7 +5,10 @@
          scheme/class
          scheme/list
          scheme/bool
+         htdp/error
+         htdp/image
          mrlib/cache-image-snip
+         (only-in lang/htdp-beginner image?)
          (only-in srfi/1 list-index))
 (require (for-syntax scheme/base
                      scheme/list
@@ -39,7 +42,8 @@
 (define *form* #f)
 
 (define *on-redraw-callback* #f)
-
+(define *on-tick-callback* #f)
+(define *on-tick-frequency* #f)
 
 
 
@@ -103,10 +107,24 @@
   (refresh!))
 
 
+
+(define (on-tick freq callback)
+  (set! *on-tick-frequency* freq)
+  (set! *on-tick-callback* callback)
+  (thread (lambda ()
+            (let loop ()
+              (sleep *on-tick-frequency*)
+              (change-world! (*on-tick-callback* *world*))
+              (loop))))
+  (void))
+
+
+
 ;; change-world!: world -> void
 (define (change-world! new-world)
   (set! *world* new-world)
   (refresh!))
+
 
 (define (refresh!)
   (when *on-redraw-callback*
@@ -247,7 +265,8 @@
       
     
     (super-new [callback (lambda (f e)
-                           (change-world! (inner-callback *world* (get-value))))])))
+                           (change-world!
+                            (inner-callback *world* (get-value))))])))
 
 
 (define world-gui:drop-down% 
@@ -543,10 +562,69 @@
 
 
 
+
+
+
+;; Copy-and-paste from htdp/world
+
+(define (place-image image x y scene)
+  (check-image 'place-image image "first")
+  (check-arg 'place-image (number? x) 'integer "second" x)
+  (check-arg 'place-image (number? y) 'integer "third" y)
+  (check-scene 'place-image scene "fourth")
+  (let ([x (number->integer x)]
+        [y (number->integer y)])
+    (place-image0 image x y scene)))
+
+;; Symbol Any String String *-> Void
+(define (check-image tag i rank . other-message)
+  (if (and (pair? other-message) (string? (car other-message)))
+      (check-arg tag (image? i) (car other-message) rank i)
+      (check-arg tag (image? i) "image" rank i)))
+
+;; Symbol Any String -> Void
+(define (check-scene tag i rank)
+  (if (image? i)
+      (unless (scene? i)
+        (error tag "scene expected, given image whose pinhole is at (~s,~s) instead of (0,0)"
+               (pinhole-x i) (pinhole-y i)))
+      (check-arg tag #f "image" rank i)))
+
+(define (place-image0 image x y scene)
+  (define sw (image-width scene))
+  (define sh (image-height scene))
+  (define ns (overlay/xy scene x y image))
+  (define nw (image-width ns))
+  (define nh (image-height ns))
+  (if (and (= sw nw) (= sh nh)) ns (shrink ns 0 0 (- sw 1) (- sh 1)))) 
+
+;; Symbol Any String -> Void
+(define (check-pos tag c rank)
+  (check-arg tag (and (number? c) (> (number->integer c) 0))
+             "positive integer" rank c))
+
+(define (scene? i) (and (= 0 (pinhole-x i)) (= 0 (pinhole-y i))))
+
+;; Number -> Integer
+(define (number->integer x)
+  (inexact->exact (floor x)))
+
+(define (empty-scene width height)
+  (check-pos 'empty-scene width "first")
+  (check-pos 'empty-scene height "second")    
+  (put-pinhole 
+   (overlay (rectangle width height 'solid 'white)
+            (rectangle width height 'outline 'black))
+   0 0))
+
+
+
+
 (provide 
  
  big-bang
  on-redraw
+ on-tick
  
  (rename-out [-make-form make-form])
  make-button
@@ -555,6 +633,10 @@
  make-drop-down
  make-text-field
  make-slider
+ 
+ 
+ place-image
+ empty-scene
  
  random-choice
  define-updaters)
