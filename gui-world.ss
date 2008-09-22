@@ -4,6 +4,7 @@
          scheme/match
          scheme/class
          scheme/list
+         scheme/bool
          mrlib/cache-image-snip
          (only-in srfi/1 list-index))
 (require (for-syntax scheme/base
@@ -207,7 +208,7 @@
 
 (define world-gui:button%
   (class* button% (world-gui<%>)
-    (inherit get-label set-label)
+    (inherit get-label set-label is-enabled? enable)
     
     (init-field inner-callback)
     
@@ -218,7 +219,9 @@
       (unless (string=? (button-elt-label an-elt) (get-label))
         (set-label (button-elt-label)))
       (unless (eq? inner-callback (button-elt-callback an-elt))
-        (set! inner-callback (button-elt-callback an-elt))))
+        (set! inner-callback (button-elt-callback an-elt)))
+      (unless (boolean=? (is-enabled?) (button-elt-enabled? an-elt))
+        (enable (button-elt-enabled? an-elt))))
       
     (super-new [callback (lambda (b e)
                            (change-world!
@@ -246,9 +249,37 @@
 
 (define world-gui:drop-down% 
   (class* choice% (world-gui<%>)
+    (init-field inner-callback)
+    (inherit get-string-selection get-number get-string clear append set-selection)
+    
     (define/public (compatible? an-elt)
       (drop-down-elt? an-elt))
-    (super-new)))
+
+    (define/public (update-with! an-elt)
+      (unless (andmap string=? (get-choices) (drop-down-elt-choices an-elt))
+        (clear)
+        (for ([choice (drop-down-elt-choices)])
+          (append choice)))
+      (unless (string=? (get-string-selection) (drop-down-elt-value an-elt))
+        (set-selection (list-index (lambda (x) 
+                                     (string=? x (drop-down-elt-value an-elt)))
+                                   (drop-down-elt-choices an-elt))))
+      (unless (eq? inner-callback (drop-down-elt-callback an-elt))
+        (set! inner-callback (drop-down-elt-callback an-elt))))
+
+    ;; get-choices: -> (listof string)
+    (define (get-choices)
+      (let loop ([i 0])
+        (cond [(= i (get-number))
+               '()]
+              [else
+               (cons (get-string i)
+                     (loop (add1 i)))])))
+    
+    (super-new
+     [callback (lambda (c e)
+                 (change-world! 
+                  (inner-callback *world* (get-string-selection))))])))
 
 
 
@@ -311,9 +342,7 @@
                                    (string=? x val))
                                  choices)]
           [parent a-container]
-          [callback (lambda (c e)
-                      (change-world! 
-                       (callback *world* (send c get-string-selection))))])]
+          [inner-callback callback])]
     
     [(struct slider-elt (val min max callback))
      (new world-gui:slider% 
