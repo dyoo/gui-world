@@ -3,6 +3,7 @@
 (require scheme/gui/base
          scheme/match
          scheme/class
+         scheme/list
          mrlib/cache-image-snip
          (only-in srfi/1 list-index))
 (require (for-syntax scheme/base
@@ -69,7 +70,7 @@
 (define-struct (string-elt elt) (s) #:transparent)
 (define-struct (button-elt elt) (label callback enabled?) #:transparent)
 (define-struct (drop-down-elt elt) (value choices callback) #:transparent)
-(define-struct (text-field-elt elt) (e callback) #:transparent)
+(define-struct (text-field-elt elt) (s callback) #:transparent)
 (define-struct (slider-elt elt) (v min max callback) #:transparent)
 (define-struct (image-elt elt) (img) #:transparent)
 
@@ -117,65 +118,154 @@
 ;; render-form-to-frame: form frame -> void
 ;; Clears out the contents of the frame, and adds the form elements in.
 (define (render-form-to-frame a-form a-frame)
-  ;; Remove all children
-  (send a-frame change-children (lambda (subareas) '()))
-  ;; Add a new child
-  (let ([a-panel (new world-gui:column% [parent a-frame])])
-    (render-elt! (form-elt a-form) a-panel)))
+  ;; Returns true if the form element has the exact same structure as the
+  ;; gui on screen.
+  (define (gui-completely-reusable?)
+    (match (send a-frame get-children)
+      [(list a-column)
+       (send a-column compatible? (form-elt a-form))]
+      [else
+       #f]))
+  
+  (define (render-from-scratch!)
+    ;; Remove all children, and add the rendered form element as a child.
+    (send a-frame change-children (lambda (subareas) '()))
+    (render-elt! (form-elt a-form) a-frame)
+    (void))
+  
+  (define (reuse!)
+    (update-elt! (form-elt a-form) 
+                 (first (send a-frame get-children))))
+
+  (cond
+    [(gui-completely-reusable?)
+     (reuse!)]
+    [else
+     (render-from-scratch!)]))
 
 
 
 
 
-(define world-gui<%> (interface () to-elt))
+
+(define world-gui<%> (interface () 
+                       compatible?
+                       update-with!))
+
 
 (define world-gui:row%
   (class* horizontal-panel% (world-gui<%>)
-    (define/public (to-elt)
-      ...)
+    (inherit get-children)
+    (define/public (compatible? an-elt)
+      (and (row-elt? an-elt)
+           (andmap (lambda (sub-elt gui-elt)
+                     (send gui-elt compatible? sub-elt))
+                   (row-elt-elts an-elt)
+                   (get-children))))
+    
+    (define/public (update-with! an-elt)
+      (for-each (lambda (sub-elt sub-gui-elt)
+                  (send sub-gui-elt update-with sub-elt))
+                (row-elt-elts an-elt)
+                (get-children)))
+    
     (super-new)))
 
 (define world-gui:column%
   (class* vertical-panel% (world-gui<%>)
-    (define/public (to-elt)
-      ...)
+    (inherit get-children)
+
+    (define/public (compatible? an-elt)
+      (and (column-elt? an-elt)
+           (andmap (lambda (sub-elt gui-elt)
+                     (send gui-elt compatible? sub-elt))
+                   (column-elt-elts an-elt)
+                   (get-children))))
+
+    (define/public (update-with! an-elt)
+      (for-each (lambda (sub-elt sub-gui-elt)
+                  (send sub-gui-elt update-with sub-elt))
+                (column-elt-elts an-elt)
+                (get-children)))
+
     (super-new)))
+
 
 (define world-gui:string% 
   (class* message% (world-gui<%>)
-    (define/public (to-elt)
-      ...)
+    (inherit get-text set-label)
+    
+    (define/public (compatible? an-elt)
+      (string-elt? an-elt))
+    
+    (define/public (update-with! an-elt)
+      (unless (string=? (string-elt-s an-elt) (get-text))
+        (set-label (string-elt-s an-elt))))
+    
     (super-new)))
+
 
 (define world-gui:button%
   (class* button% (world-gui<%>)
-    (define/public (to-elt)
-      ...)
-    (super-new)))
+    (inherit get-label set-label)
+    
+    (init-field inner-callback)
+    
+    (define/public (compatible? an-elt)
+      (button-elt? an-elt))
+    
+    (define/public (update-with! an-elt)
+      (unless (string=? (button-elt-label an-elt) (get-label))
+        (set-label (button-elt-label)))
+      (unless (eq? inner-callback (button-elt-callback an-elt))
+        (set! inner-callback (button-elt-callback an-elt))))
+      
+    (super-new [callback (lambda (b e)
+                           (change-world!
+                            (inner-callback *world*)))])))
+
 
 (define world-gui:text-field% 
   (class* text-field% (world-gui<%>)
-    (define/public (to-elt)
-      ...)
-    (super-new)))
+    (inherit get-value set-value)
+    (init-field inner-callback)
+    
+    (define/public (compatible? an-elt)
+      (text-field-elt? an-elt))
+    
+    (define/public (update-with! an-elt)
+      (unless (string=? (text-field-elt-s an-elt) (get-value))
+        (set-value (text-field-elt-s an-elt)))
+      (unless (eq? inner-callback (text-field-elt-callback an-elt))
+        (set! inner-callback (text-field-elt-callback an-elt))))
+      
+    
+    (super-new [callback (lambda (f e)
+                           (change-world! (inner-callback *world* (get-value))))])))
+
 
 (define world-gui:drop-down% 
   (class* choice% (world-gui<%>)
-    (define/public (to-elt)
-      ...)
+    (define/public (compatible? an-elt)
+      (drop-down-elt? an-elt))
     (super-new)))
+
+
 
 (define world-gui:slider%
   (class* slider% (world-gui<%>)
-    (define/public (to-elt)
-      ...)
+    (define/public (compatible? an-elt)
+      (slider-elt? an-elt))
     (super-new)))
+
+
 
 (define world-gui:image%
   (class* editor-canvas% (world-gui<%>)
-    (define/public (to-elt)
-      ...)
+    (define/public (compatible? an-elt)
+      (image-elt? an-elt))
     (super-new)))
+
 
 
 ;; render-elt!: elt container% -> world-gui<%>
@@ -203,8 +293,7 @@
     [(struct button-elt (label callback enabled?))
      (new world-gui:button% [label label]
           [parent a-container]
-          [callback (lambda (b e)
-                      (change-world! (callback *world*)))]
+          [inner-callback callback]
           [enabled enabled?])]
     
     [(struct text-field-elt (v callback))
@@ -212,8 +301,7 @@
           [label #f]
           [parent a-container]
           [init-value v]
-          [callback (lambda (t e)
-                      (change-world! (callback *world* (send t get-value))))])]
+          [inner-callback callback])]
     
     [(struct drop-down-elt (val choices callback))
      (new world-gui:drop-down% 
@@ -245,6 +333,13 @@
                          [editor pasteboard])])
        (send pasteboard insert (send an-image-snip copy))
        canvas)]))
+
+
+
+;; update-elt!: elt world-gui<%> -> void
+;; Adds an elt to the gui container. 
+(define (update-elt! an-elt gui-elt)
+  (send gui-elt update-with! an-elt))
 
 
 
