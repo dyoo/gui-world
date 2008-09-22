@@ -385,14 +385,20 @@
   (match an-elt
     [(struct row-elt (elts))
      (let ([row-container 
-            (new world-gui:row% [parent a-container])])
+            (new world-gui:row% 
+                 [parent a-container]
+                 [stretchable-width #f]
+                 [stretchable-height #f])])
        (for ([sub-elt elts])
          (render-elt! sub-elt row-container))
        row-container)]
     
     [(struct column-elt (elts))
      (let ([column-container
-            (new world-gui:column% [parent a-container])])
+            (new world-gui:column% 
+                 [parent a-container]
+                 [stretchable-width #f]
+                 [stretchable-height #f])])
        (for ([sub-elt elts])
          (render-elt! sub-elt column-container))
        column-container)]
