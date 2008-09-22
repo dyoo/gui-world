@@ -59,7 +59,7 @@
 
 
 
-(define-struct form (elts) #:transparent)
+(define-struct form (elt) #:transparent)
 
 
 (define-struct elt () #:transparent)
@@ -120,40 +120,95 @@
   ;; Remove all children
   (send a-frame change-children (lambda (subareas) '()))
   ;; Add a new child
-  (let ([a-panel (new vertical-panel% [parent a-frame])])
-    (for ([an-elt (form-elts a-form)])
-      (render-elt! an-elt a-panel))))
+  (let ([a-panel (new world-gui:column% [parent a-frame])])
+    (render-elt! (form-elt a-form) a-panel)))
 
 
-;; render-elt!: elt container% -> void
+
+
+
+(define world-gui<%> (interface () to-elt))
+
+(define world-gui:row%
+  (class* horizontal-panel% (world-gui<%>)
+    (define/public (to-elt)
+      ...)
+    (super-new)))
+
+(define world-gui:column%
+  (class* vertical-panel% (world-gui<%>)
+    (define/public (to-elt)
+      ...)
+    (super-new)))
+
+(define world-gui:string% 
+  (class* message% (world-gui<%>)
+    (define/public (to-elt)
+      ...)
+    (super-new)))
+
+(define world-gui:button%
+  (class* button% (world-gui<%>)
+    (define/public (to-elt)
+      ...)
+    (super-new)))
+
+(define world-gui:text-field% 
+  (class* text-field% (world-gui<%>)
+    (define/public (to-elt)
+      ...)
+    (super-new)))
+
+(define world-gui:drop-down% 
+  (class* choice% (world-gui<%>)
+    (define/public (to-elt)
+      ...)
+    (super-new)))
+
+(define world-gui:slider%
+  (class* slider% (world-gui<%>)
+    (define/public (to-elt)
+      ...)
+    (super-new)))
+
+(define world-gui:image%
+  (class* editor-canvas% (world-gui<%>)
+    (define/public (to-elt)
+      ...)
+    (super-new)))
+
+
+;; render-elt!: elt container% -> world-gui<%>
 ;; Adds an elt to the gui container. 
 (define (render-elt! an-elt a-container)
   (match an-elt
     [(struct row-elt (elts))
      (let ([row-container 
-            (new horizontal-panel% [parent a-container])])
+            (new world-gui:row% [parent a-container])])
        (for ([sub-elt elts])
-         (render-elt! sub-elt row-container)))]
+         (render-elt! sub-elt row-container))
+       row-container)]
     
     [(struct column-elt (elts))
      (let ([column-container
-            (new vertical-panel% [parent a-container])])
+            (new world-gui:column% [parent a-container])])
        (for ([sub-elt elts])
-         (render-elt! sub-elt column-container)))]
+         (render-elt! sub-elt column-container))
+       column-container)]
     
     [(struct string-elt (s))
-     (new message% [label s]
+     (new world-gui:string% [label s]
           [parent a-container])]
-
+    
     [(struct button-elt (label callback enabled?))
-     (new button% [label label]
+     (new world-gui:button% [label label]
           [parent a-container]
           [callback (lambda (b e)
                       (change-world! (callback *world*)))]
           [enabled enabled?])]
     
     [(struct text-field-elt (v callback))
-     (new text-field% 
+     (new world-gui:text-field% 
           [label #f]
           [parent a-container]
           [init-value v]
@@ -161,7 +216,7 @@
                       (change-world! (callback *world* (send t get-value))))])]
     
     [(struct drop-down-elt (val choices callback))
-     (new choice% 
+     (new world-gui:drop-down% 
           [label #f]
           [choices choices]
           [selection (list-index (lambda (x) 
@@ -173,7 +228,7 @@
                        (callback *world* (send c get-string-selection))))])]
     
     [(struct slider-elt (val min max callback))
-     (new slider% 
+     (new world-gui:slider% 
           [label #f]
           [parent a-container]
           [min-value min]
@@ -185,10 +240,11 @@
     
     [(struct image-elt (an-image-snip))
      (let* ([pasteboard (new pasteboard%)]
-            [canvas (new editor-canvas%
+            [canvas (new world-gui:image%
                          [parent a-container]
                          [editor pasteboard])])
-       (send pasteboard insert (send an-image-snip copy)))]))
+       (send pasteboard insert (send an-image-snip copy))
+       canvas)]))
 
 
 
@@ -196,7 +252,9 @@
 ;; make-form: element+ -> form
 (define (-make-form first-elt . rest-elements)
   (make-form 
-   (coerse-primitive-types-to-elts (cons first-elt rest-elements))))
+   (make-column-elt
+    (coerse-primitive-types-to-elts (cons first-elt rest-elements)))))
+
 
 ;; coerse-primitive-types-to-elts: (listof (or/c elt string)) -> (listof elt)
 ;; Helper to turn strings into string-elts, and images into image-elts.
