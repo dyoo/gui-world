@@ -87,7 +87,8 @@
   (set! *height* height)
   (set! *world* initial-world)
   (set-and-show-frame)
-  (change-world! initial-world))
+  (change-world/f! (lambda (a-world)
+                     initial-world)))
 
 
 ;; set-and-show-frame: -> void
@@ -114,16 +115,20 @@
   (thread (lambda ()
             (let loop ()
               (sleep *on-tick-frequency*)
-              (change-world! (*on-tick-callback* *world*))
+              (change-world/f! (lambda (a-world)
+                                 (*on-tick-callback* a-world)))
               (loop))))
   (void))
 
 
-
+(define world-sema (make-semaphore 1))
 ;; change-world!: world -> void
-(define (change-world! new-world)
-  (set! *world* new-world)
-  (refresh!))
+(define (change-world/f! new-world-f)
+  (call-with-semaphore 
+   world-sema
+   (lambda ()
+     (set! *world* (new-world-f *world*))
+     (refresh!))))
 
 
 (define (refresh!)
@@ -155,7 +160,7 @@
   (define (reuse!)2
     (update-elt! (form-elt a-form) 
                  (first (send a-frame get-children))))
-
+  
   (dynamic-wind
    (lambda ()
      (send a-frame begin-container-sequence))
@@ -201,7 +206,7 @@
 (define world-gui:column%
   (class* vertical-panel% (world-gui<%>)
     (inherit get-children)
-
+    
     (define/public (compatible? an-elt)
       (and (column-elt? an-elt)
            (= (length (get-children)) (length (column-elt-elts an-elt)))
@@ -209,13 +214,13 @@
                      (send gui-elt compatible? sub-elt))
                    (column-elt-elts an-elt)
                    (get-children))))
-
+    
     (define/public (update-with! an-elt)
       (for-each (lambda (sub-elt sub-gui-elt)
                   (send sub-gui-elt update-with! sub-elt))
                 (column-elt-elts an-elt)
                 (get-children)))
-
+    
     (super-new)))
 
 
@@ -249,10 +254,11 @@
         (set! world-callback (button-elt-callback an-elt)))
       (unless (boolean=? (is-enabled?) (button-elt-enabled? an-elt))
         (enable (button-elt-enabled? an-elt))))
-      
+    
     (super-new [callback (lambda (b e)
-                           (change-world!
-                            (world-callback *world*)))])))
+                           (change-world/f!
+                            (lambda (a-world)
+                              (world-callback a-world))))])))
 
 
 (define world-gui:text-field% 
@@ -268,11 +274,12 @@
         (set-value (text-field-elt-s an-elt)))
       (unless (eq? world-callback (text-field-elt-callback an-elt))
         (set! world-callback (text-field-elt-callback an-elt))))
-      
+    
     
     (super-new [callback (lambda (f e)
-                           (change-world!
-                            (world-callback *world* (get-value))))])))
+                           (change-world/f!
+                            (lambda (a-world)
+                              (world-callback a-world (get-value)))))])))
 
 
 (define world-gui:drop-down% 
@@ -282,7 +289,7 @@
     
     (define/public (compatible? an-elt)
       (drop-down-elt? an-elt))
-
+    
     (define/public (update-with! an-elt)
       (unless (andmap string=? (get-choices) (drop-down-elt-choices an-elt))
         (clear)
@@ -294,7 +301,7 @@
                                    (drop-down-elt-choices an-elt))))
       (unless (eq? world-callback (drop-down-elt-callback an-elt))
         (set! world-callback (drop-down-elt-callback an-elt))))
-
+    
     ;; get-choices: -> (listof string)
     (define (get-choices)
       (let loop ([i 0])
@@ -306,8 +313,9 @@
     
     (super-new
      [callback (lambda (c e)
-                 (change-world! 
-                  (world-callback *world* (get-string-selection))))])))
+                 (change-world/f!
+                  (lambda (a-world)
+                    (world-callback a-world (get-string-selection)))))])))
 
 
 
@@ -329,15 +337,16 @@
       (unless (eq? world-callback
                    (slider-elt-callback an-elt))
         (set! world-callback (slider-elt-callback an-elt))))
-   
+    
     (define -min-value min-value)
     (define -max-value max-value)
     (super-new
      [min-value min-value]
      [max-value max-value]
      [callback (lambda (s e)
-                 (change-world! 
-                  (world-callback *world* (get-value))))])))
+                 (change-world/f!
+                  (lambda (a-world)
+                    (world-callback a-world (get-value)))))])))
 
 
 
@@ -347,7 +356,7 @@
     
     (define/override (on-char evt)
       (void))
-
+    
     (define/override (on-event evt)
       (void))
     
