@@ -152,15 +152,21 @@
     (render-elt! (form-elt a-form) a-frame)
     (void))
   
-  (define (reuse!)
+  (define (reuse!)2
     (update-elt! (form-elt a-form) 
                  (first (send a-frame get-children))))
 
-  (cond
-    [(gui-completely-reusable?)
-     (reuse!)]
-    [else
-     (render-from-scratch!)]))
+  (dynamic-wind
+   (lambda ()
+     (send a-frame begin-container-sequence))
+   (lambda ()
+     (cond
+       [(gui-completely-reusable?)
+        (reuse!)]
+       [else
+        (render-from-scratch!)]))
+   (lambda ()
+     (send a-frame end-container-sequence))))
 
 
 
@@ -231,7 +237,7 @@
   (class* button% (world-gui<%>)
     (inherit get-label set-label is-enabled? enable)
     
-    (init-field inner-callback)
+    (init-field world-callback)
     
     (define/public (compatible? an-elt)
       (button-elt? an-elt))
@@ -239,20 +245,20 @@
     (define/public (update-with! an-elt)
       (unless (string=? (button-elt-label an-elt) (get-label))
         (set-label (button-elt-label)))
-      (unless (eq? inner-callback (button-elt-callback an-elt))
-        (set! inner-callback (button-elt-callback an-elt)))
+      (unless (eq? world-callback (button-elt-callback an-elt))
+        (set! world-callback (button-elt-callback an-elt)))
       (unless (boolean=? (is-enabled?) (button-elt-enabled? an-elt))
         (enable (button-elt-enabled? an-elt))))
       
     (super-new [callback (lambda (b e)
                            (change-world!
-                            (inner-callback *world*)))])))
+                            (world-callback *world*)))])))
 
 
 (define world-gui:text-field% 
   (class* text-field% (world-gui<%>)
     (inherit get-value set-value)
-    (init-field inner-callback)
+    (init-field world-callback)
     
     (define/public (compatible? an-elt)
       (text-field-elt? an-elt))
@@ -260,18 +266,18 @@
     (define/public (update-with! an-elt)
       (unless (string=? (text-field-elt-s an-elt) (get-value))
         (set-value (text-field-elt-s an-elt)))
-      (unless (eq? inner-callback (text-field-elt-callback an-elt))
-        (set! inner-callback (text-field-elt-callback an-elt))))
+      (unless (eq? world-callback (text-field-elt-callback an-elt))
+        (set! world-callback (text-field-elt-callback an-elt))))
       
     
     (super-new [callback (lambda (f e)
                            (change-world!
-                            (inner-callback *world* (get-value))))])))
+                            (world-callback *world* (get-value))))])))
 
 
 (define world-gui:drop-down% 
   (class* choice% (world-gui<%>)
-    (init-field inner-callback)
+    (init-field world-callback)
     (inherit get-string-selection get-number get-string clear append set-selection)
     
     (define/public (compatible? an-elt)
@@ -286,8 +292,8 @@
         (set-selection (list-index (lambda (x) 
                                      (string=? x (drop-down-elt-value an-elt)))
                                    (drop-down-elt-choices an-elt))))
-      (unless (eq? inner-callback (drop-down-elt-callback an-elt))
-        (set! inner-callback (drop-down-elt-callback an-elt))))
+      (unless (eq? world-callback (drop-down-elt-callback an-elt))
+        (set! world-callback (drop-down-elt-callback an-elt))))
 
     ;; get-choices: -> (listof string)
     (define (get-choices)
@@ -301,7 +307,7 @@
     (super-new
      [callback (lambda (c e)
                  (change-world! 
-                  (inner-callback *world* (get-string-selection))))])))
+                  (world-callback *world* (get-string-selection))))])))
 
 
 
@@ -310,7 +316,7 @@
     (inherit get-value set-value)
     (init min-value
           max-value)
-    (init-field inner-callback)
+    (init-field world-callback)
     
     (define/public (compatible? an-elt)
       (and (slider-elt? an-elt)
@@ -320,9 +326,9 @@
     (define/public (update-with! an-elt)
       (unless (= (slider-elt-v an-elt) (get-value))
         (set-value (slider-elt-v an-elt)))
-      (unless (eq? inner-callback
+      (unless (eq? world-callback
                    (slider-elt-callback an-elt))
-        (set! inner-callback (slider-elt-callback an-elt))))
+        (set! world-callback (slider-elt-callback an-elt))))
    
     (define -min-value min-value)
     (define -max-value max-value)
@@ -331,25 +337,28 @@
      [max-value max-value]
      [callback (lambda (s e)
                  (change-world! 
-                  (inner-callback *world* (get-value))))])))
+                  (world-callback *world* (get-value))))])))
 
 
 
 (define world-gui:image%
   (class* editor-canvas% (world-gui<%>)
-    (inherit get-editor)
+    (inherit get-editor min-width min-height)
     
     (define/public (compatible? an-elt)
       (image-elt? an-elt))
     
     (define/public (update-with! an-elt)
-      (let ([editor (get-editor)])
+      (let ([editor (get-editor)]
+            [img (send (image-elt-img an-elt) copy)])
+        (min-width (image-width img))
+        (min-height (image-height img))
         (dynamic-wind 
          (lambda () 
            (send editor begin-edit-sequence))
          (lambda () 
            (send editor erase)
-           (send editor insert (send (image-elt-img an-elt) copy)))
+           (send editor insert img 0 0))
          (lambda () 
            (send editor end-edit-sequence)))))
     
@@ -382,7 +391,7 @@
     [(struct button-elt (label callback enabled?))
      (new world-gui:button% [label label]
           [parent a-container]
-          [inner-callback callback]
+          [world-callback callback]
           [enabled enabled?])]
     
     [(struct text-field-elt (v callback))
@@ -390,7 +399,7 @@
           [label #f]
           [parent a-container]
           [init-value v]
-          [inner-callback callback])]
+          [world-callback callback])]
     
     [(struct drop-down-elt (val choices callback))
      (new world-gui:drop-down% 
@@ -400,7 +409,7 @@
                                    (string=? x val))
                                  choices)]
           [parent a-container]
-          [inner-callback callback])]
+          [world-callback callback])]
     
     [(struct slider-elt (val min max callback))
      (new world-gui:slider% 
@@ -409,14 +418,19 @@
           [min-value min]
           [max-value max]
           [init-value val]
-          [inner-callback callback])]
+          [world-callback callback])]
     
     [(struct image-elt (an-image-snip))
      (let* ([pasteboard (new pasteboard%)]
+            [img-snip (send an-image-snip copy)]
             [canvas (new world-gui:image%
                          [parent a-container]
+                         [min-width (image-width img-snip)]
+                         [min-height (image-height img-snip)]
+                         [stretchable-width #f]
+                         [stretchable-height #f]
                          [editor pasteboard])])
-       (send pasteboard insert (send an-image-snip copy))
+       (send pasteboard insert img-snip 0 0)
        canvas)]))
 
 
@@ -441,16 +455,18 @@
 (define (coerse-primitive-types-to-elts elts)
   (map (lambda (elt)
          (cond [(string? elt)
-                (make-string-elt elt)]
+                (make-string-elt (escape-label elt))]
                [(is-a? elt cache-image-snip%)
                 (make-image-elt elt)]
                [else
                 elt]))
        elts))
 
+
+
 ;; make-button: string (world -> world) [enabled? boolean] -> element
 (define (make-button label callback [enabled? #t])
-  (make-button-elt label callback enabled?))
+  (make-button-elt (escape-label label) callback enabled?))
 
 ;; make-row: element+ -> element
 (define (make-row first-elt . rest-elts)
@@ -461,30 +477,25 @@
   (make-column-elt (coerse-primitive-types-to-elts (cons first-elt rest-elts))))
 
 ;; make-drop-down: string (listof string) (world string -> world) -> element
-(define (make-drop-down default-value choices 
-                        [callback 
-                         (lambda (old-world a-str)
-                           a-str)])
+(define (make-drop-down default-value choices callback)
   (unless (member default-value choices)
     (error 'make-drop-down "Value ~s not in the choices ~s" default-value choices))
-  (make-drop-down-elt default-value choices callback))
+  (make-drop-down-elt (escape-label default-value) (map escape-label choices) callback))
 
 ;; make-text-field: string (world string -> world) -> element
-(define (make-text-field default-value 
-                         [callback
-                          (lambda (world a-string)
-                            a-string)])
-  (make-text-field-elt default-value callback))
+(define (make-text-field default-value callback)
+  (make-text-field-elt (escape-label default-value) callback))
 
 ;; make-slider: number number number (world number -> world) -> element
-(define (make-slider v min max 
-                     [callback
-                      (lambda (world a-num)
-                        a-num)])
+(define (make-slider v min max callback)
   (make-slider-elt v min max callback))
 
 
-
+;; escape-label: string -> string
+;; Escapes the special character used for underlining, since we don't want the
+;; underlining behavior.
+(define (escape-label a-label-str)
+  (regexp-replace* #rx"&" a-label-str "&&"))
 
 
 
