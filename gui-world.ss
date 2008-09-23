@@ -115,8 +115,13 @@
   (thread (lambda ()
             (let loop ()
               (sleep *on-tick-frequency*)
-              (change-world/f! (lambda (a-world)
-                                 (*on-tick-callback* a-world)))
+              ;; We run this at low priority, to avoid fighting
+              ;; gui callbacks.
+              (queue-callback 
+               (lambda ()
+                 (change-world/f! (lambda (a-world)
+                                    (*on-tick-callback* a-world))))
+               #f)
               (loop))))
   (void))
 
