@@ -1,0 +1,163 @@
+Design document
+
+A 'gui' is one of the following:
+
+     (message svalue#)
+   | (button svalue# enabled?# callback)
+   | (slider nvalue# min# max# vcallback)
+   | (drop-down svalue# choices# vcallback)
+   | (text-field svalue# vcallback)
+   | (scene a-scene#)
+   | (row . guis)
+   | (col . guis)
+
+where:
+
+    callback: world -> world
+    vcallback: world value -> value
+
+    label: string
+    nvalue: number
+    svalue: string
+    a-scene: scene
+    guis: (listof gui)
+
+The hash on the values is notation that means that the value can
+either be of the primitive type, or of a function type from world
+going to that value.
+
+
+
+A gui is a declarative definition of what's on screen; it specifies
+the view and controller of the graphical program.  The bindings
+between it and the world model are defined by both the callbacks and
+the hash-values.
+
+
+----------------------------------------------------------------------
+
+To hook into the world system, we provide two functions:
+
+    big-bang: [a-world world] [a-gui gui] -> #t
+
+    on-tick: [frame-delay number] [world-updater (world -> world)] -> #t
+
+
+Minor differences from the original world functions:
+
+    * The parameter describing the tick delay is moved from big-bang
+      to on-tick.
+
+    * width and height are no longer passed into big-bang.  The gui will
+      resize itself automatically to the minimum size necessary to fit
+      everything.
+
+----------------------------------------------------------------------
+
+GUI Example
+
+A gui that contains a counter and a button that increments that
+counter will be defined as:
+
+
+;; A world is a number whose value is initially zero.
+(define INITIAL-WORLD 0)
+
+(define (on-button-pressed a-world)
+  (add1 a-world))
+
+(define (world-counter a-world)
+  (number->string a-world))
+
+(define counter-gui
+  (col (message world-counter)
+       (button "Press me!" on-button-pressed)))
+
+(big-bang INITIAL-WORLD counter-gui)
+
+
+Since there's no asynchronicity involved, on-tick is not used.
+
+----------------------------------------------------------------------
+
+Aside
+
+We also define a special form, 'define-updaters', that takes a
+structure name and exposes functions that do functional update for
+each attribute of that structure.  For example:
+
+    (define-struct 3d (x y z))
+    (define-updaters 3d)
+
+binds update-3d-x, update-3d-y, and update-3d-z to functions that 
+functionally update the attributes of a 3d structure.
+
+
+----------------------------------------------------------------------
+
+
+GUI Example
+
+A ball moves across the screen, its radius controlled by a slider.
+
+(define WIDTH 300)
+(define HEIGHT 300)
+
+(define MIN-RADIUS 20)
+(define MAX-RADIUS 100)
+
+;; A world is the ball's radius and its X coordinate
+(define-struct world (radius x))
+
+;; Bind update functions for the attributes of a world.
+(define-updaters world)
+
+;; INITIAL-WORLD: world
+;; The ball is of MIN-RADIUS radius, and all the way to the left.
+(define INITIAL-WORLD (make-world MIN-RADIUS 0))
+
+;; change-radius: world number -> world
+;; Changes the radius to the new radius.
+(define (change-radius a-world new-radius)
+  (update-world-radius a-world new-radius))
+
+;; move-ball: world -> world
+;; Moves the ball to the right, circling around if it goes beyond.
+(define (move-ball a-world)
+  (update-world-x a-world (modulo (add1 (world-x a-world)) WIDTH)))
+
+;; draw-world: world -> scene
+;; Consumes the world, and draws the world.
+(define (draw-world a-world)
+  (place-image (circle radius "solid" "red")
+               (world-x a-world)
+               (/ HEIGHT 2)
+               (empty-scene WIDTH HEIGHT)))
+
+;; a-gui: gui with a scene on top, and a slider below it.
+(define a-gui
+  (col (scene draw-world)
+       (slider world-radius MIN-RADIUS MAX-RADIUS change-radius)))
+
+;; Let's fire up the world.
+(big-bang INITIAL-WORLD a-gui)
+(on-tick 1/30 move-ball)
+
+----------------------------------------------------------------------
+
+
+Consequences of the design
+
+A lot of the values we pass in hash-position will be functions.  For
+example,
+
+    (slider 0 0 200 a-callback)
+
+will represent a slider that refuses to move.  This is somewhat
+awkward as the intent might have been to only specify the initial
+value of the slider, rather than a permanent association between the
+value of the element and the current world.
+
+
+We can support multiple scenes in a single gui, since each scene
+element of a gui can take in a function from (world -> scene).
