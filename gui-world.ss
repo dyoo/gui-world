@@ -44,7 +44,7 @@
 (define *on-redraw-callback* #f)
 (define *on-tick-callback* #f)
 (define *on-tick-frequency* #f)
-
+(define *eventspace* #f)
 
 
 ;                       
@@ -86,6 +86,7 @@
   (set! *width* width)
   (set! *height* height)
   (set! *world* initial-world)
+  (set! *eventspace* (current-eventspace))
   (set-and-show-frame)
   (change-world/f! (lambda (a-world)
                      initial-world)))
@@ -93,7 +94,7 @@
 
 ;; set-and-show-frame: -> void
 (define (set-and-show-frame)
-  (set! *frame* (new frame% 
+  (set! *frame* (new world-gui:frame% 
                      [label ""] 
                      [width *width*]
                      [height *height*]))
@@ -112,16 +113,18 @@
 (define (on-tick freq callback)
   (set! *on-tick-frequency* freq)
   (set! *on-tick-callback* callback)
+  ;; FIXME: maybe I should use a timer% instead of a thread?
   (thread (lambda ()
             (let loop ()
               (sleep *on-tick-frequency*)
               ;; We run this at low priority, to avoid fighting
               ;; gui callbacks.
-              (queue-callback 
-               (lambda ()
-                 (change-world/f! (lambda (a-world)
-                                    (*on-tick-callback* a-world))))
-               #f)
+              (parameterize ([current-eventspace *eventspace*])
+                (queue-callback 
+                 (lambda ()
+                   (change-world/f! (lambda (a-world)
+                                      (*on-tick-callback* a-world))))
+                 #f))
               (loop))))
   (void))
 
@@ -179,7 +182,30 @@
      (send a-frame end-container-sequence))))
 
 
+(define (handle-key-event! an-event)
+  ...
+  #f)
 
+
+
+
+
+(define world-gui:frame%
+  (class frame%
+    (super-new)))
+
+
+
+(define (on-subwindow-char-mixin super%)
+  (class super%
+    (define/override (on-subwindow-char receiver event)
+      (let ([result
+             (super on-subwindow-char receiver event)])
+        (cond
+          [result result]
+          [else
+           (handle-key-event! event)])))
+    (super-new)))
 
 
 
@@ -189,7 +215,7 @@
 
 
 (define world-gui:row%
-  (class* horizontal-panel% (world-gui<%>)
+  (class* (on-subwindow-char-mixin horizontal-panel%) (world-gui<%>)
     (inherit get-children)
     (define/public (compatible? an-elt)
       (and (row-elt? an-elt)
@@ -208,8 +234,9 @@
     
     (super-new)))
 
+
 (define world-gui:column%
-  (class* vertical-panel% (world-gui<%>)
+  (class* (on-subwindow-char-mixin vertical-panel%) (world-gui<%>)
     (inherit get-children)
     
     (define/public (compatible? an-elt)
@@ -225,12 +252,12 @@
                   (send sub-gui-elt update-with! sub-elt))
                 (column-elt-elts an-elt)
                 (get-children)))
-    
+        
     (super-new)))
 
 
 (define world-gui:string% 
-  (class* message% (world-gui<%>)
+  (class* (on-subwindow-char-mixin message%) (world-gui<%>)
     (inherit get-label set-label)
     
     (define/public (compatible? an-elt)
@@ -239,12 +266,12 @@
     (define/public (update-with! an-elt)
       (unless (string=? (string-elt-s an-elt) (get-label))
         (set-label (string-elt-s an-elt))))
-    
+        
     (super-new [auto-resize #t])))
 
 
 (define world-gui:button%
-  (class* button% (world-gui<%>)
+  (class* (on-subwindow-char-mixin button%) (world-gui<%>)
     (inherit get-label set-label is-enabled? enable)
     
     (init-field world-callback)
@@ -259,7 +286,7 @@
         (set! world-callback (button-elt-callback an-elt)))
       (unless (boolean=? (is-enabled?) (button-elt-enabled? an-elt))
         (enable (button-elt-enabled? an-elt))))
-    
+        
     (super-new [callback (lambda (b e)
                            (change-world/f!
                             (lambda (a-world)
@@ -279,7 +306,9 @@
         (set-value (text-field-elt-s an-elt)))
       (unless (eq? world-callback (text-field-elt-callback an-elt))
         (set! world-callback (text-field-elt-callback an-elt))))
-    
+
+    (define/override (on-subwindow-char receiver event)
+      (super on-subwindow-char receiver event))
     
     (super-new [callback (lambda (f e)
                            (change-world/f!
@@ -288,7 +317,7 @@
 
 
 (define world-gui:drop-down% 
-  (class* choice% (world-gui<%>)
+  (class* (on-subwindow-char-mixin choice%) (world-gui<%>)
     (init-field world-callback)
     (inherit get-string-selection get-number get-string clear append set-selection)
     
@@ -315,6 +344,7 @@
               [else
                (cons (get-string i)
                      (loop (add1 i)))])))
+        
     
     (super-new
      [callback (lambda (c e)
@@ -325,7 +355,7 @@
 
 
 (define world-gui:slider%
-  (class* slider% (world-gui<%>)
+  (class* (on-subwindow-char-mixin slider%) (world-gui<%>)
     (inherit get-value set-value)
     (init min-value
           max-value)
@@ -360,6 +390,7 @@
     (inherit get-editor min-width min-height)
     
     (define/override (on-char evt)
+      (handle-key-event! evt)
       (void))
     
     (define/override (on-event evt)
@@ -648,12 +679,17 @@
   (check-arg tag (and (number? c) (> (number->integer c) 0))
              "positive integer" rank c))
 
-(define (scene? i) (and (= 0 (pinhole-x i)) (= 0 (pinhole-y i))))
+;; scene?: any -> boolean
+(define (scene? i)
+  (and (image? i)
+       (= 0 (pinhole-x i))
+       (= 0 (pinhole-y i))))
 
 ;; Number -> Integer
 (define (number->integer x)
   (inexact->exact (floor x)))
 
+;; empty-scene: number number -> scene
 (define (empty-scene width height)
   (check-pos 'empty-scene width "first")
   (check-pos 'empty-scene height "second")    
@@ -661,6 +697,22 @@
    (overlay (rectangle width height 'solid 'white)
             (rectangle width height 'outline 'black))
    0 0))
+
+
+;; MouseEvent -> MouseEventType
+(define (mouse-event->symbol e)
+  (cond [(send e button-down?) 'button-down]
+        [(send e button-up?)   'button-up]
+        [(send e dragging?)    'drag]
+        [(send e moving?)      'move]
+        [(send e entering?)    'enter]
+        [(send e leaving?)     'leave]
+        [else ; (send e get-event-type)
+         (error 'on-mouse-event
+                (format 
+                 "Unknown event type: ~a"
+                 (send e get-event-type)))]))
+
 
 
 
@@ -678,7 +730,6 @@
  make-drop-down
  make-text-field
  make-slider
- 
  
  place-image
  empty-scene

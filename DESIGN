@@ -1,52 +1,67 @@
 Design document
 
+
 A 'gui' is one of the following:
 
-     (message svalue#)
-   | (button svalue# enabled?# callback)
-   | (slider nvalue# min# max# vcallback)
-   | (drop-down svalue# choices# vcallback)
-   | (text-field svalue# vcallback)
-   | (scene a-scene#)
-   | (row . guis)
-   | (col . guis)
+     (message string-value)
+   | (button string-value boolean-value callback)
+   | (slider number-value number-value number-value ncallback)
+   | (drop-down string-value strings-value scallback)
+   | (text-field string-value scallback)
+   | (scene scene-value)
+   | (row guis)
+   | (col guis))
 
 where:
 
     callback: world -> world
-    vcallback: world value -> value
+    ncallback: world number -> world
+    scallback: world string -> world
 
-    label: string
-    nvalue: number
-    svalue: string
-    a-scene: scene
+    boolean-value: boolean
+                 | (world -> boolean)
+
+    number-value: number
+                | (world -> number)
+
+    string-value: string
+                | (world -> string)
+
+    strings-value: (listof string)
+                | (world -> (listof string))
+
+    scene-value: scene
+                | (world -> scene)
+
     guis: (listof gui)
 
-The hash on the values is notation that means that the value can
-either be of the primitive type, or of a function type from world
-going to that value.
 
+The boolean-value, number-value, string-value, strings-value, and
+scene-value are special because they can either be of the respective
+primitive type or of a function type from world going to that type.
 
 
 A gui is a declarative definition of what's on screen; it specifies
-the view and controller of the graphical program.  The bindings
-between it and the world model are defined by both the callbacks and
-the hash-values.
+the view and controller of the graphical program, and the relationship
+to the world model.  The dynamic '*-value' types map the binding from
+the world model to the its presentation on the gui.  The callbacks on
+each control map user operations to updates on the world model.
+
 
 
 ----------------------------------------------------------------------
 
 To hook into the world system, we provide two functions:
 
-    big-bang: [a-world world] [a-gui gui] -> #t
+    big-bang: world gui -> #t
 
-    on-tick: [frame-delay number] [world-updater (world -> world)] -> #t
+    on-tick: number (world -> world) -> #t
 
 
 Minor differences from the original world functions:
 
     * The parameter describing the tick delay is moved from big-bang
-      to on-tick.
+      to the first argument on on-tick.
 
     * width and height are no longer passed into big-bang.  The gui will
       resize itself automatically to the minimum size necessary to fit
@@ -76,21 +91,24 @@ counter will be defined as:
 (big-bang INITIAL-WORLD counter-gui)
 
 
-Since there's no asynchronicity involved, on-tick is not used.
+on-tick is not used since there is no animation in this example.
+
+
+(SK) Note on the number->string: maybe we should coerce the base types
+to string to reduce the hassle to get working programs.
 
 ----------------------------------------------------------------------
 
 Aside
 
-We also define a special form, 'define-updaters', that takes a
-structure name and exposes functions that do functional update for
-each attribute of that structure.  For example:
+We want to have update functions that are automatically defined when a define-struct is used.  For example:
 
     (define-struct 3d (x y z))
-    (define-updaters 3d)
 
-binds update-3d-x, update-3d-y, and update-3d-z to functions that 
-functionally update the attributes of a 3d structure.
+
+should also bind identifiers 'update-3d-x, 'update-3d-y, and
+'update-3d-z to functions that functionally update the attributes of a
+3d structure.  We can reuse struct-copy.
 
 
 ----------------------------------------------------------------------
@@ -109,8 +127,6 @@ A ball moves across the screen, its radius controlled by a slider.
 ;; A world is the ball's radius and its X coordinate
 (define-struct world (radius x))
 
-;; Bind update functions for the attributes of a world.
-(define-updaters world)
 
 ;; INITIAL-WORLD: world
 ;; The ball is of MIN-RADIUS radius, and all the way to the left.
@@ -148,16 +164,28 @@ A ball moves across the screen, its radius controlled by a slider.
 
 Consequences of the design
 
-A lot of the values we pass in hash-position will be functions.  For
-example,
+* A lot of the values that we use to construct the gui will need to be
+functions.  For example, a user may intend to create a slider whose
+initial position is at zero, and mistakenly try to do this:
 
     (slider 0 0 200 a-callback)
 
-will represent a slider that refuses to move.  This is somewhat
-awkward as the intent might have been to only specify the initial
-value of the slider, rather than a permanent association between the
-value of the element and the current world.
+But this represents a slider that is constantly fixed to zero.  What
+the user should say is:
+
+    (slider world-slider-pos 0 200 a-callback)
+
+where world-slider-pos, applied to the initial world, produces zero.
+This may be an awkward part of this design, but I don't see a way
+around it yet.
 
 
-We can support multiple scenes in a single gui, since each scene
-element of a gui can take in a function from (world -> scene).
+
+* We can support multiple scenes in a single gui, since each scene
+element of a gui can take in a function from (world -> scene).  That
+is, we can do:
+
+  (row (scene world->scene-1)
+       (scene world->scene-2))
+
+to provide different perspective renderings of the world.

@@ -62,5 +62,4 @@
 
 (big-bang 100 100 initial-world)
 (on-tick 1/20 move-ball)
-
 (on-redraw world->scene)
