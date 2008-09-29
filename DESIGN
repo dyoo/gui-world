@@ -75,7 +75,7 @@ Minor differences from the original world functions:
 
 ----------------------------------------------------------------------
 
-GUI Example
+GUI Example: counter
 
 A gui that contains a counter and a button that increments it:
 
@@ -124,7 +124,7 @@ to the appropriate functional updaters.  We can reuse struct-copy.
 ----------------------------------------------------------------------
 
 
-GUI Example
+GUI Example: sliding ball
 
 A ball moves across the screen, its radius controlled by a slider.
 
