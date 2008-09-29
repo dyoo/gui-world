@@ -3,49 +3,52 @@ Design document
 
 A 'gui' is one of the following:
 
-     (message string-value)
-   | (button string-value boolean-value callback)
-   | (slider number-value number-value number-value ncallback)
-   | (drop-down string-value strings-value scallback)
-   | (text-field string-value scallback)
-   | (scene scene-value)
-   | (row guis)
-   | (col guis))
+     (message (gvalueof string))            ;; label text
+
+   | (button (gvalueof string)              ;; label text
+             (gvalueof boolean)             ;; enabled?
+             callback)
+
+   | (slider (gvalueof number)              ;; current value
+             (gvalueof number)              ;; min
+             (gvalueof number)              ;; max
+             (gcallbackof number))
+
+   | (drop-down (gvalueof string)           ;; current value
+                (gvalueof (listof string))  ;; choices
+                (gcallbackof string))
+
+   | (text-field (gvalueof string)          ;; text
+                 (gcallbackof string))
+
+   | (scene (gvalueof scene))
+
+   | (row (listof gui))
+
+   | (col (listof gui))
 
 where:
 
     callback: world -> world
-    ncallback: world number -> world
-    scallback: world string -> world
-
-    boolean-value: boolean
-                 | (world -> boolean)
-
-    number-value: number
-                | (world -> number)
-
-    string-value: string
-                | (world -> string)
-
-    strings-value: (listof string)
-                | (world -> (listof string))
-
-    scene-value: scene
-                | (world -> scene)
-
-    guis: (listof gui)
+    (gcallbackof t): world t -> world
+    (gvalueof t): world -> t
 
 
-The boolean-value, number-value, string-value, strings-value, and
-scene-value are special because they can either be of the respective
-primitive type or of a function type from world going to that type.
+A gui is a declarative definition of the view and controller of a
+graphical program.  The gvalueof functions map the world model to the
+view.  The gcallbackof functions map controller actions to the world
+model.  The gui's display is refreshed whenever a user acts on the
+controller, or when the current world changes.
 
 
-A gui is a declarative definition of what's on screen; it specifies
-the view and controller of the graphical program, and the relationship
-to the world model.  The dynamic '*-value' types map the binding from
-the world model to the its presentation on the gui.  The callbacks on
-each control map user operations to updates on the world model.
+Syntactic sugar: literals put in gvalueof position are treated as the
+constant function that returns that value.  i.e.:
+
+    (message "hello")
+
+should be treated as:
+
+    (message (lambda (a-world) "hello"))
 
 
 
@@ -71,8 +74,7 @@ Minor differences from the original world functions:
 
 GUI Example
 
-A gui that contains a counter and a button that increments that
-counter will be defined as:
+A gui that contains a counter and a button that increments it:
 
 
 ;; A world is a number whose value is initially zero.
@@ -101,14 +103,19 @@ to string to reduce the hassle to get working programs.
 
 Aside
 
-We want to have update functions that are automatically defined when a define-struct is used.  For example:
+We expect structure definitions to also provide functional updaters.
+For example:
 
     (define-struct 3d (x y z))
 
 
-should also bind identifiers 'update-3d-x, 'update-3d-y, and
-'update-3d-z to functions that functionally update the attributes of a
-3d structure.  We can reuse struct-copy.
+should bind identifiers
+
+    update-3d-x
+    update-3d-y
+    update-3d-z
+
+to the appropriate functional updaters.  We can reuse struct-copy.
 
 
 ----------------------------------------------------------------------
