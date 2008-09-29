@@ -101,7 +101,7 @@ to string to reduce the hassle to get working programs.
 
 ----------------------------------------------------------------------
 
-Aside
+Structure update
 
 We expect structure definitions to also provide functional updaters.
 For example:
