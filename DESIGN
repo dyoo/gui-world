@@ -44,11 +44,11 @@ controller, or when the current world changes.
 Syntactic sugar: literals put in gvalueof position are treated as the
 constant function that returns that value.  i.e.:
 
-    (message "hello")
+    (message "hello world")
 
 should be treated as:
 
-    (message (lambda (a-world) "hello"))
+    (message (lambda (a-world) "hello world"))
 
 
 
