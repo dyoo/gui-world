@@ -171,22 +171,6 @@ A ball moves across the screen, its radius controlled by a slider.
 
 Consequences of the design
 
-* A lot of the values that we use to construct the gui will need to be
-functions.  For example, a user may intend to create a slider whose
-initial position is at zero, and mistakenly try to do this:
-
-    (slider 0 0 200 a-callback)
-
-But this represents a slider that is constantly fixed to zero.  What
-the user should say is:
-
-    (slider world-slider-pos 0 200 a-callback)
-
-where world-slider-pos, applied to the initial world, produces zero.
-This may be an awkward part of this design, but I don't see a way
-around it yet.
-
-
 
 * We can support multiple scenes in a single gui, since each scene
 element of a gui can take in a function from (world -> scene).  That
@@ -196,3 +180,22 @@ is, we can do:
        (scene world->scene-2))
 
 to provide different perspective renderings of the world.
+
+
+
+----------------------------------------------------------------------
+
+Possible problems
+
+* A user may intend to create a slider whose initial position is at
+zero, and mistakenly try to do this:
+
+    (slider 0 0 200 a-callback)
+
+But this represents a slider that is constantly fixed to zero.  What
+the user should say is:
+
+    (slider world-slider-pos 0 200 a-callback)
+
+where world-slider-pos, applied to the initial world, produces zero.
+This is awkward, but I don't see a way around it yet.
