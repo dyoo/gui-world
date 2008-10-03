@@ -1,9 +1,7 @@
 #lang scheme/base
 
 (require scheme/contract
-         scheme/class
          htdp/image
-         mrlib/cache-image-snip
          (only-in lang/htdp-beginner image?))
 
 

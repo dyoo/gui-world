@@ -9,10 +9,13 @@
          htdp/image
          mrlib/cache-image-snip
          (only-in lang/htdp-beginner image?)
-         (only-in srfi/1 list-index))
-(require (for-syntax scheme/base
-                     scheme/list
-                     scheme/struct-info))
+         (only-in srfi/1 list-index)
+
+         "gui-struct.ss"
+         "world-support.ss"
+         
+         )
+
 
 (define ... 'FIXME)
 
@@ -36,15 +39,14 @@
 ;                                           ;   ;;  
 
 (define *world* #f)
-(define *width* #f)
-(define *height* #f)
+(define *gui* #f)
 (define *frame* #f)
-(define *form* #f)
+(define *eventspace* #f)
 
 (define *on-redraw-callback* #f)
 (define *on-tick-callback* #f)
 (define *on-tick-frequency* #f)
-(define *eventspace* #f)
+
 
 
 ;                       
@@ -65,27 +67,13 @@
 
 
 
-(define-struct form (elt) #:transparent)
 
 
-(define-struct elt () #:transparent)
-;; An element is one of the following:
-(define-struct (row-elt elt) (elts) #:transparent)
-(define-struct (column-elt elt) (elts) #:transparent)
-(define-struct (string-elt elt) (s) #:transparent)
-(define-struct (button-elt elt) (label callback enabled?) #:transparent)
-(define-struct (drop-down-elt elt) (value choices callback) #:transparent)
-(define-struct (text-field-elt elt) (s callback) #:transparent)
-(define-struct (slider-elt elt) (v min max callback) #:transparent)
-(define-struct (image-elt elt) (img) #:transparent)
-
-
-;; big-bang: number number world -> void
+;; big-bang: world gui -> void
 ;; Shows the frame, creates the initial world.
-(define (big-bang width height initial-world)
-  (set! *width* width)
-  (set! *height* height)
+(define (big-bang initial-world a-gui)
   (set! *world* initial-world)
+  (set! *gui* a-gui)
   (set! *eventspace* (current-eventspace))
   (set-and-show-frame)
   (change-world/f! (lambda (a-world)
@@ -102,7 +90,7 @@
 
 
 
-;; on-redraw: (world -> form) -> void
+;; on-redraw: (world -> gui) -> void
 ;; Initializes the redrawing callback.
 (define (on-redraw callback)
   (set! *on-redraw-callback* callback)
@@ -141,32 +129,32 @@
 
 (define (refresh!)
   (when *on-redraw-callback*
-    (let ([new-form (*on-redraw-callback* *world*)])
-      (unless (equal? *form* new-form)
-        (set! *form* new-form)
-        (render-form-to-frame new-form *frame*)))))
+    (let ([new-gui (*on-redraw-callback* *world*)])
+      (unless (equal? *gui* new-gui)
+        (set! *gui* new-gui)
+        (render-gui-to-frame new-gui *frame*)))))
 
 
-;; render-form-to-frame: form frame -> void
-;; Clears out the contents of the frame, and adds the form elements in.
-(define (render-form-to-frame a-form a-frame)
-  ;; Returns true if the form element has the exact same structure as the
+;; render-gui-to-frame: gui frame -> void
+;; Clears out the contents of the frame, and adds the gui elements in.
+(define (render-gui-to-frame a-gui a-frame)
+  ;; Returns true if the gui element has the exact same structure as the
   ;; gui on screen.
   (define (gui-completely-reusable?)
     (match (send a-frame get-children)
       [(list a-column)
-       (send a-column compatible? (form-elt a-form))]
+       (send a-column compatible? (gui-elt a-gui))]
       [else
        #f]))
   
   (define (render-from-scratch!)
-    ;; Remove all children, and add the rendered form element as a child.
+    ;; Remove all children, and add the rendered gui element as a child.
     (send a-frame change-children (lambda (subareas) '()))
-    (render-elt! (form-elt a-form) a-frame)
+    (render-elt! (gui-elt a-gui) a-frame)
     (void))
   
   (define (reuse!)2
-    (update-elt! (form-elt a-form) 
+    (update-elt! (gui-elt a-gui) 
                  (first (send a-frame get-children))))
   
   (dynamic-wind
@@ -508,9 +496,9 @@
 
 
 
-;; make-form: element+ -> form
-(define (-make-form first-elt . rest-elements)
-  (make-form 
+;; make-gui: element+ -> gui
+(define (-make-gui first-elt . rest-elements)
+  (make-gui 
    (make-column-elt
     (coerse-primitive-types-to-elts (cons first-elt rest-elements)))))
 
@@ -565,153 +553,7 @@
 
 
 
-;                              
-;                              
-;            ;                 
-;   ;    ;                     
-;   ;;  ;;                     
-;   ;;  ;; ;;;     ;;;    ;;;  
-;   ; ;; ;   ;    ;   ;  ;;  ; 
-;   ; ;; ;   ;    ;      ;     
-;   ; ;; ;   ;     ;;;   ;     
-;   ;    ;   ;        ;  ;     
-;   ;    ;   ;    ;   ;  ;;  ; 
-;   ;    ; ;;;;;   ;;;    ;;;  
-;                              
-;                              
-;                        ; ;;  
 
-
-
-;; random-choice: (listof X) -> X
-;; Given a list of elements, chooses one of them randomly.
-(define (random-choice elts)
-  (list-ref elts
-            (random (length elts))))
-
-
-
-;; Not really a part of GUI.
-;; Convenient syntax for defining all the replacing-attribute functions,
-;; given a structure id.
-;; Usage:
-;; If we have a
-;;     (define-struct posn (x y z))
-;; then
-;;     (define-replacers posn)
-;; will expand out to definitions for replace-posn-x, replace-posn-y, replace-posn-z.
-;; Each replacer takes the struct val and an attribute value, and produces a new struct val.
-(define-syntax (define-updaters stx)
-  (syntax-case stx ()
-    [(_ a-struct-type)
-     (let* ([info (extract-struct-info (syntax-local-value #'a-struct-type))]
-            [fields 
-             (map (lambda (accessor)
-                    (datum->syntax accessor
-                                   (string->symbol
-                                    (substring
-                                     (symbol->string (syntax-e accessor))
-                                     (add1 (string-length
-                                            (symbol->string
-                                             (syntax-e
-                                              #'a-struct-type))))))))
-                  (fourth info))])
-       (with-syntax ([(accessor ...) fields]
-                     [(update ...) (map (lambda (id)
-                                          (datum->syntax 
-                                           stx
-                                           (string->symbol
-                                            (string-append "update-"
-                                                           (symbol->string (syntax-e #'a-struct-type))
-                                                           "-"
-                                                           (symbol->string (syntax-e id))))))
-                                        fields)])
-         (let ([result
-                (syntax/loc stx
-                  (begin
-                    (define (update a-struct-val new-val)
-                      (struct-copy a-struct-type a-struct-val
-                                   (accessor new-val)))
-                    ...))])
-           result)))]))
-
-
-
-
-
-
-
-;; Copy-and-paste from htdp/world
-
-(define (place-image image x y scene)
-  (check-image 'place-image image "first")
-  (check-arg 'place-image (number? x) 'integer "second" x)
-  (check-arg 'place-image (number? y) 'integer "third" y)
-  (check-scene 'place-image scene "fourth")
-  (let ([x (number->integer x)]
-        [y (number->integer y)])
-    (place-image0 image x y scene)))
-
-;; Symbol Any String String *-> Void
-(define (check-image tag i rank . other-message)
-  (if (and (pair? other-message) (string? (car other-message)))
-      (check-arg tag (image? i) (car other-message) rank i)
-      (check-arg tag (image? i) "image" rank i)))
-
-;; Symbol Any String -> Void
-(define (check-scene tag i rank)
-  (if (image? i)
-      (unless (scene? i)
-        (error tag "scene expected, given image whose pinhole is at (~s,~s) instead of (0,0)"
-               (pinhole-x i) (pinhole-y i)))
-      (check-arg tag #f "image" rank i)))
-
-(define (place-image0 image x y scene)
-  (define sw (image-width scene))
-  (define sh (image-height scene))
-  (define ns (overlay/xy scene x y image))
-  (define nw (image-width ns))
-  (define nh (image-height ns))
-  (if (and (= sw nw) (= sh nh)) ns (shrink ns 0 0 (- sw 1) (- sh 1)))) 
-
-;; Symbol Any String -> Void
-(define (check-pos tag c rank)
-  (check-arg tag (and (number? c) (> (number->integer c) 0))
-             "positive integer" rank c))
-
-;; scene?: any -> boolean
-(define (scene? i)
-  (and (image? i)
-       (= 0 (pinhole-x i))
-       (= 0 (pinhole-y i))))
-
-;; Number -> Integer
-(define (number->integer x)
-  (inexact->exact (floor x)))
-
-;; empty-scene: number number -> scene
-(define (empty-scene width height)
-  (check-pos 'empty-scene width "first")
-  (check-pos 'empty-scene height "second")    
-  (put-pinhole 
-   (overlay (rectangle width height 'solid 'white)
-            (rectangle width height 'outline 'black))
-   0 0))
-
-
-;; MouseEvent -> MouseEventType
-(define (mouse-event->symbol e)
-  (cond [(send e button-down?) 'button-down]
-        [(send e button-up?)   'button-up]
-        [(send e dragging?)    'drag]
-        [(send e moving?)      'move]
-        [(send e entering?)    'enter]
-        [(send e leaving?)     'leave]
-        [else ; (send e get-event-type)
-         (error 'on-mouse-event
-                (format 
-                 "Unknown event type: ~a"
-                 (send e get-event-type)))]))
 
 
 
@@ -722,17 +564,9 @@
  big-bang
  on-redraw
  on-tick
+  
+
  
- (rename-out [-make-form make-form])
- make-button
- make-row
- make-column
- make-drop-down
- make-text-field
- make-slider
  
- place-image
- empty-scene
  
- random-choice
- define-updaters)
+ )
