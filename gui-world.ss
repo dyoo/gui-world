@@ -43,7 +43,6 @@
 (define *frame* #f)
 (define *eventspace* #f)
 
-(define *on-redraw-callback* #f)
 (define *on-tick-callback* #f)
 (define *on-tick-frequency* #f)
 
@@ -75,50 +74,22 @@
   (set! *world* initial-world)
   (set! *gui* a-gui)
   (set! *eventspace* (current-eventspace))
-  (set-and-show-frame)
+  (initialize-and-populate-frame!)
   (change-world/f! (lambda (a-world)
                      initial-world)))
 
 
-;; set-and-show-frame: -> void
-(define (set-and-show-frame)
+(define (initialize-and-populate-frame!)
   (set! *frame* (new world-gui:frame% 
-                     [label ""] 
-                     [width *width*]
-                     [height *height*]))
+                     [label ""]))
   (send *frame* show #t))
 
 
 
-;; on-redraw: (world -> gui) -> void
-;; Initializes the redrawing callback.
-(define (on-redraw callback)
-  (set! *on-redraw-callback* callback)
-  (refresh!))
-
-
-
-(define (on-tick freq callback)
-  (set! *on-tick-frequency* freq)
-  (set! *on-tick-callback* callback)
-  ;; FIXME: maybe I should use a timer% instead of a thread?
-  (thread (lambda ()
-            (let loop ()
-              (sleep *on-tick-frequency*)
-              ;; We run this at low priority, to avoid fighting
-              ;; gui callbacks.
-              (parameterize ([current-eventspace *eventspace*])
-                (queue-callback 
-                 (lambda ()
-                   (change-world/f! (lambda (a-world)
-                                      (*on-tick-callback* a-world))))
-                 #f))
-              (loop))))
-  (void))
-
-
 (define world-sema (make-semaphore 1))
-;; change-world!: world -> void
+;; change-world!: (-> world) -> void
+;; Changes the world.  Ensures that only one thing at a time
+;; will be able to get into the critical region.
 (define (change-world/f! new-world-f)
   (call-with-semaphore 
    world-sema
@@ -128,11 +99,13 @@
 
 
 (define (refresh!)
-  (when *on-redraw-callback*
-    (let ([new-gui (*on-redraw-callback* *world*)])
-      (unless (equal? *gui* new-gui)
-        (set! *gui* new-gui)
-        (render-gui-to-frame new-gui *frame*)))))
+  (void)
+  #;(when *on-redraw-callback*
+      (let ([new-gui (*on-redraw-callback* *world*)])
+        (unless (equal? *gui* new-gui)
+          (set! *gui* new-gui)
+          (render-gui-to-frame new-gui *frame*)))))
+
 
 
 ;; render-gui-to-frame: gui frame -> void
@@ -143,19 +116,18 @@
   (define (gui-completely-reusable?)
     (match (send a-frame get-children)
       [(list a-column)
-       (send a-column compatible? (gui-elt a-gui))]
+       (send a-column compatible? a-gui)]
       [else
        #f]))
   
   (define (render-from-scratch!)
     ;; Remove all children, and add the rendered gui element as a child.
     (send a-frame change-children (lambda (subareas) '()))
-    (render-elt! (gui-elt a-gui) a-frame)
+    (render-elt! a-gui a-frame)
     (void))
   
-  (define (reuse!)2
-    (update-elt! (gui-elt a-gui) 
-                 (first (send a-frame get-children))))
+  (define (reuse!)
+    (update-elt! a-gui (first (send a-frame get-children))))
   
   (dynamic-wind
    (lambda ()
@@ -252,8 +224,11 @@
       (string-elt? an-elt))
     
     (define/public (update-with! an-elt)
-      (unless (string=? (string-elt-s an-elt) (get-label))
-        (set-label (string-elt-s an-elt))))
+      (match an-elt 
+        [(struct string-elt (val-f))
+         (let ([a-str (val-f *world*)])
+           (unless (string=? a-str (get-label))
+             (set-label a-str)))]))
         
     (super-new [auto-resize #t])))
 
@@ -268,12 +243,14 @@
       (button-elt? an-elt))
     
     (define/public (update-with! an-elt)
-      (unless (string=? (button-elt-label an-elt) (get-label))
-        (set-label (button-elt-label)))
-      (unless (eq? world-callback (button-elt-callback an-elt))
-        (set! world-callback (button-elt-callback an-elt)))
-      (unless (boolean=? (is-enabled?) (button-elt-enabled? an-elt))
-        (enable (button-elt-enabled? an-elt))))
+      (match an-elt
+        [(struct button-elt (val-f callback enabled?-f))
+         (let ([new-val (val-f *world*)]
+               [new-enabled? (enabled?-f *world*)])
+           (unless (string=? new-val (get-label))
+             (set-label new-val))
+           (unless (boolean=? (is-enabled?) new-enabled?)
+             (enable new-enabled?)))]))
         
     (super-new [callback (lambda (b e)
                            (change-world/f!
@@ -290,10 +267,11 @@
       (text-field-elt? an-elt))
     
     (define/public (update-with! an-elt)
-      (unless (string=? (text-field-elt-s an-elt) (get-value))
-        (set-value (text-field-elt-s an-elt)))
-      (unless (eq? world-callback (text-field-elt-callback an-elt))
-        (set! world-callback (text-field-elt-callback an-elt))))
+      (match an-elt
+        [(struct text-field-elt (val-f callback))
+         (let ([new-text (val-f *world*)])
+           (unless (string=? new-text (get-value))
+             (set-value new-text)))]))
 
     (define/override (on-subwindow-char receiver event)
       (super on-subwindow-char receiver event))
@@ -313,16 +291,20 @@
       (drop-down-elt? an-elt))
     
     (define/public (update-with! an-elt)
-      (unless (andmap string=? (get-choices) (drop-down-elt-choices an-elt))
-        (clear)
-        (for ([choice (drop-down-elt-choices)])
-          (append choice)))
-      (unless (string=? (get-string-selection) (drop-down-elt-value an-elt))
-        (set-selection (list-index (lambda (x) 
-                                     (string=? x (drop-down-elt-value an-elt)))
-                                   (drop-down-elt-choices an-elt))))
-      (unless (eq? world-callback (drop-down-elt-callback an-elt))
-        (set! world-callback (drop-down-elt-callback an-elt))))
+      (match an-elt
+        [(struct drop-down-elt (val-f choices-f callback))
+         (let ([new-val (val-f *world*)]
+               [new-choices (choices-f *world*)])
+           
+           (unless (andmap string=? (get-choices) new-choices)
+             (clear)
+             (for ([choice new-choices])
+               (append choice)))
+           
+           (unless (string=? (get-string-selection) new-val)
+             (set-selection (list-index (lambda (x) 
+                                          (string=? x new-val))
+                                        new-choices))))]))
     
     ;; get-choices: -> (listof string)
     (define (get-choices)
@@ -355,11 +337,12 @@
            (= -max-value (slider-elt-max an-elt))))
     
     (define/public (update-with! an-elt)
-      (unless (= (slider-elt-v an-elt) (get-value))
-        (set-value (slider-elt-v an-elt)))
-      (unless (eq? world-callback
-                   (slider-elt-callback an-elt))
-        (set! world-callback (slider-elt-callback an-elt))))
+      (match an-elt
+        [(struct slider-elt (val-f min-f max-f callback))
+         (let ([new-val (val-f *world*)])
+           ;; fixme: handle changes to min/max ranges
+           (unless (= new-val (get-value))
+             (set-value new-val)))]))
     
     (define -min-value min-value)
     (define -max-value max-value)
@@ -385,20 +368,22 @@
       (void))
     
     (define/public (compatible? an-elt)
-      (image-elt? an-elt))
+      (scene-elt? an-elt))
     
     (define/public (update-with! an-elt)
-      (let ([editor (get-editor)]
-            [img (send (image-elt-img an-elt) copy)])
-        (dynamic-wind 
-         (lambda () 
-           (send editor begin-edit-sequence))
-         (lambda () 
-           (send editor erase)
-           (send editor insert img 0 0))
-         (lambda () 
-           (send editor end-edit-sequence)))))
-    
+      (match an-elt
+        [(struct scene-elt (scene-f))
+         (let ([new-scene (scene-f *world*)]
+               [editor (get-editor)])
+           (dynamic-wind 
+            (lambda () 
+              (send editor begin-edit-sequence))
+            (lambda () 
+              (send editor erase)
+              (send editor insert new-scene 0 0))
+            (lambda () 
+              (send editor end-edit-sequence))))]))
+
     (super-new)))
 
 
@@ -463,7 +448,7 @@
           [init-value val]
           [world-callback callback])]
     
-    [(struct image-elt (an-image-snip))
+    [(struct scene-elt (an-image-snip))
      (let* ([pasteboard (new pasteboard%)]
             [img-snip (send an-image-snip copy)]
             [canvas (new world-gui:image%
@@ -496,59 +481,6 @@
 
 
 
-;; make-gui: element+ -> gui
-(define (-make-gui first-elt . rest-elements)
-  (make-gui 
-   (make-column-elt
-    (coerse-primitive-types-to-elts (cons first-elt rest-elements)))))
-
-
-;; coerse-primitive-types-to-elts: (listof (or/c elt string)) -> (listof elt)
-;; Helper to turn strings into string-elts, and images into image-elts.
-(define (coerse-primitive-types-to-elts elts)
-  (map (lambda (elt)
-         (cond [(string? elt)
-                (make-string-elt (escape-label elt))]
-               [(is-a? elt cache-image-snip%)
-                (make-image-elt elt)]
-               [else
-                elt]))
-       elts))
-
-
-
-;; make-button: string (world -> world) [enabled? boolean] -> element
-(define (make-button label callback [enabled? #t])
-  (make-button-elt (escape-label label) callback enabled?))
-
-;; make-row: element+ -> element
-(define (make-row first-elt . rest-elts)
-  (make-row-elt (coerse-primitive-types-to-elts (cons first-elt rest-elts))))
-
-;; make-column: element+ -> element
-(define (make-column first-elt . rest-elts)
-  (make-column-elt (coerse-primitive-types-to-elts (cons first-elt rest-elts))))
-
-;; make-drop-down: string (listof string) (world string -> world) -> element
-(define (make-drop-down default-value choices callback)
-  (unless (member default-value choices)
-    (error 'make-drop-down "Value ~s not in the choices ~s" default-value choices))
-  (make-drop-down-elt (escape-label default-value) (map escape-label choices) callback))
-
-;; make-text-field: string (world string -> world) -> element
-(define (make-text-field default-value callback)
-  (make-text-field-elt (escape-label default-value) callback))
-
-;; make-slider: number number number (world number -> world) -> element
-(define (make-slider v min max callback)
-  (make-slider-elt v min max callback))
-
-
-;; escape-label: string -> string
-;; Escapes the special character used for underlining, since we don't want the
-;; underlining behavior.
-(define (escape-label a-label-str)
-  (regexp-replace* #rx"&" a-label-str "&&"))
 
 
 
@@ -559,14 +491,31 @@
 
 
 
-(provide 
- 
- big-bang
- on-redraw
- on-tick
-  
 
- 
- 
- 
- )
+
+#;(define (on-tick freq callback)
+    (set! *on-tick-frequency* freq)
+    (set! *on-tick-callback* callback)
+    ;; FIXME: maybe I should use a timer% instead of a thread?
+    (thread (lambda ()
+              (let loop ()
+                (sleep *on-tick-frequency*)
+                ;; We run this at low priority, to avoid fighting
+                ;; gui callbacks.
+                (parameterize ([current-eventspace *eventspace*])
+                  (queue-callback 
+                   (lambda ()
+                     (change-world/f! (lambda (a-world)
+                                        (*on-tick-callback* a-world))))
+                   #f))
+                (loop))))
+    (void))
+
+
+
+
+
+
+
+(provide big-bang
+         #;on-tick)
