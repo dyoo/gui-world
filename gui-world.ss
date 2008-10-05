@@ -412,9 +412,15 @@
 
 
 (provide big-bang
+
+         ;; Widgets
          row
          col
          message
          button
+         drop-down
+         text-field
          
+         ;; Other helpers
+         define-updaters
          #;on-tick)

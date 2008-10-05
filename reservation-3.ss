@@ -17,7 +17,10 @@
                                   "Unknown"
                                   #f))
 
-
+(define TITLES (list "Unknown"
+                     "Mr."
+                     "Ms."
+                     "Mrs."))
 
 (define TIMES (list "Unknown"
                     "2:00pm" 
@@ -36,8 +39,11 @@
       (string=? (world-arrival a-world) "Unknown")
       (string=? (world-departure a-world) "Unknown")))
 
-(define (complete-submission? a-world)
-  (not (incomplete-submission? a-world)))
+
+;; completed-unsubmitted-form?: world -> boolean
+(define (completed-unsubmitted-form? a-world)
+  (and (not (incomplete-submission? a-world))
+       (not (world-submitted? a-world))))
 
 
 ;; on-submit: world -> world
@@ -45,38 +51,29 @@
   (update-world-submitted? a-world #t))
 
 
-
-(define (world->form-scene a-world)
-  (cond
+;; world-status-message: world -> string
+;; Consumes the world, and produces
+(define (world-status-message a-world)
+  (cond 
     [(world-submitted? a-world)
-     (make-form "Your reservation "
-                (make-row (world-title a-world)
-                          (world-name a-world)
-                          (world-arrival a-world)
-                          (world-departure a-world))
-                "has been submitted")]
-    
+     (string-append "Your reservation "
+                    (world-title a-world)
+                    (world-name a-world)
+                    (world-arrival a-world)
+                    (world-departure a-world)
+                    "has been submitted")]
     [else
-     (make-form
-      (make-row "Title" (make-drop-down (world-title a-world) 
-                                        (list "Unknown"
-                                              "Mr."
-                                              "Ms."
-                                              "Mrs.")
-                                        update-world-title))
-      
-      (make-row "Name" (make-text-field (world-name a-world)
-                                        update-world-name))
-      
-      (make-row "Departure" (make-drop-down (world-departure a-world)
-                                            TIMES
-                                            update-world-departure))
-      
-      (make-row "Arrival" (make-drop-down (world-arrival a-world)
-                                          TIMES
-                                          update-world-arrival))
-      
-      (make-button "Submit" on-submit (complete-submission? a-world)))]))
+     "Your reservation is not complete yet."]))
+   
 
-(big-bang 300 300 initial-world)
-(on-redraw world->form-scene)
+(define a-gui
+  (col 
+   (row "Title" (drop-down world-title TITLES update-world-title))
+   (row "Name" (text-field world-name update-world-name))
+   (row "Departure" (drop-down world-departure TIMES update-world-departure))
+   (row "Arrival" (drop-down world-arrival TIMES update-world-arrival))
+   (button "Submit" on-submit completed-unsubmitted-form?)
+   (message world-status-message)))
+
+
+(big-bang initial-world a-gui)
