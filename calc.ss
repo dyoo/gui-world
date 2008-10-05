@@ -65,21 +65,21 @@
 (define (key-clear a-world)
   0)
 
-;; world->form-scene: world -> scene
-(define (world->form-scene a-world)
-  (make-form (number->string a-world)
-             (make-row (make-button "7" key7)
-                       (make-button "8" key8)
-                       (make-button "9" key9))
-             (make-row (make-button "4" key4)
-                       (make-button "5" key5)
-                       (make-button "6" key6))
-             (make-row (make-button "1" key1)
-                       (make-button "2" key2)
-                       (make-button "3" key3))
-             (make-button "NEG" key-negate)
-             (make-button "SQ" key-square)
-             (make-button "C" key-clear)))
 
-(big-bang 300 300 initial-world)
-(on-redraw world->form-scene)
+;; The gui consists of the keypad and a few functions.
+(define a-gui
+  (col (message number->string)
+       (row (button "7" key7)
+            (button "8" key8)
+            (button "9" key9))
+       (row (button "4" key4)
+            (button "5" key5)
+            (button "6" key6))
+       (row (button "1" key1)
+            (button "2" key2)
+            (button "3" key3))
+       (button "NEG" key-negate)
+       (button "SQ" key-square)
+       (button "C" key-clear)))
+
+(big-bang initial-world a-gui)
