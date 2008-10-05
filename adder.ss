@@ -4,23 +4,23 @@
 ;; Simple counting example.  We show a text field and a button.  When the button is
 ;; pressed, we increment the number.
 
-
 ;; A world is a number.
 (define initial-world 0)
 
-;; on-button-click: world -> world
+;; increment-world-counter: world -> world
 ;; Increments the world when the button is pressed.
-(define (on-button-click a-world)
+(define (increment-world-counter a-world)
   (+ a-world 1))
 
+;; world-number-string: world -> string
+(define (world-number-string a-world)
+  (number->string a-world))
 
-;; world->form-scene: world -> scene
-;; Consumes the world, and produces a scene with a form.
-(define (world->form-scene a-world)
-  (make-form 
-   (number->string a-world)
-   (make-button "Press me!" on-button-click)))
+;; The gui consists of a message of the current contents
+;; of the world, and a button for incrementing those contents.
+(define a-gui
+  (col
+   (message world-number-string)
+   (button "Press me!" increment-world-counter)))
 
-
-(big-bang 100 300 initial-world)
-(on-redraw world->form-scene)
+(big-bang initial-world a-gui)

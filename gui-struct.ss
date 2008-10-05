@@ -120,10 +120,10 @@
                   
                   
                   [message ((gvalueof* string?) . -> . string-elt?)]
-
-                  [button ((gvalueof* string?) 
-                           callback/c 
-                           (gvalueof* boolean?) . -> . button-elt?)]
+                  
+                  [button (((gvalueof* string?) 
+                            callback/c)
+                           ((gvalueof* boolean?)) . ->* . button-elt?)]
                   
                   [slider ((gvalueof* number?) 
                            (gvalueof* number?)
@@ -139,8 +139,8 @@
 
                   [scene ((gvalueof* scene?) . -> . scene-elt?)]
                   
-                  [row (() (listof (or/c elt? string? scene?)) . ->* . row-elt?)]
-                  [col (() (listof (or/c elt? string? scene?)) . ->* . column-elt?)]
+                  [row (() () #:rest (listof (or/c elt? string? scene?)) . ->* . row-elt?)]
+                  [col (() () #:rest (listof (or/c elt? string? scene?)) . ->* . column-elt?)]
 
                   
                   [coerse-primitive-to-elt
