@@ -15,26 +15,6 @@
 (define HEIGHT 500)
 
 
-;; world->scene: world -> form-scene
-;; Renders a gui that contains a form with a scene in it.
-(define (world->scene a-world)
-  (make-form
-   (place-image (circle (world-radius a-world) "solid" (world-color a-world))
-                (world-x a-world)
-                (/ HEIGHT 2)
-                (empty-scene WIDTH HEIGHT))
-   (make-row (make-button "Change to red" 
-                          color-ball-red 
-                          (not (string=? (world-color a-world) "red")))
-             (make-button "Change to green" 
-                          color-ball-green
-                          (not (string=? (world-color a-world) "green")))
-             (make-button "Change to blue"
-                          color-ball-blue
-                          (not (string=? (world-color a-world) "blue"))))
-   (make-slider (world-radius a-world) 20 50 update-world-radius)))
-
-
 ;; color-ball-red: world -> world
 ;; Turns the ball red.
 (define (color-ball-red a-world)
@@ -59,7 +39,38 @@
   (update-world-x a-world (modulo (+ (world-x a-world) 3)
                                   WIDTH)))
 
+(define (render-ball a-world)
+  (place-image (circle (world-radius a-world) "solid" (world-color a-world))
+               (world-x a-world)
+               (/ HEIGHT 2)
+               (empty-scene WIDTH HEIGHT)))
 
-(big-bang 100 100 initial-world)
+
+
+;; make-button-enabled?: string -> (world -> boolean)
+;; Given a function, produces a predicate that's true only when
+;; the current ball's color is different from a-color.
+(define ((make-button-enabled? a-color) a-world)
+  (not (string=? (world-color a-world) a-color)))
+
+
+
+;; Renders a gui that contains a form with a scene in it.
+(define a-gui
+  (col (scene render-ball)
+       (row (button "Change to red" 
+                    color-ball-red 
+                    (make-button-enabled? "red"))
+            
+            (button "Change to green" 
+                    color-ball-green
+                    (make-button-enabled? "green"))
+            
+            (button "Change to blue"
+                    color-ball-blue
+                    (make-button-enabled? "blue")))
+       (slider world-radius 20 50 update-world-radius)))
+
+
+(big-bang initial-world a-gui)
 (on-tick 1/20 move-ball)
-(on-redraw world->scene)

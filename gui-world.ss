@@ -80,23 +80,25 @@
   #f)
 
 
-#;(define (on-tick freq callback)
-    (set! *on-tick-frequency* freq)
-    (set! *on-tick-callback* callback)
-    ;; FIXME: maybe I should use a timer% instead of a thread?
-    (thread (lambda ()
-              (let loop ()
-                (sleep *on-tick-frequency*)
-                ;; We run this at low priority, to avoid fighting
-                ;; gui callbacks.
-                (parameterize ([current-eventspace *eventspace*])
-                  (queue-callback 
-                   (lambda ()
-                     (change-world/f! (lambda (a-world)
-                                        (*on-tick-callback* a-world))))
-                   #f))
-                (loop))))
-    (void))
+
+;; on-tick: number (world -> world) -> void
+(define (on-tick freq callback)
+  (set! *on-tick-frequency* freq)
+  (set! *on-tick-callback* callback)
+  ;; FIXME: maybe I should use a timer% instead of a thread?
+  (thread (lambda ()
+            (let loop ()
+              (sleep *on-tick-frequency*)
+              ;; We run this at low priority, to avoid fighting
+              ;; gui callbacks.
+              (parameterize ([current-eventspace *eventspace*])
+                (queue-callback 
+                 (lambda ()
+                   (change-world/f! (lambda (a-world)
+                                      (*on-tick-callback* a-world))))
+                 #f))
+              (loop))))
+  (void))
 
 
 
@@ -446,4 +448,4 @@
          place-image
          empty-scene
          (all-from-out htdp/image)
-         #;on-tick)
+         on-tick)
