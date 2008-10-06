@@ -1,5 +1,5 @@
 #lang scheme
-(require "gui-world.ss")
+(require "../gui-world.ss")
 
 ;; Mastermind
 

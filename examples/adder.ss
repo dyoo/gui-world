@@ -1,5 +1,5 @@
 #lang scheme
-(require "gui-world.ss")
+(require "../gui-world.ss")
 
 ;; Simple counting example.  We show a text field and a button.  When the button is
 ;; pressed, we increment the number.

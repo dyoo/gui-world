@@ -1,7 +1,6 @@
 #lang scheme/base
 
-(require "gui-world.ss"
-         htdp/image)
+(require "../gui-world.ss")
 
 ;; The world is a ball with a given radius, x coordinate, and color.
 (define-struct world (radius x color))

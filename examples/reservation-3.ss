@@ -1,6 +1,6 @@
 #lang scheme
 
-(require "gui-world.ss")
+(require "../gui-world.ss")
 
 ;; Airline reservation.  Program disables the submit bug until we're happy, so the
 ;; submit error can't happen.

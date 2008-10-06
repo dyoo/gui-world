@@ -1,6 +1,6 @@
 #lang scheme/base
 
-(require "gui-world.ss")
+(require "../gui-world.ss")
 
 (define initial-world 20)
 

@@ -1,5 +1,5 @@
 #lang scheme
-(require "gui-world.ss")
+(require "../gui-world.ss")
 
 ;; Calculator example.  A world is again a number
 (define initial-world 0)
