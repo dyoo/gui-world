@@ -105,7 +105,8 @@
          an-elt]))
 
        
-(provide/contract [struct (row-elt elt) ([elts (listof elt?)])]
+(provide/contract [struct elt ()]
+                  [struct (row-elt elt) ([elts (listof elt?)])]
                   [struct (column-elt elt) ([elts (listof elt?)])]
                   [struct (string-elt elt) ([val-f (gvalueof string?)])]
                   [struct (scene-elt elt) ([scene-f (gvalueof scene?)])]

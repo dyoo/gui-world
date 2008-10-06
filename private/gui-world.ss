@@ -5,6 +5,7 @@
          scheme/class
          scheme/list
          scheme/bool
+         scheme/contract
          htdp/image
          (only-in lang/htdp-beginner image?)
          (only-in srfi/1 list-index)
@@ -430,7 +431,9 @@
 
 
 
-(provide big-bang
+(provide/contract [big-bang (any/c elt? . -> . any)])
+
+(provide 
 
          ;; Widgets
          row
