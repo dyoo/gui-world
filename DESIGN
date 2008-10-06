@@ -7,29 +7,34 @@ Gui
 
 A 'gui' is one of the following:
 
-     (message (gvalueof string))            ;; label text
+     (row (listof gui))
+
+   | (col (listof gui))
+
+   | (message (gvalueof string))            ;; label text
+
+
+   | (scene (gvalueof scene))
 
    | (button (gvalueof string)              ;; label text
-             (gvalueof boolean)             ;; enabled?
-             callback)
+             callback
+             (gvalueof boolean))            ;; enabled?
 
    | (slider (gvalueof number)              ;; current value
              (gvalueof number)              ;; min
              (gvalueof number)              ;; max
-             (gcallbackof number))
+             (gcallbackof number)
+             (gvalueof boolean))            ;; enabled?
 
    | (drop-down (gvalueof string)           ;; current value
                 (gvalueof (listof string))  ;; choices
-                (gcallbackof string))
+                (gcallbackof string)
+                (gvalueof boolean))         ;; enabled?
 
    | (text-field (gvalueof string)          ;; text
-                 (gcallbackof string))
+                 (gcallbackof string)
+                 (gvalueof boolean))        ;; enabled?
 
-   | (scene (gvalueof scene))
-
-   | (row (listof gui))
-
-   | (col (listof gui))
 
 where:
 
