@@ -10,12 +10,13 @@
 
 (define-struct (row-elt elt) (elts) #:transparent)
 (define-struct (column-elt elt) (elts) #:transparent)
-(define-struct (string-elt elt) (val) #:transparent)
-(define-struct (button-elt elt) (val callback enabled?) #:transparent)
-(define-struct (drop-down-elt elt) (val choices callback) #:transparent)
-(define-struct (text-field-elt elt) (val callback) #:transparent)
-(define-struct (slider-elt elt) (val min max callback) #:transparent)
-(define-struct (scene-elt elt) (scene) #:transparent)
+(define-struct (string-elt elt) (val-f) #:transparent)
+(define-struct (scene-elt elt) (scene-f) #:transparent)
+(define-struct (button-elt elt) (val-f callback enabled?-f) #:transparent)
+(define-struct (drop-down-elt elt) (val-f choices-f callback enabled?-f) #:transparent)
+(define-struct (text-field-elt elt) (val-f callback enabled?-f) #:transparent)
+(define-struct (slider-elt elt) (val-f min-f max-f callback enabled?-f) #:transparent)
+
 
 
 (define world/c any/c)
@@ -59,21 +60,24 @@
                    callback
                    (wrap-primitive boolean? enabled)))
 
-(define (slider val min max callback)
+(define (slider val min max callback [enabled? #t])
   (make-slider-elt (wrap-primitive number? val)
                    (wrap-primitive number? min)
                    (wrap-primitive number? max)
-                   callback))
+                   callback
+                   (wrap-primitive boolean? enabled?)))
 
-(define (drop-down val choices callback)
+(define (drop-down val choices callback [enabled? #t])
   (make-drop-down-elt (wrap-primitive string? val)
                       (wrap-primitive (flat-contract-predicate (listof string?))
                                       choices)
-                      callback))
+                      callback
+                      (wrap-primitive boolean? enabled?)))
 
-(define (text-field val callback)
+(define (text-field val callback [enabled? #t])
   (make-text-field-elt (wrap-primitive string? val)
-                       callback))
+                       callback
+                       (wrap-primitive boolean? enabled?)))
 
 (define (scene a-scene)
   (make-scene-elt (wrap-primitive scene? a-scene)))
@@ -103,39 +107,50 @@
        
 (provide/contract [struct (row-elt elt) ([elts (listof elt?)])]
                   [struct (column-elt elt) ([elts (listof elt?)])]
-                  [struct (string-elt elt) ([val (gvalueof string?)])]
-                  [struct (button-elt elt) ([val (gvalueof string?)]
+                  [struct (string-elt elt) ([val-f (gvalueof string?)])]
+                  [struct (scene-elt elt) ([scene-f (gvalueof scene?)])]
+                  [struct (button-elt elt) ([val-f (gvalueof string?)]
                                             [callback callback/c]
-                                            [enabled? (gvalueof boolean?)])]
-                  [struct (drop-down-elt elt) ([val (gvalueof string?)]
-                                           [choices (gvalueof (listof string?))]
-                                           [callback (gcallbackof string?)])]
-                  [struct (text-field-elt elt) ([val (gvalueof string?)]
-                                           [callback (gcallbackof string?)])]
-                  [struct (slider-elt elt) ([val (gvalueof number?)]
-                                            [min (gvalueof number?)]
-                                            [max (gvalueof number?)]
-                                            [callback (gcallbackof number?)])]
-                  [struct (scene-elt elt) ([scene (gvalueof scene?)])]
+                                            [enabled?-f (gvalueof boolean?)])]
+                  [struct (drop-down-elt elt) ([val-f (gvalueof string?)]
+                                           [choices-f (gvalueof (listof string?))]
+                                           [callback (gcallbackof string?)]
+                                           [enabled?-f (gvalueof boolean?)])]
+                  [struct (text-field-elt elt) ([val-f (gvalueof string?)]
+                                           [callback (gcallbackof string?)]
+                                           [enabled?-f (gvalueof boolean?)])]
+                  [struct (slider-elt elt) ([val-f (gvalueof number?)]
+                                            [min-f (gvalueof number?)]
+                                            [max-f (gvalueof number?)]
+                                            [callback (gcallbackof number?)]
+                                            [enabled?-f (gvalueof boolean?)])]
+
                   
                   
                   [message ((gvalueof* string?) . -> . string-elt?)]
                   
                   [button (((gvalueof* string?) 
                             callback/c)
-                           ((gvalueof* boolean?)) . ->* . button-elt?)]
+                           ((gvalueof* boolean?)) 
+                           . ->* . button-elt?)]
                   
-                  [slider ((gvalueof* number?) 
-                           (gvalueof* number?)
-                           (gvalueof* number?)
-                           (gcallbackof number?) . -> . slider-elt?)]
+                  [slider (((gvalueof* number?) 
+                            (gvalueof* number?)
+                            (gvalueof* number?)
+                            (gcallbackof number?))
+                           ((gvalueof boolean?))
+                           . ->* . slider-elt?)]
                   
-                  [drop-down ((gvalueof* string?)
-                              (gvalueof* (listof string?))
-                              (gcallbackof string?) . -> . drop-down-elt?)]
+                  [drop-down (((gvalueof* string?)
+                               (gvalueof* (listof string?))
+                               (gcallbackof string?)) 
+                              ((gvalueof boolean?))
+                              . ->* . drop-down-elt?)]
                   
-                  [text-field ((gvalueof* string?)
-                               (gcallbackof string?) . -> . text-field-elt?)]
+                  [text-field (((gvalueof* string?)
+                               (gcallbackof string?))
+                               ((gvalueof boolean?))
+                               . ->* . text-field-elt?)]
 
                   [scene ((gvalueof* scene?) . -> . scene-elt?)]
                   

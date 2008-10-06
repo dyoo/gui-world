@@ -158,14 +158,15 @@
           [world-callback callback]
           [enabled (enabled?-f *world*)])]
     
-    [(struct text-field-elt (v-f callback))
+    [(struct text-field-elt (v-f callback enabled?-f))
      (new world-gui:text-field% 
           [label #f]
           [parent a-container]
           [init-value (v-f *world*)]
+          [enabled (enabled?-f *world*)]
           [world-callback callback])]
     
-    [(struct drop-down-elt (val-f choices-f callback))
+    [(struct drop-down-elt (val-f choices-f callback enabled?-f))
      (let ([val (val-f *world*)]
            [choices (choices-f *world*)])
        (new world-gui:drop-down% 
@@ -174,16 +175,18 @@
             [selection (list-index (lambda (x) 
                                      (string=? x val))
                                    choices)]
+            [enabled (enabled?-f *world*)]
             [parent a-container]
             [world-callback callback]))]
     
-    [(struct slider-elt (val-f min-f max-f callback))
+    [(struct slider-elt (val-f min-f max-f callback enabled?-f))
      (new world-gui:slider% 
           [label #f]
           [parent a-container]
           [min-value (min-f *world*)]
           [max-value (max-f *world*)]
           [init-value (val-f *world*)]
+          [enabled (enabled?-f *world*)]
           [world-callback callback])]
     
     [(struct scene-elt (an-image-snip-f))
@@ -298,15 +301,18 @@
 
 (define world-gui:text-field% 
   (class* text-field% (world-gui<%>)
-    (inherit get-value set-value)
+    (inherit get-value set-value is-enabled? enable)
     (init-field world-callback)
         
     (define/public (update-with! an-elt)
       (match an-elt
-        [(struct text-field-elt (val-f callback))
-         (let ([new-text (val-f *world*)])
+        [(struct text-field-elt (val-f callback enabled?-f))
+         (let ([new-text (val-f *world*)]
+               [new-enabled? (enabled?-f *world*)])
            (unless (string=? new-text (get-value))
-             (set-value new-text)))]))
+             (set-value new-text))
+           (unless (boolean=? (is-enabled?) new-enabled?)
+             (enable new-enabled?)))]))
 
     (define/override (on-subwindow-char receiver event)
       (super on-subwindow-char receiver event))
@@ -320,13 +326,15 @@
 (define world-gui:drop-down% 
   (class* (on-subwindow-char-mixin choice%) (world-gui<%>)
     (init-field world-callback)
-    (inherit get-string-selection get-number get-string clear append set-selection)
+    (inherit get-string-selection get-number get-string clear append set-selection
+             is-enabled? enable)
     
     (define/public (update-with! an-elt)
       (match an-elt
-        [(struct drop-down-elt (val-f choices-f callback))
+        [(struct drop-down-elt (val-f choices-f callback enabled?-f))
          (let ([new-val (val-f *world*)]
-               [new-choices (choices-f *world*)])
+               [new-choices (choices-f *world*)]
+               [new-enabled? (enabled?-f *world*)])
            
            (unless (andmap string=? (get-choices) new-choices)
              (clear)
@@ -336,7 +344,10 @@
            (unless (string=? (get-string-selection) new-val)
              (set-selection (list-index (lambda (x) 
                                           (string=? x new-val))
-                                        new-choices))))]))
+                                        new-choices)))
+           
+           (unless (boolean=? (is-enabled?) new-enabled?)
+             (enable new-enabled?)))]))
     
     ;; get-choices: -> (listof string)
     (define (get-choices)
@@ -357,18 +368,24 @@
 
 (define world-gui:slider%
   (class* (on-subwindow-char-mixin slider%) (world-gui<%>)
-    (inherit get-value set-value)
+    (inherit get-value set-value
+             is-enabled? enable)
     (init min-value
           max-value)
     (init-field world-callback)
         
     (define/public (update-with! an-elt)
       (match an-elt
-        [(struct slider-elt (val-f min-f max-f callback))
-         (let ([new-val (val-f *world*)])
+        [(struct slider-elt (val-f min-f max-f callback enabled?-f))
+         (let ([new-val (val-f *world*)]
+               [new-enabled? (enabled?-f *world*)])
            ;; fixme: handle changes to min/max ranges
            (unless (= new-val (get-value))
-             (set-value new-val)))]))
+             (set-value new-val))
+           
+           (unless (boolean=? (is-enabled?) new-enabled?)
+             (enable new-enabled?))
+           )]))
     
     (define -min-value min-value)
     (define -max-value max-value)

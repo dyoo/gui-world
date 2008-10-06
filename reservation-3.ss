@@ -43,12 +43,18 @@
 ;; completed-unsubmitted-form?: world -> boolean
 (define (completed-unsubmitted-form? a-world)
   (and (not (incomplete-submission? a-world))
-       (not (world-submitted? a-world))))
-
+       (not-submitted? a-world)))
 
 ;; on-submit: world -> world
+;; Submits the form, not allowing any further changes.
 (define (on-submit a-world)
   (update-world-submitted? a-world #t))
+
+
+;; not-submitted?: world -> boolean
+;; Returns true if the world isn't yet submitted.
+(define (not-submitted? a-world)
+  (not (world-submitted? a-world)))
 
 
 ;; world-status-message: world -> string
@@ -58,20 +64,23 @@
     [(world-submitted? a-world)
      (string-append "Your reservation "
                     (world-title a-world)
+                    " "
                     (world-name a-world)
+                    " "
                     (world-arrival a-world)
+                    " "
                     (world-departure a-world)
-                    "has been submitted")]
+                    " has been submitted")]
     [else
      "Your reservation is not complete yet."]))
    
 
 (define a-gui
   (col 
-   (row "Title" (drop-down world-title TITLES update-world-title))
-   (row "Name" (text-field world-name update-world-name))
-   (row "Departure" (drop-down world-departure TIMES update-world-departure))
-   (row "Arrival" (drop-down world-arrival TIMES update-world-arrival))
+   (row "Title" (drop-down world-title TITLES update-world-title not-submitted?))
+   (row "Name" (text-field world-name update-world-name not-submitted?))
+   (row "Departure" (drop-down world-departure TIMES update-world-departure not-submitted?))
+   (row "Arrival" (drop-down world-arrival TIMES update-world-arrival not-submitted?))
    (button "Submit" on-submit completed-unsubmitted-form?)
    (message world-status-message)))
 
