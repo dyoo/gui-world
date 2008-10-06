@@ -31,8 +31,8 @@
 (define (world-add-horizontal a-world)
   (update-world-fabric a-world
                        (add-horiz-stripe (world-color a-world)
-                                              (world-width a-world)
-                                              (world-fabric a-world))))
+                                         (world-width a-world)
+                                         (world-fabric a-world))))
 
 ;; world-add-vertical: world -> world
 (define (world-add-vertical a-world) 
