@@ -434,11 +434,16 @@
          row
          col
          message
+         scene
          button
+         slider
          drop-down
          text-field
          
          ;; Other helpers
          define-updaters
          random-choice
+         place-image
+         empty-scene
+         (all-from-out htdp/image)
          #;on-tick)
