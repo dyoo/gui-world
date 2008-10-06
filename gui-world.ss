@@ -440,4 +440,5 @@
          
          ;; Other helpers
          define-updaters
+         random-choice
          #;on-tick)

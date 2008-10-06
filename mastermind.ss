@@ -44,28 +44,49 @@
 ;; win?: world -> boolean
 ;; Returns true if the world is in winning state.
 (define (win? a-world)
-  (string=? (mm-c1 a-world) (mm-g1 a-world))
-  (string=? (mm-c2 a-world) (mm-g2 a-world)))
+  (and (string=? (mm-c1 a-world) (mm-g1 a-world))
+       (string=? (mm-c2 a-world) (mm-g2 a-world))))
 
 
 
-;; world->form-scene: world -> scene
-;; Either shows an editable form if the game is still being played, or
-;; a read-only form if the game is over.
-(define (world->form-scene a-world)
+;; mm-c1-display: world -> string
+;; Produces the content of the first color.  If the game isn't over yet, obscures it with ???.
+(define (mm-c1-display a-world)
   (cond
     [(form-filled? a-world)
-     (make-form (make-row (mm-c1 a-world) (mm-c2 a-world))
-                (make-row (mm-g1 a-world) (mm-g2 a-world))
-                (cond [(win? a-world)
-                       "You win!"]
-                      [else
-                       "You didn't win."]))]
+     (mm-c1 a-world)]
     [else
-     (make-form
-      (make-row "???" "???")
-      (make-row (make-drop-down (mm-g1 a-world) COLORS+BLANK on-g1-change)
-                (make-drop-down (mm-g2 a-world) COLORS+BLANK on-g2-change)))]))
+     "???"]))
 
-(big-bang 200 200 initial-world)
-(on-redraw world->form-scene)
+
+;; mm-c2-display: world -> string
+;; Produces the content of the second color.  If the game isn't over yet, obscures it with ???.
+(define (mm-c2-display a-world)
+  (cond
+    [(form-filled? a-world)
+     (mm-c2 a-world)]
+    [else
+     "???"]))
+
+
+;; world-status-message: world -> string
+;; Produces the status message at the bottom of the GUI.
+(define (world-status-message a-world)
+  (cond
+    [(form-filled? a-world)
+     (cond [(win? a-world)
+            "You win!"]
+           [else
+            "You didn't win."])]
+    [else ""]))
+  
+
+(define a-gui
+  (col
+   (row (message mm-c1-display) (message mm-c2-display))
+   (row (drop-down mm-g1 COLORS+BLANK on-g1-change)
+        (drop-down mm-g2 COLORS+BLANK on-g2-change))
+   (message world-status-message)))
+
+
+(big-bang initial-world a-gui)
