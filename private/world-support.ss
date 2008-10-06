@@ -147,6 +147,14 @@
    0 0))
 
 
+(define (nw:rectangle width height mode color)
+  (check-pos 'rectangle width "first")
+  (check-pos 'rectangle height "second")
+  (check-mode 'rectangle mode "third")
+  (check-color 'rectangle color "fourth")
+  (put-pinhole (rectangle width height mode color) 0 0))
+
+
 ;; MouseEvent -> MouseEventType
 (define (mouse-event->symbol e)
   (cond [(send e button-down?) 'button-down]
@@ -161,8 +169,20 @@
                  "Unknown event type: ~a"
                  (send e get-event-type)))]))
 
+;; Symbol (union Symbol String) Nat -> Void
+(define (check-mode tag s rank)
+  (check-arg tag (or (eq? s 'solid)
+                     (eq? s 'outline)
+                     (string=? "solid" s)
+                     (string=? "outline" s)) "mode (solid or outline)" rank s))
+
+;; Symbol Any String -> Void
+(define (check-color tag width rank)
+  (check-arg tag (or (symbol? width) (string? width)) 
+             "color symbol or string" rank width))
 
 (provide place-image
          empty-scene
          random-choice
-         define-updaters)
+         define-updaters
+         nw:rectangle)

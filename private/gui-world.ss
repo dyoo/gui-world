@@ -450,5 +450,6 @@
          random-choice
          place-image
          empty-scene
+         nw:rectangle
          (all-from-out htdp/image)
          on-tick)
