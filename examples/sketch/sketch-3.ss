@@ -17,7 +17,7 @@
 ;; the dots drawn already,
 ;; the drifting direction (one-of "left" "right" "up" "down" "stable"),
 ;; and the global color for the dot.
-(define-struct world (posn dots direction global-color))
+(define-struct world (posn dots direction color))
 (define-updaters world)
 (define-updaters posn)
 
@@ -121,7 +121,7 @@
 (define (render-etch-a-sketch a-world)
   (draw-world-posn (world-posn a-world)
                    (draw-dots (world-dots a-world)
-                              (world-global-color a-world)
+                              (world-color a-world)
                               (place-image (nw:rectangle WIDTH HEIGHT "solid" BLANK-COLOR)
                                            0
                                            0
@@ -158,7 +158,7 @@
         (button "right" change-direction-right))
    (button "down" change-direction-down)
    (button "shake!" shake-to-clear)
-   (drop-down world-global-color COLORS update-world-global-color)))
+   (drop-down world-color COLORS update-world-color)))
 
 (big-bang initial-world a-gui)
 (on-tick 1/20 move-by-drifting)
