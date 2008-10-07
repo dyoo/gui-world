@@ -10,10 +10,10 @@
 ;; The colors we'll provide.
 (define COLORS (list "red" "white" "blue" "green" "orange" "black"))
 
-;; The initial state of the world will be to select the white color, with a 
+;; The initial state of the world will be to select the black color, with a 
 ;; stripe length of five, and the empty fabric.
 (define initial-world 
-  (make-world "white"
+  (make-world "black"
               5
               (create-solid-fabric "white" 
                                    (image-width tshirt)
