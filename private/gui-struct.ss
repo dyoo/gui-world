@@ -10,6 +10,7 @@
 
 (define-struct (row-elt elt) (elts) #:transparent)
 (define-struct (column-elt elt) (elts) #:transparent)
+(define-struct (group-box-elt elt) (val-f elt enabled?-f) #:transparent)
 (define-struct (string-elt elt) (val-f) #:transparent)
 (define-struct (scene-elt elt) (scene-f) #:transparent)
 (define-struct (button-elt elt) (val-f callback enabled?-f) #:transparent)
@@ -89,6 +90,13 @@
 (define (col . elts)
   (make-column-elt (coerse-primitive-types-to-elts elts)))
 
+(define (group-box val a-gui [enabled? #t])
+  (make-group-box-elt (wrap-primitive string? val)
+                      a-gui
+                      (wrap-primitive boolean? enabled?)))
+
+
+
 
 ;; coerse-primitive-types-to-elts: (listof (or/c elt string scene)) -> (listof elt)
 ;; Helper to turn strings into string-elts, and images into image-elts.
@@ -108,6 +116,9 @@
 (provide/contract [struct elt ()]
                   [struct (row-elt elt) ([elts (listof elt?)])]
                   [struct (column-elt elt) ([elts (listof elt?)])]
+                  [struct (group-box-elt elt) ([val-f (gvalueof string?)]
+                                               [elt elt?]
+                                               [enabled?-f (gvalueof boolean?)])]
                   [struct (string-elt elt) ([val-f (gvalueof string?)])]
                   [struct (scene-elt elt) ([scene-f (gvalueof scene?)])]
                   [struct (button-elt elt) ([val-f (gvalueof string?)]
@@ -157,6 +168,10 @@
                   
                   [row (() () #:rest (listof (or/c elt? string? scene?)) . ->* . row-elt?)]
                   [col (() () #:rest (listof (or/c elt? string? scene?)) . ->* . column-elt?)]
+                  [group-box (((gvalueof* string?) elt?)
+                              ((gvalueof* boolean?))
+                              . ->* .
+                              group-box-elt?)]
 
                   
                   [coerse-primitive-to-elt

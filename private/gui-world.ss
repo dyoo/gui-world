@@ -150,6 +150,15 @@
          (render-elt! sub-elt column-container))
        column-container)]
     
+    [(struct group-box-elt (label-f sub-elt enabled?-f))
+     (let ([a-group-box
+            (new world-gui:group-box%
+                 [parent a-container]
+                 [label (label-f *world*)]
+                 [enabled (enabled?-f *world*)])])
+       (render-elt! sub-elt a-group-box)
+       a-group-box)]
+    
     [(struct string-elt (s-f))
      (new world-gui:string% [label (s-f *world*)]
           [parent a-container])]
@@ -263,6 +272,25 @@
                 (column-elt-elts an-elt)
                 (get-children)))
         
+    (super-new)))
+
+
+(define world-gui:group-box%
+  (class* (on-subwindow-char-mixin group-box-panel%) (world-gui<%>)
+    (inherit get-children get-label set-label is-enabled? enable)
+    
+    (define/public (update-with! an-elt)
+      (match an-elt
+        [(struct group-box-elt (val-f sub-elt enabled?-f))
+         (let ([new-val (val-f *world*)]
+               [new-enabled? (enabled?-f *world*)])
+           (unless (string=? new-val (get-label))
+             (set-label new-val))
+           (unless (boolean=? new-enabled? (is-enabled?))
+             (enable new-enabled?))
+           
+           (send (first (get-children)) update-with! sub-elt))]))
+
     (super-new)))
 
 
@@ -457,6 +485,7 @@
          slider
          drop-down
          text-field
+         group-box
          
          ;; Other helpers
          define-updaters

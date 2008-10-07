@@ -160,6 +160,29 @@
 
 
 
+
+
+
+;                                                   
+;                                                   
+;                 ;;;                               
+;   ;    ;          ;                               
+;   ;    ;          ;                               
+;   ;    ;  ;;;     ;    ;;;;    ;;;    ; ;;   ;;;  
+;   ;    ; ;;  ;    ;    ;; ;;  ;;  ;   ;;  ; ;   ; 
+;   ;;;;;; ;   ;    ;    ;   ;  ;   ;   ;     ;     
+;   ;    ; ;;;;;    ;    ;   ;  ;;;;;   ;      ;;;  
+;   ;    ; ;        ;    ;   ;  ;       ;         ; 
+;   ;    ; ;;  ;    ;    ;; ;;  ;;  ;   ;     ;   ; 
+;   ;    ;  ;;;      ;;  ;;;;    ;;;    ;      ;;;  
+;                        ;                          
+;                        ;                          
+;                        ;                  ;; ; ;; 
+
+
+
+
+
 ;; world-rect-state-width: world -> number
 ;; Consumes the global state of the world, produces the width in the rect-state.
 (define (world-rect-state-width a-world)
@@ -186,19 +209,6 @@
   (update-world-rect-state a-world
                            (update-rect-state-height (world-rect-state a-world)
                                                      width)))
-
-
-;; world-rect-state-not-selected?: world -> boolean
-(define (world-rect-state-not-selected? a-world)
-  (not (string=? (world-current-shape a-world) "rect")))
-
-;; world-circle-state-not-selected?: world -> boolean
-(define (world-circle-state-not-selected? a-world)
-  (not (string=? (world-current-shape a-world) "circle")))
-
-;; world-star-state-not-selected?: world -> boolean
-(define (world-star-state-not-selected? a-world)
-  (not (string=? (world-current-shape a-world) "star")))
 
 
 ;; world-circle-state-radius: world -> number
@@ -312,6 +322,7 @@
 
 
 
+
 ;                       
 ;                       
 ;                       
@@ -383,28 +394,62 @@
   (update-world-current-shape a-world "star"))
 
 
+;; world-rect-state-not-selected?: world -> boolean
+(define (world-rect-state-not-selected? a-world)
+  (not (string=? (world-current-shape a-world) "rect")))
+
+;; world-circle-state-not-selected?: world -> boolean
+(define (world-circle-state-not-selected? a-world)
+  (not (string=? (world-current-shape a-world) "circle")))
+
+;; world-star-state-not-selected?: world -> boolean
+(define (world-star-state-not-selected? a-world)
+  (not (string=? (world-current-shape a-world) "star")))
+
+
+;; world-rect-state-selected?: world -> boolean
+(define (world-rect-state-selected? a-world)
+  (string=? (world-current-shape a-world) "rect"))
+
+;; world-circle-state-selected?: world -> boolean
+(define (world-circle-state-selected? a-world)
+  (string=? (world-current-shape a-world) "circle"))
+
+;; world-star-state-selected?: world -> boolean
+(define (world-star-state-selected? a-world)
+  (string=? (world-current-shape a-world) "star"))
+
+
+
 ;; button-label: world -> string
 ;; Produces the label we attach to the add button in our gui.
 (define (button-label a-world)
   (string-append "Add " (world-current-shape a-world) "!"))
 
 
+;; The main gui combines all of the shape controls.
 (define a-main-gui
   (col (scene render-flag)
        (row (col (button "Select rect" 
                          rect-button-pressed 
                          world-rect-state-not-selected?)
-                 rect-gui)
+                 (group-box "Rect options" 
+                            rect-gui
+                            world-rect-state-selected?))
             
             (col (button "Select circle" 
                          circle-button-pressed 
                          world-circle-state-not-selected?)
-                 circle-gui)
+                 (group-box "Circle options"
+                            circle-gui
+                            world-circle-state-selected?))
             
             (col (button "Select star"
                          star-button-pressed
                          world-star-state-not-selected?)
-                 star-gui)
+                 (group-box "Star options" 
+                            star-gui
+                            world-star-state-selected?))
             
             misc-gui)
        (button button-label add-current-shape-to-flag)))
