@@ -8,17 +8,17 @@
 (define FLAG-HEIGHT (floor (/ FLAG-WIDTH 2)))
 
 ;; A shape is one of:
-(define-struct rect-shape (x y color width height))
-(define-struct circle-shape (x y color radius))
-(define-struct star-shape (x y color inner-radius outer-radius))
-;; where x and y are numbers, color is a color string, width and height are
+(define-struct rect-shape (posn color width height))
+(define-struct circle-shape (posn color radius))
+(define-struct star-shape (posn color n inner-radius outer-radius))
+;; where posn is a posn, color is a color, width and height are
 ;; numbers, and radius, inner-radius, and outer-radius are numbers.
 
 
 ;; We also represent the state of the gui widgets.
 (define-struct rect-state (width height))
 (define-struct circle-state (radius))
-(define-struct star-state (inner-radius outer-radius))
+(define-struct star-state (n inner-radius outer-radius))
 
 ;; Misc-state records the state that's generic across all the shapes.
 ;; x, y are coordinates
@@ -52,9 +52,9 @@
   (make-world empty
               (make-misc-state 0 0 0 0 0)
               "rect"
-              (make-rect-state 1 1)
-              (make-circle-state 1)
-              (make-star-state 1 1)))
+              (make-rect-state FLAG-WIDTH 10)
+              (make-circle-state 30)
+              (make-star-state 3 20 40)))
               
 
 ;; render-current-color: world -> scene
@@ -67,6 +67,52 @@
                0 
                0
                (empty-scene 30 30)))
+
+
+
+;; world-current-color: world -> color
+(define (world-current-color a-world)
+  (make-color (misc-state-r (world-misc-state a-world))
+              (misc-state-g (world-misc-state a-world))
+              (misc-state-b (world-misc-state a-world))))
+
+;; world-current-posn: world -> posn
+(define (world-current-posn a-world)
+  (make-posn (misc-state-x (world-misc-state a-world))
+             (misc-state-y (world-misc-state a-world))))
+
+
+;; world-current-editing-shape: world -> shape
+;; Gets the shape that is currently selected and being edited by the user.
+(define (world-current-editing-shape a-world)
+  (cond
+    [(string=? (world-current-shape a-world) "rect")
+     (make-rect-shape (world-current-posn a-world)
+                      (world-current-color a-world)
+                      (rect-state-width (world-rect-state a-world))
+                      (rect-state-height (world-rect-state a-world)))]
+    
+    [(string=? (world-current-shape a-world) "circle")
+     (make-circle-shape (world-current-posn a-world)
+                        (world-current-color a-world)
+                        (circle-state-radius (world-circle-state a-world)))]
+
+    [(string=? (world-current-shape a-world) "star")
+     (make-star-shape (world-current-posn a-world)
+                      (world-current-color a-world)
+                      (star-state-n (world-star-state a-world))
+                      (star-state-inner-radius (world-star-state a-world))
+                      (star-state-outer-radius (world-star-state a-world)))]))
+
+
+;; add-current-shape-to-flag: world -> world
+;; Adds a new shape to the flag.
+(define (add-current-shape-to-flag a-world)
+  (update-world-shapes a-world
+                       (cons (world-current-editing-shape a-world)
+                             (world-shapes a-world))))
+
+
 
 
 ;; render-flag: world -> scene
@@ -92,23 +138,24 @@
                                 (rect-shape-height a-shape)
                                 "solid"
                                 (rect-shape-color a-shape))
-                  (rect-shape-x a-shape)
-                  (rect-shape-y a-shape)
+                  (posn-x (rect-shape-posn a-shape))
+                  (posn-y (rect-shape-posn a-shape))
                   a-scene)]
     [(circle-shape? a-shape)
      (place-image (circle (circle-shape-radius a-shape) 
                           "solid"
                           (circle-shape-color a-shape))
-                  (circle-shape-x a-shape)
-                  (circle-shape-y a-shape)
+                  (posn-x (circle-shape-posn a-shape))
+                  (posn-y (circle-shape-posn a-shape))
                   a-scene)]
     [(star-shape? a-shape)
-     (place-image (star (star-shape-inner-radius a-shape) 
+     (place-image (star (star-shape-n a-shape)
+                        (star-shape-inner-radius a-shape) 
                         (star-shape-outer-radius a-shape) 
                         "solid"
                         (star-shape-color a-shape))
-                  (star-shape-x a-shape)
-                  (star-shape-y a-shape)
+                  (posn-x (star-shape-posn a-shape))
+                  (posn-y (star-shape-posn a-shape))
                   a-scene)]))
 
 
@@ -167,6 +214,19 @@
   (update-world-circle-state a-world
                              (update-circle-state-radius (world-circle-state a-world)
                                                          a-radius)))
+
+;; world-star-state-n: world -> number
+(define (world-star-state-n a-world)
+  (star-state-n
+   (world-star-state a-world)))
+
+
+;; update-world-star-state-n: world number -> world
+(define (update-world-star-state-n a-world n)
+  (update-world-star-state a-world
+                           (update-star-state-n (world-star-state a-world)
+                                                n)))
+
 
 ;; world-star-state-inner-radius: world -> number
 (define (world-star-state-inner-radius a-world)
@@ -288,7 +348,9 @@
 
 ;; The star part of the gui.
 (define star-gui
-  (col (row "Inner radius"
+  (col (row "# of points"
+            (slider world-star-state-n 3 100 update-world-star-state-n))
+       (row "Inner radius"
             (slider world-star-state-inner-radius
                     1 FLAG-WIDTH 
                     update-world-star-state-inner-radius))
@@ -321,6 +383,12 @@
   (update-world-current-shape a-world "star"))
 
 
+;; button-label: world -> string
+;; Produces the label we attach to the add button in our gui.
+(define (button-label a-world)
+  (string-append "Add " (world-current-shape a-world) "!"))
+
+
 (define a-main-gui
   (col (scene render-flag)
        (row (col (button "Select rect" 
@@ -338,6 +406,7 @@
                          world-star-state-not-selected?)
                  star-gui)
             
-            misc-gui)))
+            misc-gui)
+       (button button-label add-current-shape-to-flag)))
 
 (big-bang initial-world a-main-gui)
