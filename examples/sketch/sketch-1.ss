@@ -108,10 +108,10 @@
 (define a-gui
   (col
    (scene render-etch-a-sketch)
-   (row (row (button "left" move-left)
+   (col (button "up" move-up)
+        (row (button "left" move-left)
              (button "right" move-right))
-        (col (button "up" move-up)
-             (button "down" move-down)))
+        (button "down" move-down))
    (button "shake" shake-to-clear)))
 
 (big-bang initial-world a-gui)
