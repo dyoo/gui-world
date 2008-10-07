@@ -177,9 +177,9 @@
                      (string=? "outline" s)) "mode (solid or outline)" rank s))
 
 ;; Symbol Any String -> Void
-(define (check-color tag width rank)
-  (check-arg tag (or (symbol? width) (string? width)) 
-             "color symbol or string" rank width))
+(define (check-color tag a-color rank)
+  (check-arg tag (or (symbol? a-color) (string? a-color) (color? a-color)) 
+             "color symbol or string" rank a-color))
 
 (provide place-image
          empty-scene
