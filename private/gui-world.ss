@@ -329,9 +329,19 @@
 (define world-gui:drop-down% 
   (class* (on-subwindow-char-mixin choice%) (world-gui<%>)
     (init-field world-callback)
-    (inherit get-string-selection get-number get-string clear append set-selection
+    (inherit get-string-selection get-number get-string clear append 
+             set-selection
              is-enabled? enable)
-    
+
+    ;; TRICKY:
+    ;; We need to keep track of some internal state of the drop down.
+    ;; On Windows, as the user is selecting a new string, the string selection
+    ;; switches.  This interferes if an on-tick event happens, because then
+    ;; the world will snap the selection back to the world state.
+    ;; internal-selection-string maintains the last selection that was
+    ;; chosen by a control event; see the callback for the set!.
+    (define internal-selection-string "")
+       
     (define/public (update-with! an-elt)
       (match an-elt
         [(struct drop-down-elt (val-f choices-f callback enabled?-f))
@@ -344,10 +354,11 @@
              (for ([choice new-choices])
                (append choice)))
            
-           (unless (string=? (get-string-selection) new-val)
+           (unless (string=? internal-selection-string new-val)
              (set-selection (list-index (lambda (x) 
                                           (string=? x new-val))
-                                        new-choices)))
+                                        new-choices))
+             (set! internal-selection-string new-val))
            
            (unless (boolean=? (is-enabled?) new-enabled?)
              (enable new-enabled?)))]))
@@ -363,9 +374,11 @@
             
     (super-new
      [callback (lambda (c e)
+                 (set! internal-selection-string (get-string-selection))
                  (change-world/f!
                   (lambda (a-world)
-                    (world-callback a-world (get-string-selection)))))])))
+                    (world-callback 
+                     a-world (get-string-selection)))))])))
 
 
 
