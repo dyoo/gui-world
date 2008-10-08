@@ -487,6 +487,8 @@
          text-field
          group-box
          
+         scope-struct
+         
          ;; Other helpers
          define-updaters
          random-choice

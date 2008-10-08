@@ -2,6 +2,7 @@
 
 (require scheme/contract
          htdp/image
+         scheme/match
          (only-in lang/htdp-beginner image?))
 
 
@@ -21,6 +22,7 @@
 
 
 (define world/c any/c)
+(define subworld/c any/c)
 
 (define (gvalueof t)
   (world/c . -> . t))
@@ -112,7 +114,67 @@
         [else
          an-elt]))
 
-       
+
+
+;; scope-struct: elt (world -> sub-world) (world sub-world -> world) -> elt
+;; Scoping operator on structure.
+(define (scope-struct an-elt w->s s->w)
+  (match an-elt
+    [(struct row-elt (elts))
+     (make-row-elt (map (lambda (a-subelt) (scope-struct a-subelt w->s s->w))
+                        elts))]
+    [(struct column-elt (elts))
+     (make-column-elt (map (lambda (a-subelt) (scope-struct a-subelt w->s s->w))
+                           elts))]
+    [(struct group-box-elt (val-f a-subelt enabled?-f))
+     (make-group-box-elt (translate-gvalue val-f w->s)
+                         (scope-struct a-subelt w->s s->w)
+                         (translate-gvalue enabled?-f w->s))]
+    [(struct string-elt (val-f))
+     (make-string-elt (translate-gvalue val-f w->s))]
+    
+    [(struct scene-elt (scene-f))
+     (make-scene-elt (translate-gvalue scene-f w->s))]
+    
+    [(struct button-elt (val-f callback enabled?-f))
+     (make-button-elt (translate-gvalue val-f w->s)
+                      (lambda (world) 
+                        (s->w world (callback (w->s world))))
+                      (translate-gvalue enabled?-f w->s))]
+    
+    [(struct drop-down-elt (val-f choices-f callback enabled?-f))
+     (make-drop-down-elt (translate-gvalue val-f w->s)
+                         (translate-gvalue choices-f w->s)
+                         (translate-gcallback callback w->s s->w)
+                         (translate-gvalue enabled?-f w->s))]
+    
+    [(struct text-field-elt (val-f callback enabled?-f))
+     (make-text-field-elt (translate-gvalue val-f w->s)
+                          (translate-gcallback callback w->s s->w)
+                          (translate-gvalue enabled?-f w->s))]
+    
+    [(struct slider-elt (val-f min-f max-f callback enabled?-f))
+     (make-slider-elt (translate-gvalue val-f w->s)
+                      (translate-gvalue min-f w->s)
+                      (translate-gvalue max-f w->s)
+                      (translate-gcallback callback w->s s->w)
+                      (translate-gvalue enabled?-f w->s))]))
+
+
+;; translate-gvalue: (S -> X) (W -> S) -> (W -> X)
+(define (translate-gvalue a-gvalue w->s)
+  (lambda (a-world)
+    (a-gvalue (w->s a-world))))
+
+;; translate-gcallback: (S X -> S) (W -> S) (W S -> W) -> (W X -> W)
+(define (translate-gcallback a-gcallback w->s s->w)
+  (lambda (a-world a-val)
+    (s->w a-world (a-gcallback (w->s a-world) a-val))))
+
+
+
+
+
 (provide/contract [struct elt ()]
                   [struct (row-elt elt) ([elts (listof elt?)])]
                   [struct (column-elt elt) ([elts (listof elt?)])]
@@ -125,18 +187,18 @@
                                             [callback callback/c]
                                             [enabled?-f (gvalueof boolean?)])]
                   [struct (drop-down-elt elt) ([val-f (gvalueof string?)]
-                                           [choices-f (gvalueof (listof string?))]
-                                           [callback (gcallbackof string?)]
-                                           [enabled?-f (gvalueof boolean?)])]
+                                               [choices-f (gvalueof (listof string?))]
+                                               [callback (gcallbackof string?)]
+                                               [enabled?-f (gvalueof boolean?)])]
                   [struct (text-field-elt elt) ([val-f (gvalueof string?)]
-                                           [callback (gcallbackof string?)]
-                                           [enabled?-f (gvalueof boolean?)])]
+                                                [callback (gcallbackof string?)]
+                                                [enabled?-f (gvalueof boolean?)])]
                   [struct (slider-elt elt) ([val-f (gvalueof number?)]
                                             [min-f (gvalueof number?)]
                                             [max-f (gvalueof number?)]
                                             [callback (gcallbackof number?)]
                                             [enabled?-f (gvalueof boolean?)])]
-
+                  
                   
                   
                   [message ((gvalueof* string?) . -> . string-elt?)]
@@ -160,10 +222,10 @@
                               . ->* . drop-down-elt?)]
                   
                   [text-field (((gvalueof* string?)
-                               (gcallbackof string?))
+                                (gcallbackof string?))
                                ((gvalueof boolean?))
                                . ->* . text-field-elt?)]
-
+                  
                   [scene ((gvalueof* scene?) . -> . scene-elt?)]
                   
                   [row (() () #:rest (listof (or/c elt? string? scene?)) . ->* . row-elt?)]
@@ -172,8 +234,12 @@
                               ((gvalueof* boolean?))
                               . ->* .
                               group-box-elt?)]
-
+                  
+                  [scope-struct (elt? 
+                                 (world/c . -> . subworld/c) 
+                                 (world/c subworld/c . -> . world/c)
+                                 . -> . 
+                                 elt?)]
                   
                   [coerse-primitive-to-elt
-                   ((or/c elt? string? scene?) . -> . elt?)]
-                  )
+                   ((or/c elt? string? scene?) . -> . elt?)])
