@@ -1,0 +1,169 @@
+The flag-1 example demonstrates a problem with the current design.  If
+our world consists of substructure, the design requires required the
+associated gvalues and gcallbacks to be expressed as functions that
+consume the whole global state rather than those substructures.
+
+
+----------------------------------------------------------------------
+The problem
+
+i.e.  Given the following data definition
+
+   (define-struct star-state (n inner outer))
+   (define-struct rect-state (width height))
+   (define-struct circle-state (radius))
+
+   (define-struct global-state (star-state rect-state circle-state))
+
+global-state is our world.  A gui expressed for global state has the
+following requirement: all gvalues and gcallbacks in the gui must be
+expressed in terms of global-state.
+
+
+If we have a slider that corresponds to the width of a
+rectangle, we must do something to adapt the rect-state functions to
+work on global-states.
+
+    ;; global-rect-width: global-state -> number
+    (define (global-rect-width a-global-state)
+      (rect-state-width (global-state-rect-state a-global-state)))
+
+    ;; update-global-rect-width: global-state number -> global-state
+    (define (update-global-rect-width a-global-state a-width)
+      (update-global-state-rect-state 
+        a-global-state
+        (update-rect-state-width (global-state-rect-state a-global-state)
+                                 a-width)))
+
+    ;; A simple gui consisting of a slider.
+    (slider global-rect-width 1 100 update-global-rect-width)
+
+
+We will end up writing such adaptor pairs for every attribute of the
+smaller state structure.
+
+----------------------------------------------------------------------
+Proposal: scope-struct
+
+
+I propose a modularity mechanism for hooking up guis to elements of
+the substructure state.  This will be a gui element called
+'scope-struct':
+
+   (scope-struct gui w->s s->w)
+
+where
+
+   w->s: (world -> substructure)
+   s->w: (world substructure -> world)
+
+
+The scope-struct form acts as a scope to adapting the gui to a
+substructure.  Given this form, we can write:
+
+    (scope-struct 
+      (slider rect-state-width 1 100 update-rect-state-width)
+      global-world-rect-state
+      update-global-world-rect-state)
+
+without needing to write global-rect-width and
+update-global-rect-width.
+
+
+
+----------------------------------------------------------------------
+Semantics
+
+
+The semantics of scope-struct are:
+
+
+  (scope-struct (row elts) w->s s->w)
+
+  -> (row (map (lambda (a-gui) (scope-struct a-gui w->s s->w)) 
+               elts))
+
+
+
+  (scope-struct (col elts) w->s s->w)
+
+  -> (col (map (lambda (a-gui) (scope-struct a-gui w->s s->w)) elts))
+
+
+
+  (scope-struct (message val-f) w->s s->w)
+
+  -> (message (translate-gvalue val-f w->s))
+
+
+
+  (scope-struct (group-box val-f a-gui enabled?-f) w->s s->w)
+
+  -> (group-box (translate-gvalue val-f w->s)
+                (scope-struct a-gui w->s s->w)
+                (translate-gvalue enabled?-f w->s))
+
+
+  (scope-struct (scene a-scene-f) w->s s->w)
+
+  -> (scene (translate-gvalue a-scene-f w->s))
+
+
+
+  (scope-struct (button val-f callback enabled?-f) w->s s->w)
+
+  -> (button (translate-gvalue val-f w->s)
+             (lambda (world)
+               (s->w world (callback (w->s world))))
+             (translate-gvalue enabled?-f w->s))
+
+
+
+  (scope-struct (slider val-f min-f max-f callback enabled?-f) w->s s->w)
+
+  -> (slider (translate-gvalue val-f w->s)
+             (translate-gvalue min-f w->s)
+             (translate-gvalue max-f w->s)
+             (translate-gcallback callback w->s s->w)
+             (translate-gvalue enabled?-f w->s))
+
+
+  (scope-struct (drop-down val-f choices-f callback enabled?-f) w->s s->w)
+
+  -> (drop-down (translate-gvalue val-f w->s)
+                (translate-gvalue choices-f w->s)
+                (translate-gcallback callback w->s s->w)
+                (translate-gvalue enabled?-f w->s))
+
+
+  (scope-struct (text-field val-f callback enabled?-f) w->s s->w)
+
+  -> (text-field (translate-gvalue val-f w->s)
+                 (translate-gcallback callback w->s s->w)
+                 (translate-gvalue enabled?-f w->s))
+
+
+  (scope-struct (scope-struct a-gui inner-w->s inner-s->w) outer-w->s outer-s->w)
+
+  -> (scope-struct a-gui (lambda (world)
+                     (inner-w->s (outer-w->s world)))
+
+                   (lambda (world subworld)
+                     (outer-s->w 
+                       world
+                       (inner-w->s (outer->w->s world) subworld))))
+
+
+
+We define helper functions to generate adaptors, given w->s and s->w:
+
+  ;; translate-gvalue: (S -> X) (W -> S) -> (W -> X)
+  (define (translate-gvalue a-gvalue w->s)
+    (lambda (a-world)
+      (a-gvalue (w->s a-world))))
+
+  ;; translate-gcallback: (S X -> S) (W -> S) (W S -> W) -> (W X -> W)
+  (define (translate-gcallback a-gcallback w->s s->w)
+    (lambda (a-world a-val)
+      (s->w a-world (a-gcallback (w->s a-world) a-val))))
+
