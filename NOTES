@@ -7,7 +7,7 @@ consume the whole global state rather than those substructures.
 ----------------------------------------------------------------------
 The problem
 
-i.e.  Given the following data definition
+Given the following data definition
 
    (define-struct star-state (n inner outer))
    (define-struct rect-state (width height))
