@@ -145,7 +145,8 @@ The semantics of scope-struct are:
 
   (scope-struct (scope-struct a-gui inner-w->s inner-s->w) outer-w->s outer-s->w)
 
-  -> (scope-struct a-gui (lambda (world)
+  -> (scope-struct a-gui 
+                   (lambda (world)
                      (inner-w->s (outer-w->s world)))
 
                    (lambda (world subworld)
