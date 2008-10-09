@@ -9,11 +9,6 @@
 (define FLAG-HEIGHT (floor (/ FLAG-WIDTH 2)))
 
 
-;; BLINK-DELAY: number
-;; The number of frames that the current editing shape persists between it blinking
-;; in and out.
-(define BLINK-DELAY 15)
-
 
 ;; A shape is one of:
 (define-struct rect-shape (posn color width height))
@@ -42,7 +37,6 @@
 ;;                          rect-state circle-state star-state)
 (define-struct world (shapes              ;; list of the shapes on the flag
                       undo-history        ;; a history of the previous shapes.
-                      time                ;; amount of frame time that's past
                       misc-state          ;; the global miscellaneous state of the gui
                       current-shape       ;; the current shape type selected
                       rect-state          ;; the rect-state of the gui
@@ -63,27 +57,12 @@
 (define initial-world 
   (make-world empty
               empty
-              0
-              (make-misc-state 0 0 0 0 0)
+              (make-misc-state (quotient FLAG-WIDTH 2) (quotient FLAG-HEIGHT 2) 0 0 0)
               "rect"
               (make-rect-state FLAG-WIDTH 10)
               (make-circle-state 30)
               (make-star-state 3 20 40)))
 
-
-;; time-passes: world -> world
-;; Records the passage of time so we can appropriately show the blinking 
-(define (time-passes a-world)
-  (update-world-time a-world (modulo (add1 (world-time a-world)) (* BLINK-DELAY 2))))
-
-
-
-;; show-current-shape?: world -> boolean
-;; Returns true if we should show the current shape.  We'll show it only if the
-;; blink delay tells us it's ok to show it.
-(define (show-current-shape? a-world)
-  (< (world-time a-world) BLINK-DELAY))
-  
 
 
 ;; render-current-color: misc-state -> scene
@@ -163,11 +142,8 @@
 (define (render-flag a-world)
   (draw-cross-cursor (misc-state-posn (world-misc-state a-world)) 
                      (render-shapes
-                      (append (cond [(show-current-shape? a-world)
-                                     (list (world-current-editing-shape a-world))]
-                                    [else
-                                     empty])
-                              (world-shapes a-world)))))
+                      (cons (world-current-editing-shape a-world)
+                            (world-shapes a-world)))))
 
 
 
@@ -347,4 +323,3 @@
 
 
 (big-bang initial-world a-main-gui)
-(on-tick 1/20 time-passes)

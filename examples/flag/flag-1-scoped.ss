@@ -50,7 +50,7 @@
 
 (define initial-world 
   (make-world empty
-              (make-misc-state 0 0 0 0 0)
+              (make-misc-state (quotient FLAG-WIDTH 2) (quotient FLAG-HEIGHT 2) 0 0 0)
               "rect"
               (make-rect-state FLAG-WIDTH 10)
               (make-circle-state 30)
