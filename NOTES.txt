@@ -168,3 +168,28 @@ We define helper functions to generate adaptors, given w->s and s->w:
     (lambda (a-world a-val)
       (s->w a-world (a-gcallback (w->s a-world) a-val))))
 
+
+----------------------------------------------------------------------
+
+
+
+sk says:
+
+Your "scoped" proposal is very intriguing, and I commend you for
+trying it out.  But at the very least, I hate the name.  As someone
+who's taken a PL course, you should have known better than to use a
+name like that.  (Why?)
+
+Name aside, I am also unsure that you have attached the injection and
+projection to the right place.  I'm not sure why a *GUI element* would
+be considered "scoped".  Sometimes that might be too narrow, at other
+times too broad.  It's not clear that the restriction should be
+associated with an *element*, per se.  So this does not have the ring
+of truth to it.
+
+That said, the general idea -- of projecting from a bigger structure,
+processing, then injecting back into the bigger structure -- seems
+very reasonable.  (It's reminiscent of the WITH construct in Pascal,
+which also allowed you to restrict your vision to part of a
+structure.)  I've now given you a hint as to how you might think about
+redesigning this.

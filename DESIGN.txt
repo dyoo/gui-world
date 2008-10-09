@@ -17,32 +17,34 @@ A 'gui' is one of the following:
                 gui                         ;; the inner gui
                 (gvalueof boolean?))        ;; enabled?
 
-   | (scene (gvalueof scene))
+   | (canvas (gvalueof scene)               ;; the displayed scene
+             (gcallbackof-2 number number)) ;; on-click callback
 
    | (button (gvalueof string)              ;; label text
-             callback
+             gcallbackof-0                  ;; button press callback
              (gvalueof boolean))            ;; enabled?
 
    | (slider (gvalueof number)              ;; current value
              (gvalueof number)              ;; min
              (gvalueof number)              ;; max
-             (gcallbackof number)
+             (gcallbackof-1 number)         ;; slider moved callback
              (gvalueof boolean))            ;; enabled?
 
    | (drop-down (gvalueof string)           ;; current value
                 (gvalueof (listof string))  ;; choices
-                (gcallbackof string)
+                (gcallbackof-1 string)      ;; selection callback
                 (gvalueof boolean))         ;; enabled?
 
    | (text-field (gvalueof string)          ;; text
-                 (gcallbackof string)
+                 (gcallbackof-1 string)     ;; text changed callback
                  (gvalueof boolean))        ;; enabled?
 
 
 where:
 
-    callback: world -> world
-    (gcallbackof t): world t -> world
+    (gcallbackof-0 t): world -> world
+    (gcallbackof-1 t): world t -> world
+    (gcallbackof-2 t1 t2): world t1 t2 -> world
     (gvalueof t): world -> t
 
 
@@ -174,7 +176,7 @@ A ball moves across the screen, its radius controlled by a slider.
 
 ;; a-gui: gui with a scene on top, and a slider below it.
 (define a-gui
-  (col (scene draw-world)
+  (col (canvas draw-world)
        (slider world-radius MIN-RADIUS MAX-RADIUS change-radius)))
 
 ;; Let's fire up the world.
@@ -191,8 +193,8 @@ Consequences of the design
 element of a gui can take in a function from (world -> scene).  That
 is, we can do:
 
-  (row (scene world->scene-1)
-       (scene world->scene-2))
+  (row (canvas world->scene-1)
+       (canvas world->scene-2))
 
 to provide different perspective renderings of the world.
 
@@ -214,3 +216,9 @@ the user should say is:
 
 where world-slider-pos, applied to the initial world, produces zero.
 This is awkward, but I don't see a way around it yet.
+
+
+* All the callbacks are currently expressed as functions that consume
+  the whole world; this doesn't mesh well when there is substructure
+  within the world that matches closely with a localized part of the
+  gui.  See NOTES.txt.
