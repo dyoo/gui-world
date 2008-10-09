@@ -433,21 +433,21 @@
        (row (col (button "Select rect" 
                          rect-button-pressed 
                          world-rect-state-not-selected?)
-                 (group-box "Rect options" 
+                 (box-group "Rect options" 
                             rect-gui
                             world-rect-state-selected?))
             
             (col (button "Select circle" 
                          circle-button-pressed 
                          world-circle-state-not-selected?)
-                 (group-box "Circle options"
+                 (box-group "Circle options"
                             circle-gui
                             world-circle-state-selected?))
             
             (col (button "Select star"
                          star-button-pressed
                          world-star-state-not-selected?)
-                 (group-box "Star options" 
+                 (box-group "Star options" 
                             star-gui
                             world-star-state-selected?))
             

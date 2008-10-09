@@ -280,21 +280,21 @@
        (row (col (button "Select rect" 
                          rect-button-pressed 
                          world-rect-state-not-selected?)
-                 (group-box "Rect options" 
+                 (box-group "Rect options" 
                             (scope-struct rect-gui world-rect-state update-world-rect-state)
                             world-rect-state-selected?))
             
             (col (button "Select circle" 
                          circle-button-pressed 
                          world-circle-state-not-selected?)
-                 (group-box "Circle options"
+                 (box-group "Circle options"
                             (scope-struct circle-gui world-circle-state update-world-circle-state)
                             world-circle-state-selected?))
             
             (col (button "Select star"
                          star-button-pressed
                          world-star-state-not-selected?)
-                 (group-box "Star options" 
+                 (box-group "Star options" 
                             (scope-struct star-gui world-star-state update-world-star-state)
                             world-star-state-selected?))
             

@@ -13,7 +13,7 @@ A 'gui' is one of the following:
 
    | (message (gvalueof string))            ;; label text
 
-   | (group-box (gvalueof string)           ;; label text
+   | (box-group (gvalueof string)           ;; label text
                 gui                         ;; the inner gui
                 (gvalueof boolean?))        ;; enabled?
 

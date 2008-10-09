@@ -150,7 +150,7 @@
          (render-elt! sub-elt column-container))
        column-container)]
     
-    [(struct group-box-elt (label-f sub-elt enabled?-f))
+    [(struct box-group-elt (label-f sub-elt enabled?-f))
      (let ([a-group-box
             (new world-gui:group-box%
                  [parent a-container]
@@ -282,7 +282,7 @@
     
     (define/public (update-with! an-elt)
       (match an-elt
-        [(struct group-box-elt (val-f sub-elt enabled?-f))
+        [(struct box-group-elt (val-f sub-elt enabled?-f))
          (let ([new-val (val-f *world*)]
                [new-enabled? (enabled?-f *world*)])
            (unless (string=? new-val (get-label))
@@ -494,7 +494,7 @@
          slider
          drop-down
          text-field
-         group-box
+         box-group
          
          scope-struct
          
