@@ -204,8 +204,9 @@
     [(struct canvas-elt (an-image-snip-f callback))
      (let* ([pasteboard (new pasteboard%)]
             [img-snip (send (an-image-snip-f *world*) copy)]
-            [canvas (new world-gui:image%
+            [canvas (new world-gui:canvas%
                          [parent a-container]
+                         [world-callback callback]
                          [min-width (image-width img-snip)]
                          [min-height (image-height img-snip)]
                          [horizontal-inset INSET]
@@ -443,16 +444,24 @@
 
 
 
-(define world-gui:image%
+(define world-gui:canvas%
   (class* editor-canvas% (world-gui<%>)
     (inherit get-editor min-width min-height)
+    
+    (init-field world-callback)
     
     (define/override (on-char evt)
       (handle-key-event! evt)
       (void))
     
     (define/override (on-event evt)
-      (void))
+      (when (send evt get-left-down)
+        (let ([x (send evt get-x)]
+              [y (send evt get-y)])
+        (change-world/f!
+         (lambda (a-world)
+           (world-callback a-world x y))))))
+
         
     (define/public (update-with! an-elt)
       (match an-elt
