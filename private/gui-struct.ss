@@ -13,7 +13,7 @@
 (define-struct (column-elt elt) (elts) #:transparent)
 (define-struct (group-box-elt elt) (val-f elt enabled?-f) #:transparent)
 (define-struct (string-elt elt) (val-f) #:transparent)
-(define-struct (scene-elt elt) (scene-f) #:transparent)
+(define-struct (canvas-elt elt) (scene-f callback) #:transparent)
 (define-struct (button-elt elt) (val-f callback enabled?-f) #:transparent)
 (define-struct (drop-down-elt elt) (val-f choices-f callback enabled?-f) #:transparent)
 (define-struct (text-field-elt elt) (val-f callback enabled?-f) #:transparent)
@@ -33,6 +33,9 @@
 
 (define (gcallbackof t)
   (world/c t . -> . world/c))
+
+(define (gcallbackof-2 t1 t2)
+  (world/c t1 t2 . -> . world/c))
 
 (define callback/c
   (world/c . -> . world/c))
@@ -82,8 +85,8 @@
                        callback
                        (wrap-primitive boolean? enabled?)))
 
-(define (scene a-scene)
-  (make-scene-elt (wrap-primitive scene? a-scene)))
+(define (canvas a-scene [callback (lambda (world x y) world)])
+  (make-canvas-elt (wrap-primitive scene? a-scene) callback))
 
 
 (define (row . elts)
@@ -110,7 +113,7 @@
   (cond [(string? an-elt)
          (message an-elt)]
         [(scene? an-elt)
-         (scene an-elt)]
+         (canvas an-elt)]
         [else
          an-elt]))
 
@@ -133,8 +136,8 @@
     [(struct string-elt (val-f))
      (make-string-elt (translate-gvalue val-f w->s))]
     
-    [(struct scene-elt (scene-f))
-     (make-scene-elt (translate-gvalue scene-f w->s))]
+    [(struct canvas-elt (scene-f callback))
+     (make-canvas-elt (translate-gvalue scene-f w->s) (translate-gcallback-2 callback w->s s->w))]
     
     [(struct button-elt (val-f callback enabled?-f))
      (make-button-elt (translate-gvalue val-f w->s)
@@ -171,7 +174,10 @@
   (lambda (a-world a-val)
     (s->w a-world (a-gcallback (w->s a-world) a-val))))
 
-
+;; translate-gcallback-2: (S X Y -> S) (W -> S) (W S -> W) -> (W X Y -> W)
+(define (translate-gcallback-2 a-gcallback w->s s->w)
+  (lambda (a-world v1 v2)
+    (s->w a-world (a-gcallback (w->s a-world) v1 v2))))
 
 
 
@@ -182,7 +188,8 @@
                                                [elt elt?]
                                                [enabled?-f (gvalueof boolean?)])]
                   [struct (string-elt elt) ([val-f (gvalueof string?)])]
-                  [struct (scene-elt elt) ([scene-f (gvalueof scene?)])]
+                  [struct (canvas-elt elt) ([scene-f (gvalueof scene?)]
+                                            [callback (gcallbackof-2 number? number?)])]
                   [struct (button-elt elt) ([val-f (gvalueof string?)]
                                             [callback callback/c]
                                             [enabled?-f (gvalueof boolean?)])]
@@ -226,7 +233,7 @@
                                ((gvalueof boolean?))
                                . ->* . text-field-elt?)]
                   
-                  [scene ((gvalueof* scene?) . -> . scene-elt?)]
+                  [canvas (((gvalueof* scene?)) ((gcallbackof-2 number? number?)) . ->* . canvas-elt?)]
                   
                   [row (() () #:rest (listof (or/c elt? string? scene?)) . ->* . row-elt?)]
                   [col (() () #:rest (listof (or/c elt? string? scene?)) . ->* . column-elt?)]

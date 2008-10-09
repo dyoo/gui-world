@@ -375,7 +375,7 @@
 (define misc-gui
   (col (row "x" (slider world-misc-state-x 0 (sub1 FLAG-WIDTH) update-world-misc-state-x))
        (row "y" (slider world-misc-state-y 0 (sub1 FLAG-HEIGHT) update-world-misc-state-y))
-       (scene render-current-color)
+       (canvas render-current-color)
        (row "r" (slider world-misc-state-r 0 255 update-world-misc-state-r))
        (row "g" (slider world-misc-state-g 0 255 update-world-misc-state-g))
        (row "b" (slider world-misc-state-b 0 255 update-world-misc-state-b))))
@@ -429,7 +429,7 @@
 
 ;; The main gui combines all of the shape controls.
 (define a-main-gui
-  (col (scene render-flag)
+  (col (canvas render-flag)
        (row (col (button "Select rect" 
                          rect-button-pressed 
                          world-rect-state-not-selected?)

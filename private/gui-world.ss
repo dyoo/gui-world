@@ -201,7 +201,7 @@
           [enabled (enabled?-f *world*)]
           [world-callback callback])]
     
-    [(struct scene-elt (an-image-snip-f))
+    [(struct canvas-elt (an-image-snip-f callback))
      (let* ([pasteboard (new pasteboard%)]
             [img-snip (send (an-image-snip-f *world*) copy)]
             [canvas (new world-gui:image%
@@ -456,7 +456,7 @@
         
     (define/public (update-with! an-elt)
       (match an-elt
-        [(struct scene-elt (scene-f))
+        [(struct canvas-elt (scene-f callback))
          (let ([new-scene (scene-f *world*)]
                [editor (get-editor)])
            (dynamic-wind 
@@ -480,7 +480,7 @@
          row
          col
          message
-         scene
+         canvas
          button
          slider
          drop-down

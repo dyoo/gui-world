@@ -23,7 +23,7 @@
                (empty-scene 200 200)))
 
 (define a-gui
-  (col (scene render-ball)
+  (col (canvas render-ball)
        (slider world-radius 20 50 update-world-radius)))
 
 

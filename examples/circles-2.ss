@@ -56,7 +56,7 @@
 
 ;; Renders a gui that contains a form with a scene in it.
 (define a-gui
-  (col (scene render-ball)
+  (col (canvas render-ball)
        (row (button "Change to red" 
                     color-ball-red 
                     (make-button-enabled? "red"))
