@@ -41,6 +41,22 @@
   (world/c . -> . world/c))
 
 
+;; displayable?: any -> boolean
+(define (displayable? datum)
+  (or (string? datum)
+      (number? datum)))
+
+
+;; displayable->string: displayable -> string
+(define (displayable->string datum)
+  (match datum 
+    [(? string?)
+     datum]
+    [(? number?) 
+     (number->string datum)]))
+
+
+
 ;; scene?: any -> boolean
 (define (scene? i)
   (and (image? i)
