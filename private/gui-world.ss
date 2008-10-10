@@ -42,7 +42,7 @@
 
 (define *on-tick-callback* #f)
 (define *on-tick-frequency* #f)
-
+(define *on-tick-thread* #f)
 
 
 ;                       
@@ -86,21 +86,28 @@
 (define (on-tick freq callback)
   (set! *on-tick-frequency* freq)
   (set! *on-tick-callback* callback)
-  ;; FIXME: maybe I should use a timer% instead of a thread?
-  (thread (lambda ()
-            (let loop ()
-              (sleep *on-tick-frequency*)
-              ;; We run this at low priority, to avoid fighting
-              ;; gui callbacks.
-              (parameterize ([current-eventspace *eventspace*])
-                (queue-callback 
-                 (lambda ()
-                   (change-world/f! (lambda (a-world)
-                                      (*on-tick-callback* a-world))))
-                 #f))
-              (loop))))
+  (set! *on-tick-thread*
+        (thread (lambda ()
+                  (define (new-alarm-evt)
+                    (alarm-evt (+ (current-inexact-milliseconds) (* 1000 *on-tick-frequency*))))
+                  
+                  (let loop ([an-alarm-evt (new-alarm-evt)])
+                    (sync (handle-evt an-alarm-evt 
+                                      (lambda (_)
+                                        ;; We run this at low priority, to avoid fighting
+                                        ;; gui callbacks.
+                                        (parameterize ([current-eventspace *eventspace*])
+                                          (queue-callback 
+                                           (lambda ()
+                                             (change-world/f! (lambda (a-world)
+                                                                (*on-tick-callback* a-world))))
+                                           #f))
+                                        (loop (new-alarm-evt))))
+                          (handle-evt (thread-receive-evt)
+                                      (lambda (msg)
+                                        ;; Stops the thread.
+                                        (void))))))))
   (void))
-
 
 
 ;; big-bang: world gui -> void
@@ -229,6 +236,10 @@
 
 (define world-gui:frame%
   (class frame%
+    (define/augment (on-close)
+      (inner (void) on-close)
+      (when *on-tick-thread*
+        (thread-send *on-tick-thread* 'shutdown)))
     (super-new)))
 
 
