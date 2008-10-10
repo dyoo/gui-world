@@ -410,6 +410,10 @@
                      a-world (get-string-selection)))))])))
 
 
+;; clamp: number number number -> number
+(define (clamp x low high)
+  (min (max x low) high))
+
 
 (define world-gui:slider%
   (class* (on-subwindow-char-mixin slider%) (world-gui<%>)
@@ -422,15 +426,16 @@
     (define/public (update-with! an-elt)
       (match an-elt
         [(struct slider-elt (val-f min-f max-f callback enabled?-f))
-         (let ([new-val (val-f *world*)]
-               [new-enabled? (enabled?-f *world*)])
+         (let* ([new-min (min-f *world*)]
+                [new-max (max-f *world*)]
+                [new-val (clamp (val-f *world*) new-min new-max)]
+                [new-enabled? (enabled?-f *world*)])
            ;; fixme: handle changes to min/max ranges
            (unless (= new-val (get-value))
              (set-value new-val))
            
            (unless (boolean=? (is-enabled?) new-enabled?)
-             (enable new-enabled?))
-           )]))
+             (enable new-enabled?)))]))
     
     (define -min-value min-value)
     (define -max-value max-value)
