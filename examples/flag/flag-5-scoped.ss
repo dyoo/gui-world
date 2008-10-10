@@ -30,14 +30,12 @@
 
 
 ;; A world is a (make-world (listof shape) 
-;;                          (listof (listof shape))
-;;                          (listof (listof shape))
+;;                          (listof shape)
 ;;                          number
 ;;                          misc-state
 ;;                          (one-of '("rect" "circle" "star"))
 ;;                          rect-state circle-state star-state)
 (define-struct world (shapes              ;; list of the shapes on the flag
-                      undo-history        ;; a history of the previous shapes.
                       redo-history        ;; a history of the stuff that was previously undone.
                       misc-state          ;; the global miscellaneous state of the gui
                       current-shape       ;; the current shape type selected
@@ -58,7 +56,6 @@
 
 (define initial-world 
   (make-world empty
-              empty
               empty
               (make-misc-state (quotient FLAG-WIDTH 2) (quotient FLAG-HEIGHT 2) 0 0 0)
               "rect"
@@ -81,7 +78,7 @@
 ;; can-undo?: world -> boolean
 ;; Produces true if we can undo the world.
 (define (can-undo? a-world)
-  (not (empty? (world-undo-history a-world))))
+  (not (empty? (world-shapes a-world))))
 
 
 ;; can-redo?: world -> boolean
@@ -89,34 +86,23 @@
 (define (can-redo? a-world)
   (not (empty? (world-redo-history a-world))))
 
-
 ;; undo: world -> world
 ;; Undoes the world, produces a world with the previous list of shapes.
 (define (undo a-world)
-  (local [(define world-1 
-            (update-world-undo-history 
-             a-world 
-             (rest (world-undo-history a-world))))
-          (define world-2
-            (update-world-redo-history 
-             world-1 
-             (cons (world-shapes a-world) (world-redo-history a-world))))]
-    (update-world-shapes world-2 (first (world-undo-history a-world)))))
+  (update-world-shapes 
+   (update-world-redo-history a-world
+                              (cons (first (world-shapes a-world))
+                                    (world-redo-history a-world)))
+   (rest (world-shapes a-world))))
 
 
-;; redo: world -> world
 ;; Redoes the world.
 (define (redo a-world)
-  (local [(define world-1 
-            (update-world-undo-history 
-             a-world 
-             (cons (world-shapes a-world) (world-undo-history a-world))))
-          (define world-2
-            (update-world-redo-history 
-             world-1 
-             (rest (world-redo-history a-world))))]
-    (update-world-shapes world-2 (first (world-redo-history a-world)))))
-
+  (update-world-shapes 
+   (update-world-redo-history a-world
+                              (rest (world-redo-history a-world)))
+   (cons (first (world-redo-history a-world))
+         (world-shapes a-world))))
 
 
 ;; misc-state-color: misc-state -> color
@@ -166,16 +152,13 @@
 
 
 ;; add-current-shape-to-flag: world -> world
-;; Adds a new shape to the flag.  Adds to the undo history, and clears the redo history.
+;; Adds a new shape to the flag.  Clears the redo history.
 (define (add-current-shape-to-flag a-world)
   (update-world-redo-history 
-   (update-world-undo-history 
     (update-world-shapes a-world
                          (cons (world-current-editing-shape a-world)
                                (world-shapes a-world)))
-    (cons (world-shapes a-world)
-          (world-undo-history a-world)))
-   empty))
+    empty))
 
 
 ;; render-flag: world -> scene
