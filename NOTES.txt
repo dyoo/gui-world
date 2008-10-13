@@ -1,3 +1,6 @@
+Scoped structure updating / projection and injection
+----------------------------------------------------------------------
+
 The flag-1 example demonstrates a problem with the current design.  If
 our world consists of substructure, the design requires required the
 associated gvalues and gcallbacks to be expressed as functions that
@@ -193,3 +196,18 @@ very reasonable.  (It's reminiscent of the WITH construct in Pascal,
 which also allowed you to restrict your vision to part of a
 structure.)  I've now given you a hint as to how you might think about
 redesigning this.
+
+
+
+
+
+----------------------------------------------------------------------
+
+Checkboxes (2008/10/13)
+
+I need to add checkboxes to the gui language to support boolean
+inputs.  I'm proposing to add to the gui elements:
+
+    (checkbox (gvalueof boolean)          ;; current checked value
+              (gcallbackof-1 boolean)     ;; callback
+              (gvalueof boolean))         ;; enabled?
