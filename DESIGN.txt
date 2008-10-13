@@ -39,6 +39,10 @@ A 'gui' is one of the following:
                  (gcallbackof-1 string)     ;; text changed callback
                  (gvalueof boolean))        ;; enabled?
 
+   | (checkbox (gvalueof boolean)           ;; current checked value
+               (gcallbackof-1 boolean)      ;; callback
+               (gvalueof boolean))          ;; enabled?
+
 
 where:
 

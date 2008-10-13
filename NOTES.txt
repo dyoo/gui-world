@@ -211,3 +211,5 @@ inputs.  I'm proposing to add to the gui elements:
     (checkbox (gvalueof boolean)          ;; current checked value
               (gcallbackof-1 boolean)     ;; callback
               (gvalueof boolean))         ;; enabled?
+
+  -- Added, design doc updated.

@@ -18,6 +18,7 @@
 (define-struct (drop-down-elt elt) (val-f choices-f callback enabled?-f) #:transparent)
 (define-struct (text-field-elt elt) (val-f callback enabled?-f) #:transparent)
 (define-struct (slider-elt elt) (val-f min-f max-f callback enabled?-f) #:transparent)
+(define-struct (checkbox-elt elt) (val-f callback enabled?-f) #:transparent)
 
 
 
@@ -116,6 +117,11 @@
                       a-gui
                       (wrap-primitive boolean? enabled?)))
 
+(define (checkbox val callback [enabled? #t])
+  (make-checkbox-elt (wrap-primitive boolean? val)
+                     callback
+                     (wrap-primitive boolean? enabled?)))
+
 
 
 
@@ -142,18 +148,22 @@
     [(struct row-elt (elts))
      (make-row-elt (map (lambda (a-subelt) (scope-struct a-subelt w->s s->w))
                         elts))]
+    
     [(struct column-elt (elts))
      (make-column-elt (map (lambda (a-subelt) (scope-struct a-subelt w->s s->w))
                            elts))]
+    
     [(struct box-group-elt (val-f a-subelt enabled?-f))
      (make-box-group-elt (translate-gvalue val-f w->s)
                          (scope-struct a-subelt w->s s->w)
                          (translate-gvalue enabled?-f w->s))]
+
     [(struct string-elt (val-f))
      (make-string-elt (translate-gvalue val-f w->s))]
     
     [(struct canvas-elt (scene-f callback))
-     (make-canvas-elt (translate-gvalue scene-f w->s) (translate-gcallback-2 callback w->s s->w))]
+     (make-canvas-elt (translate-gvalue scene-f w->s) 
+                      (translate-gcallback-2 callback w->s s->w))]
     
     [(struct button-elt (val-f callback enabled?-f))
      (make-button-elt (translate-gvalue val-f w->s)
@@ -177,7 +187,12 @@
                       (translate-gvalue min-f w->s)
                       (translate-gvalue max-f w->s)
                       (translate-gcallback callback w->s s->w)
-                      (translate-gvalue enabled?-f w->s))]))
+                      (translate-gvalue enabled?-f w->s))]
+  
+    [(struct checkbox-elt (val-f callback enabled?-f))
+     (make-checkbox-elt (translate-gvalue val-f w->s)
+                        (translate-gcallback callback w->s s->w)
+                        (translate-gvalue enabled?-f w->s))]))
 
 
 ;; translate-gvalue: (S -> X) (W -> S) -> (W -> X)
@@ -198,31 +213,43 @@
 
 
 (provide/contract [struct elt ()]
+                  
                   [struct (row-elt elt) ([elts (listof elt?)])]
+                  
                   [struct (column-elt elt) ([elts (listof elt?)])]
+                  
                   [struct (box-group-elt elt) ([val-f (gvalueof string?)]
                                                [elt elt?]
                                                [enabled?-f (gvalueof boolean?)])]
+
                   [struct (string-elt elt) ([val-f (gvalueof string?)])]
+                  
                   [struct (canvas-elt elt) ([scene-f (gvalueof scene?)]
                                             [callback (gcallbackof-2 number? number?)])]
+                  
                   [struct (button-elt elt) ([val-f (gvalueof string?)]
                                             [callback callback/c]
                                             [enabled?-f (gvalueof boolean?)])]
+                  
                   [struct (drop-down-elt elt) ([val-f (gvalueof string?)]
                                                [choices-f (gvalueof (listof string?))]
                                                [callback (gcallbackof string?)]
                                                [enabled?-f (gvalueof boolean?)])]
+                  
                   [struct (text-field-elt elt) ([val-f (gvalueof string?)]
                                                 [callback (gcallbackof string?)]
                                                 [enabled?-f (gvalueof boolean?)])]
+                  
                   [struct (slider-elt elt) ([val-f (gvalueof number?)]
                                             [min-f (gvalueof number?)]
                                             [max-f (gvalueof number?)]
                                             [callback (gcallbackof number?)]
                                             [enabled?-f (gvalueof boolean?)])]
-                  
-                  
+
+                  [struct (checkbox-elt elt) ([val-f (gvalueof boolean?)]
+                                              [callback (gcallbackof boolean?)]
+                                              [enabled?-f (gvalueof boolean?)])]
+
                   
                   [message ((gvalueof* string?) . -> . string-elt?)]
                   
@@ -235,21 +262,29 @@
                             (gvalueof* number?)
                             (gvalueof* number?)
                             (gcallbackof number?))
-                           ((gvalueof boolean?))
+                           ((gvalueof* boolean?))
                            . ->* . slider-elt?)]
                   
                   [drop-down (((gvalueof* string?)
                                (gvalueof* (listof string?))
                                (gcallbackof string?)) 
-                              ((gvalueof boolean?))
+                              ((gvalueof* boolean?))
                               . ->* . drop-down-elt?)]
                   
                   [text-field (((gvalueof* string?)
                                 (gcallbackof string?))
-                               ((gvalueof boolean?))
+                               ((gvalueof* boolean?))
                                . ->* . text-field-elt?)]
                   
-                  [canvas (((gvalueof* scene?)) ((gcallbackof-2 number? number?)) . ->* . canvas-elt?)]
+                  [checkbox (((gvalueof* boolean?)
+                              (gcallbackof boolean?))
+                             ((gvalueof* boolean?))
+                             . ->* . checkbox-elt?)]
+                  
+                  [canvas (((gvalueof* scene?)) 
+                           ((gcallbackof-2 number? number?)) 
+                           . ->* .
+                           canvas-elt?)]
                   
                   [row (() () #:rest (listof (or/c elt? string? scene?)) . ->* . row-elt?)]
                   [col (() () #:rest (listof (or/c elt? string? scene?)) . ->* . column-elt?)]

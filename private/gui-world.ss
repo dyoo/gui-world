@@ -208,6 +208,14 @@
           [enabled (enabled?-f *world*)]
           [world-callback callback])]
     
+    [(struct checkbox-elt (val-f callback enabled?-f))
+     (new world-gui:checkbox%
+          [label ""]
+          [parent a-container]
+          [value (val-f *world*)]
+          [enabled (enabled?-f *world*)]
+          [world-callback callback])]
+    
     [(struct canvas-elt (an-image-snip-f callback))
      (let* ([pasteboard (new pasteboard%)]
             [img-snip (send (an-image-snip-f *world*) copy)]
@@ -459,6 +467,31 @@
                     (world-callback a-world (get-value)))))])))
 
 
+(define world-gui:checkbox%
+  (class* (on-subwindow-char-mixin check-box%) (world-gui<%>)
+    (init-field world-callback)
+    (inherit get-value set-value is-enabled? enable)
+    
+    (define/public (update-with! an-elt)
+      (match an-elt
+        [(struct checkbox-elt (val-f callback enabled?-f))
+         (let ([new-val (val-f *world*)]
+               [new-enabled? (enabled?-f *world*)])
+           (unless (boolean=? new-val (get-value))
+             (set-value new-val))
+           
+           (unless (boolean=? (is-enabled?) new-enabled?)
+             (enable new-enabled?)))]))
+
+    (super-new
+     [callback (lambda (s e)
+                 (change-world/f!
+                  (lambda (a-world)
+                    (world-callback a-world (get-value)))))])))
+
+
+
+
 
 (define world-gui:canvas%
   (class* editor-canvas% (world-gui<%>)
@@ -511,6 +544,7 @@
          drop-down
          text-field
          box-group
+         checkbox
          
          scope-struct
          
