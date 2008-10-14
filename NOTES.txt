@@ -216,6 +216,7 @@ inputs.  I'm proposing to add to the gui elements:
 
 ----------------------------------------------------------------------
 
+
 project/inject (2008/10/13)
 
 I'm still trying to capture the right name for the operation to do
@@ -229,9 +230,9 @@ neither of which are hitting the mark yet.
 
 
 I think Shriram is arguing that the projection and injection operation
-should be on the individual functions, rather than at the level of the
-gui elements.  In that case, I need the two functions project and
-project/inject:
+should be on the individual gcallback and gvalue functions, rather
+than at the level of the gui elements.  I need the two functions
+project and project/inject:
 
     project: (subworld -> Z) (world -> subworld)  -> (world -> Z) 
 
@@ -241,11 +242,24 @@ project/inject:
                      -> 
                     (world Z -> world)           ;; global updater
 
-In this sense, the project/inject and project functions are orthogonal
-to guis: they're really about sub-structure update.  It just so
-happens that in GUIs and in sophisticated programs that we do a lot of
-substructure updating.
+The project/inject and project functions are orthogonal to guis:
+they're really about sub-structure update.  It just so happens that in
+GUIs and in sophisticated programs that we do a lot of substructure
+updating.
+
+See examples/colors for a small use of project and project/inject.
 
 
-I still think that there's a common case where a portion of a gui will
-be limited to a particular substructure.
+
+But I still think that there's a common case where a portion of a gui
+will be focused on a common substructure.  In the more substantial
+flag-designing program, I'm doing a lot of projection and injection
+for all of the gvalue and gcallback functions embedded in my gui.  A
+proposed function project/inject/gui does what my original
+scope-struct function does:
+
+    project/inject/gui: elt
+                        (world -> subworld)        ;; projection
+                        (world subworld -> world)  ;; injection
+                        -> 
+                        elt                        ;; projected/injected element
