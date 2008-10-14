@@ -247,16 +247,16 @@ they're really about sub-structure update.  It just so happens that in
 GUIs and in sophisticated programs that we do a lot of substructure
 updating.
 
-See examples/colors for a small use of project and project/inject.
+
+See examples/colors.ss for a small use of project and project/inject.
 
 
 
-But I still think that there's a common case where a portion of a gui
-will be focused on a common substructure.  In the more substantial
-flag-designing program, I'm doing a lot of projection and injection
-for all of the gvalue and gcallback functions embedded in my gui.  A
-proposed function project/inject/gui does what my original
-scope-struct function does:
+I still think that there's a common case where a portion of a gui will
+be completely focused on a substructure.  In that case, it's onerous
+to write out the individual project and project/inject calls when we
+build the gui.  A proposed function project/inject/gui does what my
+original scope-struct function does, and does the tedious work for us:
 
     project/inject/gui: elt
                         (world -> subworld)        ;; projection
