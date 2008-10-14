@@ -546,7 +546,9 @@
          box-group
          checkbox
          
-         scope-struct
+         project/inject/gui
+         project
+         project/inject
          
          ;; Other helpers
          define-updaters

@@ -213,3 +213,39 @@ inputs.  I'm proposing to add to the gui elements:
               (gvalueof boolean))         ;; enabled?
 
   -- Added, design doc updated.
+
+----------------------------------------------------------------------
+
+project/inject (2008/10/13)
+
+I'm still trying to capture the right name for the operation to do
+substructure update on guis.  I've gone through:
+
+   scope-struct
+   adapt
+
+neither of which are hitting the mark yet.
+
+
+
+I think Shriram is arguing that the projection and injection operation
+should be on the individual functions, rather than at the level of the
+gui elements.  In that case, I need the two functions project and
+project/inject:
+
+    project: (subworld -> Z) (world -> subworld)  -> (world -> Z) 
+
+    project/inject: (subworld Z -> subworld)     ;; local-updater
+                    (world -> subworld)          ;; projection
+                    (world subworld -> world)    ;; injection
+                     -> 
+                    (world Z -> world)           ;; global updater
+
+In this sense, the project/inject and project functions are orthogonal
+to guis: they're really about sub-structure update.  It just so
+happens that in GUIs and in sophisticated programs that we do a lot of
+substructure updating.
+
+
+I still think that there's a common case where a portion of a gui will
+be limited to a particular substructure.

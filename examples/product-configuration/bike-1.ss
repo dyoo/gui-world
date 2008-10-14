@@ -126,10 +126,6 @@
   (if x y #t))
 
 
-;; project: (config -> X) (X -> Y) -> (config -> Y)
-(define (project projection f)
-  (lambda (config)
-    (f (projection config))))
 
 
 
@@ -155,7 +151,7 @@
 
 (define main-gui
   (row
-   (scope-struct pedal-gui config-pedal update-config-pedal)
-   (scope-struct extra-gui config-extra update-config-extra)))
+   (project/inject/gui pedal-gui config-pedal update-config-pedal)
+   (project/inject/gui extra-gui config-extra update-config-extra)))
 
 (big-bang initial-world main-gui)

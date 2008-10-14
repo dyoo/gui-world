@@ -336,24 +336,24 @@
                          rect-button-pressed 
                          world-rect-state-not-selected?)
                  (box-group "Rect options" 
-                            (scope-struct rect-gui world-rect-state update-world-rect-state)
+                            (project/inject/gui rect-gui world-rect-state update-world-rect-state)
                             world-rect-state-selected?))
             
             (col (button "Select circle" 
                          circle-button-pressed 
                          world-circle-state-not-selected?)
                  (box-group "Circle options"
-                            (scope-struct circle-gui world-circle-state update-world-circle-state)
+                            (project/inject/gui circle-gui world-circle-state update-world-circle-state)
                             world-circle-state-selected?))
             
             (col (button "Select star"
                          star-button-pressed
                          world-star-state-not-selected?)
                  (box-group "Star options" 
-                            (scope-struct star-gui world-star-state update-world-star-state)
+                            (project/inject/gui star-gui world-star-state update-world-star-state)
                             world-star-state-selected?))
             
-            (scope-struct misc-gui world-misc-state update-world-misc-state))
+            (project/inject/gui misc-gui world-misc-state update-world-misc-state))
        (button button-label add-current-shape-to-flag)
        (row (button "Undo" undo can-undo?)
             (button "Redo" redo can-redo?))))

@@ -141,76 +141,83 @@
 
 
 
-;; scope-struct: elt (world -> sub-world) (world sub-world -> world) -> elt
+;; project/inject/gui: elt (world -> sub-world) (world sub-world -> world) -> elt
 ;; Scoping operator on structure.
-(define (scope-struct an-elt w->s s->w)
+(define (project/inject/gui an-elt w->s s->w)
   (match an-elt
     [(struct row-elt (elts))
-     (make-row-elt (map (lambda (a-subelt) (scope-struct a-subelt w->s s->w))
+     (make-row-elt (map (lambda (a-subelt) (project/inject/gui a-subelt w->s s->w))
                         elts))]
     
     [(struct column-elt (elts))
-     (make-column-elt (map (lambda (a-subelt) (scope-struct a-subelt w->s s->w))
+     (make-column-elt (map (lambda (a-subelt) (project/inject/gui a-subelt w->s s->w))
                            elts))]
     
     [(struct box-group-elt (val-f a-subelt enabled?-f))
-     (make-box-group-elt (translate-gvalue val-f w->s)
-                         (scope-struct a-subelt w->s s->w)
-                         (translate-gvalue enabled?-f w->s))]
+     (make-box-group-elt (project val-f w->s)
+                         (project/inject/gui a-subelt w->s s->w)
+                         (project enabled?-f w->s))]
 
     [(struct string-elt (val-f))
-     (make-string-elt (translate-gvalue val-f w->s))]
+     (make-string-elt (project val-f w->s))]
     
     [(struct canvas-elt (scene-f callback))
-     (make-canvas-elt (translate-gvalue scene-f w->s) 
-                      (translate-gcallback-2 callback w->s s->w))]
+     (make-canvas-elt (project scene-f w->s) 
+                      (project/inject callback w->s s->w))]
     
     [(struct button-elt (val-f callback enabled?-f))
-     (make-button-elt (translate-gvalue val-f w->s)
-                      (lambda (world) 
-                        (s->w world (callback (w->s world))))
-                      (translate-gvalue enabled?-f w->s))]
+     (make-button-elt (project val-f w->s)
+                      (project/inject callback w->s s->w)
+                      (project enabled?-f w->s))]
     
     [(struct drop-down-elt (val-f choices-f callback enabled?-f))
-     (make-drop-down-elt (translate-gvalue val-f w->s)
-                         (translate-gvalue choices-f w->s)
-                         (translate-gcallback callback w->s s->w)
-                         (translate-gvalue enabled?-f w->s))]
+     (make-drop-down-elt (project val-f w->s)
+                         (project choices-f w->s)
+                         (project/inject callback w->s s->w)
+                         (project enabled?-f w->s))]
     
     [(struct text-field-elt (val-f callback enabled?-f))
-     (make-text-field-elt (translate-gvalue val-f w->s)
-                          (translate-gcallback callback w->s s->w)
-                          (translate-gvalue enabled?-f w->s))]
+     (make-text-field-elt (project val-f w->s)
+                          (project/inject callback w->s s->w)
+                          (project enabled?-f w->s))]
     
     [(struct slider-elt (val-f min-f max-f callback enabled?-f))
-     (make-slider-elt (translate-gvalue val-f w->s)
-                      (translate-gvalue min-f w->s)
-                      (translate-gvalue max-f w->s)
-                      (translate-gcallback callback w->s s->w)
-                      (translate-gvalue enabled?-f w->s))]
+     (make-slider-elt (project val-f w->s)
+                      (project min-f w->s)
+                      (project max-f w->s)
+                      (project/inject callback w->s s->w)
+                      (project enabled?-f w->s))]
   
     [(struct checkbox-elt (val-f callback enabled?-f))
-     (make-checkbox-elt (translate-gvalue val-f w->s)
-                        (translate-gcallback callback w->s s->w)
-                        (translate-gvalue enabled?-f w->s))]))
+     (make-checkbox-elt (project val-f w->s)
+                        (project/inject callback w->s s->w)
+                        (project enabled?-f w->s))]))
 
 
-;; translate-gvalue: (S -> X) (W -> S) -> (W -> X)
-(define (translate-gvalue a-gvalue w->s)
+;; project: (S -> X) (W -> S) -> (W -> X)
+(define (project a-gvalue w->s)
   (lambda (a-world)
     (a-gvalue (w->s a-world))))
 
-;; translate-gcallback: (S X -> S) (W -> S) (W S -> W) -> (W X -> W)
-(define (translate-gcallback a-gcallback w->s s->w)
-  (lambda (a-world a-val)
-    (s->w a-world (a-gcallback (w->s a-world) a-val))))
-
-;; translate-gcallback-2: (S X Y -> S) (W -> S) (W S -> W) -> (W X Y -> W)
-(define (translate-gcallback-2 a-gcallback w->s s->w)
-  (lambda (a-world v1 v2)
-    (s->w a-world (a-gcallback (w->s a-world) v1 v2))))
 
 
+;; project/inject: (S X Y -> S) (W -> S) (W S -> W) -> (W X Y -> W)
+;; project/inject: (S X -> S) (W -> S) (W S -> W) -> (W X -> W)
+;; project/inject: (S -> S) (W -> S) (W S -> W) -> (W -> W)
+(define (project/inject a-gcallback w->s s->w)
+  (cond
+    [(procedure-arity-includes? a-gcallback 3)
+     (lambda (a-world v1 v2)
+       (s->w a-world (a-gcallback (w->s a-world) v1 v2)))]
+    [(procedure-arity-includes? a-gcallback 2)
+     (lambda (a-world a-val)
+       (s->w a-world (a-gcallback (w->s a-world) a-val)))]
+    [(procedure-arity-includes? a-gcallback 1)
+     (lambda (a-world)
+       (s->w a-world (a-gcallback (w->s a-world))))]))
+
+
+(provide project project/inject)
 
 (provide/contract [struct elt ()]
                   
@@ -293,7 +300,7 @@
                               . ->* .
                               box-group-elt?)]
                   
-                  [scope-struct (elt? 
+                  [project/inject/gui (elt? 
                                  (world/c . -> . subworld/c) 
                                  (world/c subworld/c . -> . world/c)
                                  . -> . 
