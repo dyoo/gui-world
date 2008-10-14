@@ -106,15 +106,6 @@
              (project legal-pedal-config? config-pedal)))
 
 
-;; legal-configuration-status: config -> string
-(define (legal-configuration-status a-config)
-  (cond
-    [(legal-configuration? a-config)
-     "Legal configuration."]
-    [else
-     "Illegal configuration."]))
-
-
 
 ;; implies: boolean boolean -> boolean
 (define (implies x y)
@@ -176,8 +167,7 @@
 
 
 (define main-gui
-  (col (row pedal-gui extra-gui)
-       (message legal-configuration-status)))
+  (col (row pedal-gui extra-gui)))
 
 
 (big-bang initial-world main-gui)
