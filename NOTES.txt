@@ -227,39 +227,58 @@ substructure update on guis.  I've gone through:
 
 neither of which are hitting the mark yet.
 
+Until I can think of a better name, I will use project/inject/gui.
 
 
-I think Shriram is arguing that the projection and injection operation
-should be on the individual gcallback and gvalue functions, rather
-than at the level of the gui elements.  I need the two functions
-project and project/inject:
+----------------------------------------------------------------------
 
-    project: (subworld -> Z) (world -> subworld)  -> (world -> Z) 
-
-    project/inject: (subworld Z -> subworld)     ;; local-updater
-                    (world -> subworld)          ;; projection
-                    (world subworld -> world)    ;; injection
-                     -> 
-                    (world Z -> world)           ;; global updater
-
-The project/inject and project functions are orthogonal to guis:
-they're really about sub-structure update.  It just so happens that in
-GUIs and in sophisticated programs that we do a lot of substructure
-updating.
+On update (2008/10/15):
 
 
-See examples/colors.ss for a small use of project and project/inject.
+We've decided to try a setf-style "update" form to address awkward
+substructure updates.  i.e.
+
+   (update (color-red (world-color-1 a-world)) 17)
+
+will be syntactic sugar for the appropriate functional update on
+substructure, keeping the rest of the structure as is.
 
 
+There is one complication that I ran across in using update.  I need
+to run my solution with Shriram and Kathi to see if it makes sense.
 
-I still think that there's a common case where a portion of a gui will
-be completely focused on a substructure.  In that case, it's onerous
-to write out the individual project and project/inject calls when we
-build the gui.  A proposed function project/inject/gui does what my
-original scope-struct function does, and does the tedious work for us:
 
-    project/inject/gui: elt
-                        (world -> subworld)        ;; projection
-                        (world subworld -> world)  ;; injection
-                        -> 
-                        elt                        ;; projected/injected element
+Sometimes I need to explicitly hint to the update syntax that
+something is a selector or updater.  i.e.
+
+    (define-struct color (r g b))
+    (update (color-r ...) 42)
+
+should work fine, because update can statically tell that color-r is a
+structure selector in this context.  However, update can't
+automatically tell if we start passing selectors and updaters in a
+higher-order context:
+
+    (define-struct color (r g b))
+
+    (define (update-some-value selector updater)
+       (update (selector ...) 42))                              ;; does not work
+
+    (update-some-value color-r)
+
+
+Update can't syntactically tell if an identifier is a selector without
+some hinting.  To address this, I'm currently adding a scoped
+with-selector/updater form that locally introduces that hint, so that
+update does the right thing:
+
+    (define-struct color (r g b))
+
+    (define (update-some-value selector updater)
+       (with-selector/updater ([selector updater])
+         (update (selector ...) 42)))
+
+    (update-some-value color-r)
+
+
+See examples/colors/colors-with-update.ss where this is used.
