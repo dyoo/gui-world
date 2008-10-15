@@ -7,6 +7,7 @@
 (require scheme/class
          htdp/error
          htdp/image
+         "update.ss"
          (only-in lang/htdp-beginner image?))
 
 
@@ -36,52 +37,6 @@
 (define (random-choice elts)
   (list-ref elts
             (random (length elts))))
-
-
-
-;; Not really a part of GUI.
-;; Convenient syntax for defining all the replacing-attribute functions,
-;; given a structure id.
-;; Usage:
-;; If we have a
-;;     (define-struct posn (x y z))
-;; then
-;;     (define-replacers posn)
-;; will expand out to definitions for replace-posn-x, replace-posn-y, replace-posn-z.
-;; Each replacer takes the struct val and an attribute value, and produces a new struct val.
-(define-syntax (define-updaters stx)
-  (syntax-case stx ()
-    [(_ a-struct-type)
-     (let* ([info (extract-struct-info (syntax-local-value #'a-struct-type))]
-            [fields 
-             (map (lambda (accessor)
-                    (datum->syntax accessor
-                                   (string->symbol
-                                    (substring
-                                     (symbol->string (syntax-e accessor))
-                                     (add1 (string-length
-                                            (symbol->string
-                                             (syntax-e
-                                              #'a-struct-type))))))))
-                  (fourth info))])
-       (with-syntax ([(accessor ...) fields]
-                     [(update ...) (map (lambda (id)
-                                          (datum->syntax 
-                                           stx
-                                           (string->symbol
-                                            (string-append "update-"
-                                                           (symbol->string (syntax-e #'a-struct-type))
-                                                           "-"
-                                                           (symbol->string (syntax-e id))))))
-                                        fields)])
-         (let ([result
-                (syntax/loc stx
-                  (begin
-                    (define (update a-struct-val new-val)
-                      (struct-copy a-struct-type a-struct-val
-                                   (accessor new-val)))
-                    ...))])
-           result)))]))
 
 
 
@@ -184,5 +139,5 @@
 (provide place-image
          empty-scene
          random-choice
-         define-updaters
          nw:rectangle)
+(provide (all-from-out "update.ss"))
