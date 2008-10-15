@@ -53,9 +53,9 @@
 
 
 (define main-gui
-  (row (col "Color 1" (make-color-gui world-color-1 update-world-color-1)
+  (row (col "Color 1" (make-color-gui world-color-1 update-world-color-1))
        (col "Color 2" (make-color-gui world-color-2 update-world-color-2))
-       (col "Color 3" (make-color-gui world-color-3 update-world-color-3)))))
+       (col "Color 3" (make-color-gui world-color-3 update-world-color-3))))
 
 
 (big-bang (make-world (make-color 0 0 0) 

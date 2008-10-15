@@ -1,7 +1,6 @@
 #lang scheme/base
 (require "../../gui-world.ss"
-         scheme/list
-         lang/posn)
+         scheme/list)
 
 ;; The width and height of the drawing canvas.
 (define WIDTH 500)
@@ -17,7 +16,6 @@
 ;; and the drifting direction (one-of "left" "right" "up" "down" "stable")
 (define-struct world (posn dots direction))
 (define-updaters world)
-(define-updaters posn)
 
 
 ;; We start things off by putting the position at the very center, on an empty
@@ -146,7 +144,7 @@
 ;; a-gui: gui
 (define a-gui
   (col
-   (scene render-etch-a-sketch)
+   (canvas render-etch-a-sketch)
    (button "up" change-direction-up)
    (row (button "left" change-direction-left)
         (button "stop" change-direction-stable)

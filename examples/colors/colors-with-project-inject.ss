@@ -1,5 +1,5 @@
 #lang scheme/base
-(require "../gui-world.ss")
+(require "../../gui-world.ss")
 
 (define-struct world (color1 color2 color3))
 (define-updaters world)

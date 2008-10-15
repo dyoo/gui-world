@@ -43,7 +43,7 @@
 
 ;; Our gui will consist of the tshirt's display and controls to add more stripes.
 (define a-gui
-  (col (scene draw-shirt)
+  (col (canvas draw-shirt)
        (slider world-width 1 20 update-world-width)
        (drop-down world-color COLORS update-world-color)
        (row (button "Add horizontal stripe" world-add-horizontal)

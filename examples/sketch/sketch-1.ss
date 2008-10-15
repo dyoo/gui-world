@@ -1,7 +1,6 @@
 #lang scheme/base
 (require "../../gui-world.ss"
-         scheme/list
-         lang/posn)
+         scheme/list)
 
 ;; The width and height of the drawing canvas.
 (define WIDTH 500)
@@ -15,7 +14,6 @@
 ;; the dots drawn already.
 (define-struct world (posn dots))
 (define-updaters world)
-(define-updaters posn)
 
 
 ;; We start things off by putting the position at the very center, on an empty
@@ -107,7 +105,7 @@
 ;; a-gui: gui
 (define a-gui
   (col
-   (scene render-etch-a-sketch)
+   (canvas render-etch-a-sketch)
    (button "up" move-up)
    (row (button "left" move-left)
         (button "right" move-right))
