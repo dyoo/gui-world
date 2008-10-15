@@ -89,3 +89,6 @@
      (with-syntax ([a-mutator (mutator #'accessor)])
        (syntax/loc stx
          (a-mutator datum val)))]))
+
+
+(provide update define-updaters)
