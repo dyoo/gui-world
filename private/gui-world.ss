@@ -553,6 +553,7 @@
          ;; Other helpers
          define-updaters
          update
+         with-accessor/updater
          
          update-color-red update-color-green update-color-blue
          update-posn-x update-posn-y

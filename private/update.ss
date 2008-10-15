@@ -1,19 +1,60 @@
 #lang scheme/base
 (require htdp/image
          lang/posn
+         scheme/stxparam
          (for-syntax scheme/base
                      scheme/struct-info
                      scheme/list
-                     syntax/boundmap))
+                     syntax/boundmap
+                     scheme/stxparam))
 
 (begin-for-syntax
   (define accessor-updater-mappings (make-free-identifier-mapping)))
 
+(define-syntax-parameter scoped-accessor-updater-mappings '())
 
-;; register-accessor-updater
+
+;; register-accessor-updater: syntax syntax -> void
+;; Attaches a binding between an accessor and its updater.
 (define-for-syntax (register-accessor-updater accessor updater)
   ;; fixme: record more information.
-  (free-identifier-mapping-put! accessor-updater-mappings accessor updater))
+  (free-identifier-mapping-put! accessor-updater-mappings 
+                                accessor 
+                                updater))
+
+
+;; lookup-accessor-updater: syntax -> (or syntax #f)
+;; Tries to find the updater for a given accessor, or #f if we can't
+;; find it.
+(define-for-syntax (lookup-accessor-updater accessor)
+  (let loop ([local-accessor-updater-bindings
+              (syntax-parameter-value #'scoped-accessor-updater-mappings)])
+    (cond
+      [(empty? local-accessor-updater-bindings)
+       (free-identifier-mapping-get accessor-updater-mappings
+                                    accessor
+                                    (lambda () #f))]
+      [(free-identifier=? (first (first local-accessor-updater-bindings))
+                           accessor)
+       (second (first local-accessor-updater-bindings))]
+      [else
+       (loop (rest local-accessor-updater-bindings))])))
+
+
+;; with-accessor/updater: syntax
+;; Locally bind an accessor/updater pair so that update can recognize it.
+(define-syntax (with-accessor/updater stx)
+  (syntax-case stx ()
+    [(_ [(accessor updater) ...] body ...)
+     (syntax/loc stx
+       (syntax-parameterize 
+        ([scoped-accessor-updater-mappings
+          (list* (list #'accessor #'updater) ...
+                 (syntax-parameter-value 
+                  #'scoped-accessor-updater-mappings))])
+        body ...))]))
+
+
 
 
 (define-for-syntax (check-struct-type! a-struct-type ctx-stx)
@@ -70,18 +111,12 @@
 ;; mutator: syntax -> syntax
 ;; Gets the mutator for the given accessor.
 (define-for-syntax (mutator accessor)
-  (free-identifier-mapping-get accessor-updater-mappings accessor)
-  #;(datum->syntax
-     accessor
-     (string->symbol
-      (string-append "update-" 
-                     (symbol->string (syntax-e accessor))))))
+  (lookup-accessor-updater accessor))
 
 
 ;; fixme
 (define-for-syntax (accessor? stx)
-  (and (free-identifier-mapping-get accessor-updater-mappings stx 
-                                    (lambda () #f))
+  (and (lookup-accessor-updater stx)
        #t))
 
 
@@ -106,20 +141,24 @@
 ;; Hack: we'll need to register updaters for the built-in structures.
 
 ;; Colors
+;; update-color-red: color number -> color
 (define (update-color-red a-color val)
   (make-color val
               (color-green a-color)
               (color-blue a-color)))
 
+;; update-color-green: color number -> color
 (define (update-color-green a-color val)
   (make-color (color-red a-color)
               val
               (color-blue a-color)))
 
+;; update-color-blue: color number -> color
 (define (update-color-blue a-color val)
   (make-color (color-red a-color)
               (color-green a-color)
               val))
+
 (begin-for-syntax
   (register-accessor-updater #'color-red #'update-color-red)
   (register-accessor-updater #'color-green #'update-color-green)
@@ -131,7 +170,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
-(provide update define-updaters
+(provide update define-updaters with-accessor/updater
          
          update-color-red update-color-green update-color-blue
          update-posn-x update-posn-y)
