@@ -547,11 +547,16 @@
          checkbox
          
          project/inject/gui
-         project
-         project/inject
+         ;project
+         ;project/inject
          
          ;; Other helpers
          define-updaters
+         update
+         
+         update-color-red update-color-green update-color-blue
+         update-posn-x update-posn-y
+         
          random-choice
          place-image
          empty-scene

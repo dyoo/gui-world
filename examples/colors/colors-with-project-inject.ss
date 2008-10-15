@@ -21,25 +21,6 @@
                       a-projection
                       an-injection))
 
-;; update-color-red: color number -> color
-(define (update-color-red a-color a-val)
-  (make-color a-val
-              (color-green a-color)
-              (color-blue a-color)))
-
-
-;; update-color-green: color number -> color
-(define (update-color-green a-color a-val)
-  (make-color (color-red a-color)
-              a-val
-              (color-blue a-color)))
-
-
-;; update-color-blue: color number -> color
-(define (update-color-blue a-color a-val)
-  (make-color (color-red a-color)
-              (color-green a-color)
-              a-val))
 
 (define main-gui
   (row (col "Color 1" (make-color-gui world-color1 update-world-color1))
