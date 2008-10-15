@@ -50,14 +50,6 @@
            result)))]))
 
 
-(define-struct world (state) #:transparent)
-(define-struct state (color) #:transparent)
-(define-struct color (r g b) #:transparent)
-(define-updaters world)
-(define-updaters state)
-(define-updaters color)
-
-
 
 ;; mutator: syntax -> syntax
 ;; Gets the mutator for the given accessor.
