@@ -1,8 +1,8 @@
-#lang scheme/base
-
+;; The first three lines of this file were inserted by DrScheme. They record metadata
+;; about the language level of this file in a form that our tools can easily process.
+#reader(lib "htdp-beginner-reader.ss" "lang")((modname flag-1-update) (read-case-sensitive #t) (teachpacks ()) (htdp-settings #(#t constructor repeating-decimal #f #t none #f ())))
 ;; Flag designer.  Allows the user to design a flag.
 (require "../../gui-world.ss")
-(require scheme/list)
 
 (define FLAG-WIDTH 500)
 (define FLAG-HEIGHT (floor (/ FLAG-WIDTH 2)))
@@ -173,131 +173,139 @@
 
 
 
+;; rect-width: world -> number
+(define (rect-width a-world)
+  (rect-state-width (world-rect-state a-world)))
+
+;; update-rect-width: world number -> world
+(define (update-rect-width a-world a-width)
+  (update (rect-state-width (world-rect-state a-world))
+          a-width))
+
+;; rect-height: world -> number
+(define (rect-height a-world)
+  (rect-state-height (world-rect-state a-world)))
+
+;; update-rect-height: world number -> world
+(define (update-rect-height a-world a-height)
+  (update (rect-state-height (world-rect-state a-world))
+          a-height))
+
 ;; The rect tool part of the gui.
 (define rect-gui
-  (local [;; rect-width: world -> number
-          (define (rect-width a-world)
-            (rect-state-width (world-rect-state a-world)))
-          
-          ;; update-rect-width: world number -> world
-          (define (update-rect-width a-world a-width)
-            (update (rect-state-width (world-rect-state a-world))
-                    a-width))
-          
-          ;; rect-height: world -> number
-          (define (rect-height a-world)
-            (rect-state-height (world-rect-state a-world)))
-          
-          ;; update-rect-height: world number -> world
-          (define (update-rect-height a-world a-height)
-            (update (rect-state-height (world-rect-state a-world))
-                    a-height))]
-    
-    (col (row "Width" (slider rect-width 1 FLAG-WIDTH update-rect-width)
-              (row "Height" (slider rect-height 1 FLAG-WIDTH update-rect-height))))))
+  (col (row "Width" (slider rect-width 1 FLAG-WIDTH update-rect-width)
+            (row "Height" (slider rect-height 1 FLAG-WIDTH update-rect-height)))))
 
+
+
+;; circle-radius: world -> number
+(define (circle-radius a-world)
+  (circle-state-radius (world-circle-state a-world)))
+
+;; update-circle-radius: world number -> world
+(define (update-circle-radius a-world a-radius)
+  (update (circle-state-radius (world-circle-state a-world))
+          a-radius))
 
 ;; The circle part of the gui.
 (define circle-gui
-  (local [;; circle-radius: world -> number
-          (define (circle-radius a-world)
-            (circle-state-radius (world-circle-state a-world)))
-          ;; update-circle-radius: world number -> world
-          (define (update-circle-radius a-world a-radius)
-            (update (circle-state-radius (world-circle-state a-world))
-                    a-radius))]
-    (col (row "Radius" (slider circle-radius 1 FLAG-WIDTH update-circle-radius)))))
+  (col (row "Radius" 
+            (slider circle-radius 1 FLAG-WIDTH update-circle-radius))))
 
+
+
+;; star-n: world -> number
+(define (star-n a-world)
+  (star-state-n (world-star-state a-world)))
+
+;; update-star-n: world number -> world
+(define (update-star-n a-world an-n)
+  (update (star-state-n (world-star-state a-world))
+          an-n))
+
+;; star-inner-radius: world -> number
+(define (star-inner-radius a-world)
+  (star-state-inner-radius (world-star-state a-world)))
+
+;; update-star-inner-radius: world number -> world
+(define (update-star-inner-radius a-world an-n)
+  (update (star-state-inner-radius (world-star-state a-world))
+          an-n))
+
+;; star-outer-radius: world -> number
+(define (star-outer-radius a-world)
+  (star-state-outer-radius (world-star-state a-world)))
+
+;; update-star-outer-radius: world number -> world
+(define (update-star-outer-radius a-world an-n)
+  (update (star-state-outer-radius (world-star-state a-world))
+          an-n))
 
 ;; The star part of the gui.
 (define star-gui
-  (local [;; star-n: world -> number
-          (define (star-n a-world)
-            (star-state-n (world-star-state a-world)))
-          
-          ;; update-star-n: world number -> world
-          (define (update-star-n a-world an-n)
-            (update (star-state-n (world-star-state a-world))
-                    an-n))
-          
-          ;; star-inner-radius: world -> number
-          (define (star-inner-radius a-world)
-            (star-state-inner-radius (world-star-state a-world)))
-          
-          ;; update-star-inner-radius: world number -> world
-          (define (update-star-inner-radius a-world an-n)
-            (update (star-state-inner-radius (world-star-state a-world))
-                    an-n))
-          
-          ;; star-outer-radius: world -> number
-          (define (star-outer-radius a-world)
-            (star-state-outer-radius (world-star-state a-world)))
-          
-          ;; update-star-outer-radius: world number -> world
-          (define (update-star-outer-radius a-world an-n)
-            (update (star-state-outer-radius (world-star-state a-world))
-                    an-n))]
-    (col (row "# of points"
-              (slider star-n 3 100 update-star-n))
-         (row "Inner radius"
-              (slider star-inner-radius 1 FLAG-WIDTH update-star-inner-radius))
-         (row "Outer radius"
-              (slider star-outer-radius 1 FLAG-WIDTH update-star-outer-radius)))))
+  (col (row "# of points"
+            (slider star-n 3 100 update-star-n))
+       (row "Inner radius"
+            (slider star-inner-radius 1 FLAG-WIDTH update-star-inner-radius))
+       (row "Outer radius"
+            (slider star-outer-radius 1 FLAG-WIDTH update-star-outer-radius))))
 
+
+
+
+;; misc-x: world -> number
+(define (misc-x a-world)
+  (misc-state-x (world-misc-state a-world)))
+
+;; update-misc-x: world number -> world
+(define (update-misc-x a-world an-x)
+  (update (misc-state-x (world-misc-state a-world))
+          an-x))
+
+;; misc-y: world -> number
+(define (misc-y a-world)
+  (misc-state-y (world-misc-state a-world)))
+
+;; update-misc-y: world number -> world
+(define (update-misc-y a-world a-y)
+  (update (misc-state-y (world-misc-state a-world))
+          a-y))
+
+;; misc-r: world -> number
+(define (misc-r a-world)
+  (misc-state-r (world-misc-state a-world)))
+
+;; update-misc-r: world number -> world
+(define (update-misc-r a-world a-r)
+  (update (misc-state-r (world-misc-state a-world))
+          a-r))
+
+;; misc-g: world -> number
+(define (misc-g a-world)
+  (misc-state-g (world-misc-state a-world)))
+
+;; update-misc-g: world number -> world
+(define (update-misc-g a-world an-g)
+  (update (misc-state-g (world-misc-state a-world))
+          an-g))
+
+;; misc-b: world -> number
+(define (misc-b a-world)
+  (misc-state-b (world-misc-state a-world)))
+
+;; update-misc-b: world number -> world
+(define (update-misc-b a-world an-b)
+  (update (misc-state-b (world-misc-state a-world))
+          an-b))
 
 ;; The common attributes for all the shapes.
 (define misc-gui
-  (local [;; misc-x: world -> number
-          (define (misc-x a-world)
-            (misc-state-x (world-misc-state a-world)))
-          
-          ;; update-misc-x: world number -> world
-          (define (update-misc-x a-world an-x)
-            (update (misc-state-x (world-misc-state a-world))
-                    an-x))
-          
-          ;; misc-y: world -> number
-          (define (misc-y a-world)
-            (misc-state-y (world-misc-state a-world)))
-          
-          ;; update-misc-y: world number -> world
-          (define (update-misc-y a-world a-y)
-            (update (misc-state-y (world-misc-state a-world))
-                    a-y))
-          
-          ;; misc-r: world -> number
-          (define (misc-r a-world)
-            (misc-state-r (world-misc-state a-world)))
-          
-          ;; update-misc-r: world number -> world
-          (define (update-misc-r a-world a-r)
-            (update (misc-state-r (world-misc-state a-world))
-                    a-r))
-          
-          ;; misc-g: world -> number
-          (define (misc-g a-world)
-            (misc-state-g (world-misc-state a-world)))
-          
-          ;; update-misc-g: world number -> world
-          (define (update-misc-g a-world an-g)
-            (update (misc-state-g (world-misc-state a-world))
-                    an-g))
-          
-          ;; misc-b: world -> number
-          (define (misc-b a-world)
-            (misc-state-b (world-misc-state a-world)))
-          
-          ;; update-misc-b: world number -> world
-          (define (update-misc-b a-world an-b)
-            (update (misc-state-b (world-misc-state a-world))
-                    an-b))]
-    
-    (col (row "x" (slider misc-x 0 (sub1 FLAG-WIDTH) update-misc-x))
-         (row "y" (slider misc-y 0 (sub1 FLAG-HEIGHT) update-misc-y))
-         (canvas render-current-color)
-         (row "r" (slider misc-r 0 255 update-misc-r))
-         (row "g" (slider misc-g 0 255 update-misc-g))
-         (row "b" (slider misc-b 0 255 update-misc-b)))))
+  (col (row "x" (slider misc-x 0 (sub1 FLAG-WIDTH) update-misc-x))
+       (row "y" (slider misc-y 0 (sub1 FLAG-HEIGHT) update-misc-y))
+       (canvas render-current-color)
+       (row "r" (slider misc-r 0 255 update-misc-r))
+       (row "g" (slider misc-g 0 255 update-misc-g))
+       (row "b" (slider misc-b 0 255 update-misc-b))))
 
 
 ;; rect-button-pressed: world -> world
@@ -349,26 +357,26 @@
 ;; The main gui combines all of the shape controls.
 (define a-main-gui
   (col (canvas render-flag)
-       (row (col (button "Select rect" 
-                         rect-button-pressed 
-                         world-rect-state-not-selected?)
-                 (box-group "Rect options" 
-                            rect-gui
-                            world-rect-state-selected?))
+       (row (col (button/enabled "Select rect" 
+                                 rect-button-pressed 
+                                 world-rect-state-not-selected?)
+                 (box-group/enabled "Rect options" 
+                                    rect-gui
+                                    world-rect-state-selected?))
             
-            (col (button "Select circle" 
-                         circle-button-pressed 
-                         world-circle-state-not-selected?)
-                 (box-group "Circle options"
-                            circle-gui
-                            world-circle-state-selected?))
+            (col (button/enabled "Select circle" 
+                                 circle-button-pressed 
+                                 world-circle-state-not-selected?)
+                 (box-group/enabled "Circle options"
+                                    circle-gui
+                                    world-circle-state-selected?))
             
-            (col (button "Select star"
-                         star-button-pressed
-                         world-star-state-not-selected?)
-                 (box-group "Star options" 
-                            star-gui
-                            world-star-state-selected?))
+            (col (button/enabled "Select star"
+                                 star-button-pressed
+                                 world-star-state-not-selected?)
+                 (box-group/enabled "Star options" 
+                                    star-gui
+                                    world-star-state-selected?))
             
             misc-gui)
        (button button-label add-current-shape-to-flag)))

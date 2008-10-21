@@ -1,9 +1,9 @@
-#lang scheme/base
-
+;; The first three lines of this file were inserted by DrScheme. They record metadata
+;; about the language level of this file in a form that our tools can easily process.
+#reader(lib "htdp-beginner-reader.ss" "lang")((modname flag-4-inject) (read-case-sensitive #t) (teachpacks ()) (htdp-settings #(#t constructor repeating-decimal #f #t none #f ())))
 ;; Flag designer.  Allows the user to design a flag.
-
 (require "../../gui-world.ss")
-(require scheme/list scheme/local)
+
 
 (define FLAG-WIDTH 500)
 (define FLAG-HEIGHT (floor (/ FLAG-WIDTH 2)))
@@ -105,7 +105,7 @@
                               (rest (world-redo-history a-world)))
    (cons (first (world-redo-history a-world))
          (world-shapes a-world))))
-  
+
 
 ;; misc-state-color: misc-state -> color
 (define (misc-state-color a-misc-state)
@@ -134,7 +134,7 @@
      (make-circle-shape (misc-state-posn (world-misc-state a-world))
                         (misc-state-color (world-misc-state a-world))
                         (circle-state-radius (world-circle-state a-world)))]
-
+    
     [(string=? (world-current-shape a-world) "star")
      (make-star-shape (misc-state-posn (world-misc-state a-world))
                       (misc-state-color (world-misc-state a-world))
@@ -147,10 +147,10 @@
 ;; Adds a new shape to the flag.  Clears the redo history.
 (define (add-current-shape-to-flag a-world)
   (update-world-redo-history 
-    (update-world-shapes a-world
-                         (cons (world-current-editing-shape a-world)
-                               (world-shapes a-world)))
-    empty))
+   (update-world-shapes a-world
+                        (cons (world-current-editing-shape a-world)
+                              (world-shapes a-world)))
+   empty))
 
 
 ;; render-flag: world -> scene
@@ -312,32 +312,32 @@
 ;; The main gui combines all of the shape controls.
 (define a-main-gui
   (col (canvas render-flag)
-       (row (col (button "Select rect" 
-                         rect-button-pressed 
-                         world-rect-state-not-selected?)
-                 (box-group "Rect options" 
-                            (project/inject/gui rect-gui world-rect-state update-world-rect-state)
-                            world-rect-state-selected?))
+       (row (col (button/enabled "Select rect" 
+                                 rect-button-pressed 
+                                 world-rect-state-not-selected?)
+                 (box-group/enabled "Rect options" 
+                                    (project/inject/gui rect-gui world-rect-state update-world-rect-state)
+                                    world-rect-state-selected?))
             
-            (col (button "Select circle" 
-                         circle-button-pressed 
-                         world-circle-state-not-selected?)
-                 (box-group "Circle options"
-                            (project/inject/gui circle-gui world-circle-state update-world-circle-state)
-                            world-circle-state-selected?))
+            (col (button/enabled "Select circle" 
+                                 circle-button-pressed 
+                                 world-circle-state-not-selected?)
+                 (box-group/enabled "Circle options"
+                                    (project/inject/gui circle-gui world-circle-state update-world-circle-state)
+                                    world-circle-state-selected?))
             
-            (col (button "Select star"
-                         star-button-pressed
-                         world-star-state-not-selected?)
-                 (box-group "Star options" 
-                            (project/inject/gui star-gui world-star-state update-world-star-state)
-                            world-star-state-selected?))
+            (col (button/enabled "Select star"
+                                 star-button-pressed
+                                 world-star-state-not-selected?)
+                 (box-group/enabled "Star options" 
+                                    (project/inject/gui star-gui world-star-state update-world-star-state)
+                                    world-star-state-selected?))
             
             (project/inject/gui misc-gui world-misc-state update-world-misc-state))
        (button button-label add-current-shape-to-flag)
-       (row (button "Undo" undo can-undo?)
-            (button "Redo" redo can-redo?))))
-            
+       (row (button/enabled "Undo" undo can-undo?)
+            (button/enabled "Redo" redo can-redo?))))
+
 
 
 (big-bang initial-world a-main-gui)
