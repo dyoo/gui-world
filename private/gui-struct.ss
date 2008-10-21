@@ -257,8 +257,8 @@
 (provide-higher-order-primitive checkbox/enabled (val-f callback enabled?-f))
 (provide-higher-order-primitive canvas (scene-f))
 (provide-higher-order-primitive canvas/callback (scene-f callback))
-(provide-higher-order-primitive box-group (val-f _))
-(provide-higher-order-primitive box-group/enabled (val-f _ enabled?-f))
+(provide-higher-order-primitive box-group (_ _))
+(provide-higher-order-primitive box-group/enabled (_ _ enabled?-f))
 
 (provide-higher-order-primitive project/inject/gui (_ projection-f injection-f))
 
