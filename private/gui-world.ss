@@ -533,6 +533,8 @@
 
 (provide-primitive big-bang)
 
+(provide-higher-order-primitive on-tick (_ on-tick-handler))
+
 (provide 
 
          ;; Widgets
@@ -559,5 +561,4 @@
          place-image
          empty-scene
          nw:rectangle
-         (all-from-out htdp/image)
-         on-tick)
+         (all-from-out htdp/image))

@@ -86,6 +86,7 @@
                   accessors)])
        (with-syntax ([(field ...) fields]
                      [(accessor ...) accessors]
+                     [(-updater ...) (generate-temporaries fields)]
                      [(updater ...) (map (lambda (id)
                                            (datum->syntax 
                                             stx
@@ -103,10 +104,13 @@
                                         (register-accessor-updater #'accessor #'updater) ...
                                         (syntax (void)))])
                       (do-compile-time-registration))
-                    (define (updater a-struct-val new-val)
+                    (define (-updater a-struct-val new-val)
                       (struct-copy a-struct-type a-struct-val
                                    (field new-val)))
-                    ...))])
+                    ...
+                    (define-primitive updater -updater) ...
+                    
+                                                     ))])
            result))))]))
 
 
@@ -174,6 +178,5 @@
 
 
 (provide update define-updaters with-accessor/updater
-         
          update-color-red update-color-green update-color-blue
          update-posn-x update-posn-y)

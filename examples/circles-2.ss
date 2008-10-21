@@ -1,4 +1,6 @@
-#lang scheme/base
+;; The first three lines of this file were inserted by DrScheme. They record metadata
+;; about the language level of this file in a form that our tools can easily process.
+#reader(lib "htdp-beginner-reader.ss" "lang")((modname circles-2) (read-case-sensitive #t) (teachpacks ()) (htdp-settings #(#t constructor repeating-decimal #f #t none #f ())))
 (require "../gui-world.ss")
 
 ;; The world is a ball with a given radius, x coordinate, and color.
@@ -13,7 +15,7 @@
 (define HEIGHT 500)
 
 
-;; color-ball-red: world -> world
+; color-ball-red: world -> world
 ;; Turns the ball red.
 (define (color-ball-red a-world)
   (update-world-color a-world "red"))
@@ -45,13 +47,20 @@
 
 
 
-;; make-button-enabled?: string -> (world -> boolean)
-;; Given a function, produces a predicate that's true only when
-;; the current ball's color is different from a-color.
-(define (make-button-enabled? a-color)
-  (local [(define (enabled? a-world)
-            (not (string=? (world-color a-world) a-color)))]
-    enabled?))
+;; not-red-button-selected?: world -> boolean
+;; Produces true when the red button is not selected.
+(define (not-red-button-selected? a-world)
+  (not (string=? (world-color a-world) "red")))
+
+;; not-green-button-selected?: world -> boolean
+;; Produces true when the green button is not selected.
+(define (not-green-button-selected? a-world)
+  (not (string=? (world-color a-world) "green")))
+
+;; not-blue-button-selected?: world -> boolean
+;; Produces true when the blue button is not selected.
+(define (not-blue-button-selected? a-world)
+  (not (string=? (world-color a-world) "blue")))
 
 
 
@@ -60,15 +69,15 @@
   (col (canvas render-ball)
        (row (button/enabled "Change to red" 
                             color-ball-red 
-                            (make-button-enabled? "red"))
+                            not-red-button-selected?)
             
             (button/enabled "Change to green" 
                             color-ball-green
-                            (make-button-enabled? "green"))
+                            not-green-button-selected?)
             
             (button/enabled "Change to blue"
                             color-ball-blue
-                            (make-button-enabled? "blue")))
+                            not-blue-button-selected?))
        (slider world-radius 20 50 update-world-radius)))
 
 
