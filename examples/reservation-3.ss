@@ -1,5 +1,6 @@
-#lang scheme
-
+;; The first three lines of this file were inserted by DrScheme. They record metadata
+;; about the language level of this file in a form that our tools can easily process.
+#reader(lib "htdp-beginner-reader.ss" "lang")((modname reservation-3) (read-case-sensitive #t) (teachpacks ()) (htdp-settings #(#t constructor repeating-decimal #f #t none #f ())))
 (require "../gui-world.ss")
 
 ;; Airline reservation.  Program disables the submit bug until we're happy, so the
@@ -77,11 +78,11 @@
 
 (define a-gui
   (col 
-   (row "Title" (drop-down world-title TITLES update-world-title not-submitted?))
-   (row "Name" (text-field world-name update-world-name not-submitted?))
-   (row "Departure" (drop-down world-departure TIMES update-world-departure not-submitted?))
-   (row "Arrival" (drop-down world-arrival TIMES update-world-arrival not-submitted?))
-   (button "Submit" on-submit completed-unsubmitted-form?)
+   (row "Title" (drop-down/enabled world-title TITLES update-world-title not-submitted?))
+   (row "Name" (text-field/enabled world-name update-world-name not-submitted?))
+   (row "Departure" (drop-down/enabled world-departure TIMES update-world-departure not-submitted?))
+   (row "Arrival" (drop-down/enabled world-arrival TIMES update-world-arrival not-submitted?))
+   (button/enabled "Submit" on-submit completed-unsubmitted-form?)
    (message world-status-message)))
 
 
