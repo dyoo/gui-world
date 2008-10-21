@@ -260,7 +260,7 @@
 (provide-higher-order-primitive box-group (val-f _))
 (provide-higher-order-primitive box-group/enabled (val-f _ enabled?-f))
 
-(provide-higher-order-primitive project-inject-gui (_ projection-f injection-f))
+(provide-higher-order-primitive project/inject/gui (_ projection-f injection-f))
 
 
 

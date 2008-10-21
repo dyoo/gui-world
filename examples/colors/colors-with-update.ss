@@ -1,18 +1,21 @@
-#lang scheme/base
+;; The first three lines of this file were inserted by DrScheme. They record metadata
+;; about the language level of this file in a form that our tools can easily process.
+#reader(lib "htdp-intermediate-reader.ss" "lang")((modname colors-with-update) (read-case-sensitive #t) (teachpacks ()) (htdp-settings #(#t constructor repeating-decimal #f #t none #f ())))
 (require "../../gui-world.ss")
 
 (define-struct world (color-1 color-2 color-3))
 (define-updaters world)
 
 
-;; render-color-block: (world -> color) -> (world -> scene)
+;; make-render-color-block: (world -> color) -> (world -> scene)
 ;; Draws a small colored block.
 (define (make-render-color-block get-color)  
-  (lambda (a-world)
-    (place-image (nw:rectangle 50 50 "solid" (get-color a-world))
-                 0 
-                 0
-                 (empty-scene 50 50))))
+  (local [(define (make-a-scene a-world)
+            (place-image (nw:rectangle 50 50 "solid" (get-color a-world))
+                         0 
+                         0
+                         (empty-scene 50 50)))]
+    make-a-scene))
 
 
 ;; make-color-gui: (world -> color) (world color -> world) -> gui
