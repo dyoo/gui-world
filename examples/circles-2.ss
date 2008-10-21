@@ -1,5 +1,4 @@
 #lang scheme/base
-
 (require "../gui-world.ss")
 
 ;; The world is a ball with a given radius, x coordinate, and color.
@@ -49,25 +48,27 @@
 ;; make-button-enabled?: string -> (world -> boolean)
 ;; Given a function, produces a predicate that's true only when
 ;; the current ball's color is different from a-color.
-(define ((make-button-enabled? a-color) a-world)
-  (not (string=? (world-color a-world) a-color)))
+(define (make-button-enabled? a-color)
+  (local [(define (enabled? a-world)
+            (not (string=? (world-color a-world) a-color)))]
+    enabled?))
 
 
 
 ;; Renders a gui that contains a form with a scene in it.
 (define a-gui
   (col (canvas render-ball)
-       (row (button "Change to red" 
-                    color-ball-red 
-                    (make-button-enabled? "red"))
+       (row (button/enabled "Change to red" 
+                            color-ball-red 
+                            (make-button-enabled? "red"))
             
-            (button "Change to green" 
-                    color-ball-green
-                    (make-button-enabled? "green"))
+            (button/enabled "Change to green" 
+                            color-ball-green
+                            (make-button-enabled? "green"))
             
-            (button "Change to blue"
-                    color-ball-blue
-                    (make-button-enabled? "blue")))
+            (button/enabled "Change to blue"
+                            color-ball-blue
+                            (make-button-enabled? "blue")))
        (slider world-radius 20 50 update-world-radius)))
 
 

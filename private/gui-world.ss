@@ -539,13 +539,13 @@
          row
          col
          message
-         canvas
-         button
-         slider
-         drop-down
-         text-field
-         box-group
-         checkbox
+         canvas canvas/callback
+         button button/enabled
+         slider slider/enabled
+         drop-down drop-down/enabled
+         text-field text-field/enabled
+         box-group box-group/enabled
+         checkbox checkbox/enabled
          
          ;; Other helpers
          define-updaters

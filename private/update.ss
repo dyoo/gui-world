@@ -2,6 +2,7 @@
 (require htdp/image
          lang/posn
          scheme/stxparam
+         lang/prim
          (for-syntax scheme/base
                      scheme/struct-info
                      scheme/list
@@ -97,9 +98,11 @@
          (let ([result
                 (syntax/loc stx
                   (begin
-                    (begin-for-syntax
+                    (let-syntax ([do-compile-time-registration (lambda (stx)
                       ;; mark the accessors for the updater to cooperate
-                      (register-accessor-updater #'accessor #'updater) ...)
+                                        (register-accessor-updater #'accessor #'updater) ...
+                                        (syntax (void)))])
+                      (do-compile-time-registration))
                     (define (updater a-struct-val new-val)
                       (struct-copy a-struct-type a-struct-val
                                    (field new-val)))

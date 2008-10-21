@@ -18,14 +18,12 @@
 (define (world-number-string a-world)
   (number->string a-world))
 
-(define (button-message a-world)
-  "Press me!")
 
 ;; The gui consists of a message of the current contents
 ;; of the world, and a button for incrementing those contents.
 (define a-gui
   (col
    (message world-number-string)
-   (button button-message increment-world-counter)))
+   (button "Press me!" increment-world-counter)))
 
 (big-bang initial-world a-gui)

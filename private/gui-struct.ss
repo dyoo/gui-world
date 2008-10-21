@@ -245,8 +245,8 @@
 ;; TODO: we need to figure out how to allow non-higher-order values in higher-order
 ;; position to fit the original design of gui-world.
 (provide-higher-order-primitive message (val-f))
-(provide-higher-order-primitive button (val-f callback))
-(provide-higher-order-primitive button/enabled (val-f callback enabled?-f))
+(provide-higher-order-primitive button (_ callback))
+(provide-higher-order-primitive button/enabled (_ callback enabled?-f))
 (provide-higher-order-primitive slider (val-f min-f max-f callback))
 (provide-higher-order-primitive slider/enabled (val-f min-f max-f callback enabled?-f))
 (provide-higher-order-primitive drop-down (val-f choices-f callback))
@@ -254,7 +254,7 @@
 (provide-higher-order-primitive text-field (val-f callback))
 (provide-higher-order-primitive text-field/enabled (val-f callback enabled?-f))
 (provide-higher-order-primitive checkbox (val-f callback))
-(provide-higher-order-primitive check-box/enabled (val-f callback enabled?-f))
+(provide-higher-order-primitive checkbox/enabled (val-f callback enabled?-f))
 (provide-higher-order-primitive canvas (scene-f))
 (provide-higher-order-primitive canvas/callback (scene-f callback))
 (provide-higher-order-primitive box-group (val-f _))
