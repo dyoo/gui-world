@@ -5,6 +5,8 @@
 
 
 
+(define UNKNOWN "Unknown")
+
 ;                                                                 
 ;                                                                 
 ;                                                                 
@@ -50,9 +52,9 @@
                     width))     ;; (in WIDTHS)
 (define-updaters rim)
 
-(define initial-rim (make-rim "Unknown" "Unknown" "Unknown"))
+(define initial-rim (make-rim UNKNOWN UNKNOWN UNKNOWN))
 
-(define RIMS (list "Unknown"
+(define RIMS (list UNKNOWN
                    "Campagnolo Atlanta Aero"
                    "Campagnolo Mexico Aero"
                    "Campagnolo Moskva Aero"
@@ -65,11 +67,11 @@
                    "Open Pro"
                    "T519"
                    "X221")) 
-(define HEIGHTS (list "Unknown"
+(define HEIGHTS (list UNKNOWN
                       "50 cm"
                       "65 cm"
                       "70 cm"))
-(define WIDTHS (list "Unknown"
+(define WIDTHS (list UNKNOWN
                      "0.85 cm"
                      "1.00 cm"
                      "1.25 cm"
@@ -91,17 +93,19 @@
 
 
 ;; Pedals
-(define PEDALS (list  "Black Plastic"
-                      "Campagnolo Chorus"
-                      "Campagnolo Record"
-                      "PD 5500"
-                      "PD 6600"
-                      "PD C101"
-                      "PD C105"
-                      "PD M434"
-                      "PD M545" ))
+(define PEDALS (list UNKNOWN
+                     "Black Plastic"
+                     "Campagnolo Chorus"
+                     "Campagnolo Record"
+                     "PD 5500"
+                     "PD 6600"
+                     "PD C101"
+                     "PD C105"
+                     "PD M434"
+                     "PD M545" ))
 
-(define PEDAL-TYPES (list "Standard"
+(define PEDAL-TYPES (list UNKNOWN
+                          "Standard"
                           "SPD"
                           "Clip"))
 
@@ -109,7 +113,7 @@
                       pedaltype))       ;; (in PEDAL-TYPES)
 (define-updaters pedal)
 
-(define initial-pedal (make-pedal "Black Plastic" "Standard"))
+(define initial-pedal (make-pedal UNKNOWN UNKNOWN))
 
 
 (define-struct tire (sku        ;; in TIRES
@@ -118,7 +122,7 @@
                      profile))  ;; in TIRE-PROFILES
 (define-updaters tire)
 
-(define TIRES (list "Unknown"
+(define TIRES (list UNKNOWN
                     "All Weather"
                     "Atlanta"
                     "Beaumont"
@@ -136,7 +140,7 @@
                     "Track"
                     "Triatlon"))
 
-(define TIRE-PROFILES (list "Unknown"
+(define TIRE-PROFILES (list UNKNOWN
                             "19 mm"
                             "20 mm"
                             "21 mm"
@@ -149,10 +153,10 @@
                             "35 mm"
                             "38 mm"))
 
-(define initial-tire (make-tire "Unknown" 
-                                "Unknown"
-                                "Unknown"
-                                "Unknown"))
+(define initial-tire (make-tire UNKNOWN 
+                                UNKNOWN
+                                UNKNOWN
+                                UNKNOWN))
 
 
 (define-struct config
