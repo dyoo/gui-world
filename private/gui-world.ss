@@ -7,6 +7,7 @@
          scheme/bool
          scheme/contract
          htdp/image
+         lang/prim
          (only-in lang/htdp-beginner image?)
          (only-in srfi/1 list-index)
 
@@ -530,7 +531,7 @@
 
 
 
-(provide/contract [big-bang (any/c elt? . -> . any)])
+(provide-primitive big-bang)
 
 (provide 
 
@@ -545,10 +546,6 @@
          text-field
          box-group
          checkbox
-         
-         project/inject/gui
-         ;project
-         ;project/inject
          
          ;; Other helpers
          define-updaters

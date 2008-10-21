@@ -3,6 +3,7 @@
 (require scheme/contract
          htdp/image
          scheme/match
+         lang/prim
          (only-in lang/htdp-beginner image?))
 
 
@@ -75,36 +76,6 @@
      (error 'wrap-primitive)]))
 
 
-(define (message a-gvalue)
-  (make-string-elt (wrap-primitive string? a-gvalue)))
-
-(define (button val callback [enabled #t])
-  (make-button-elt (wrap-primitive string? val)
-                   callback
-                   (wrap-primitive boolean? enabled)))
-
-(define (slider val min max callback [enabled? #t])
-  (make-slider-elt (wrap-primitive number? val)
-                   (wrap-primitive number? min)
-                   (wrap-primitive number? max)
-                   callback
-                   (wrap-primitive boolean? enabled?)))
-
-(define (drop-down val choices callback [enabled? #t])
-  (make-drop-down-elt (wrap-primitive string? val)
-                      (wrap-primitive (flat-contract-predicate (listof string?))
-                                      choices)
-                      callback
-                      (wrap-primitive boolean? enabled?)))
-
-(define (text-field val callback [enabled? #t])
-  (make-text-field-elt (wrap-primitive string? val)
-                       callback
-                       (wrap-primitive boolean? enabled?)))
-
-(define (canvas a-scene [callback (lambda (world x y) world)])
-  (make-canvas-elt (wrap-primitive scene? a-scene) callback))
-
 
 (define (row . elts)
   (make-row-elt (coerse-primitive-types-to-elts elts)))
@@ -112,16 +83,60 @@
 (define (col . elts)
   (make-column-elt (coerse-primitive-types-to-elts elts)))
 
-(define (box-group val a-gui [enabled? #t])
+
+(define (message a-gvalue)
+  (make-string-elt (wrap-primitive string? a-gvalue)))
+
+
+(define (button/enabled val callback [enabled #t])
+  (make-button-elt (wrap-primitive string? val)
+                   callback
+                   (wrap-primitive boolean? enabled)))
+(define button button/enabled)
+
+(define (slider/enabled val min max callback [enabled? #t])
+  (make-slider-elt (wrap-primitive number? val)
+                   (wrap-primitive number? min)
+                   (wrap-primitive number? max)
+                   callback
+                   (wrap-primitive boolean? enabled?)))
+
+(define slider slider/enabled)
+
+(define (drop-down/enabled val choices callback [enabled? #t])
+  (make-drop-down-elt (wrap-primitive string? val)
+                      (wrap-primitive (flat-contract-predicate (listof string?))
+                                      choices)
+                      callback
+                      (wrap-primitive boolean? enabled?)))
+(define drop-down drop-down/enabled)
+
+
+(define (text-field/enabled val callback [enabled? #t])
+  (make-text-field-elt (wrap-primitive string? val)
+                       callback
+                       (wrap-primitive boolean? enabled?)))
+(define text-field text-field/enabled)
+
+
+(define (canvas/callback a-scene [callback (lambda (world x y) world)])
+  (make-canvas-elt (wrap-primitive scene? a-scene) callback))
+
+(define canvas canvas/callback)
+
+
+(define (box-group/enabled val a-gui [enabled? #t])
   (make-box-group-elt (wrap-primitive string? val)
                       a-gui
                       (wrap-primitive boolean? enabled?)))
+(define box-group box-group/enabled)
 
-(define (checkbox val callback [enabled? #t])
+
+(define (checkbox/enabled val callback [enabled? #t])
   (make-checkbox-elt (wrap-primitive boolean? val)
                      callback
                      (wrap-primitive boolean? enabled?)))
-
+(define checkbox checkbox/enabled)
 
 
 
@@ -217,7 +232,37 @@
        (s->w a-world (a-gcallback (w->s a-world))))]))
 
 
-(provide project project/inject)
+(provide-primitives col row)
+
+;; NOTE: We're doing this (having pairs of functions, one with and one 
+;; without the enabled argument) because provide-higher-order-primitive doesn't
+;; support optional arguments.
+;;
+;; One other deviation that I haven't figured out how to get around yet is
+;; that higher-order values are required to be functions in beginner level.  But the design
+;; of gui-world asks that we allow primitive values there too for convenience.  Argh.
+;;
+;; TODO: we need to figure out how to allow non-higher-order values in higher-order
+;; position to fit the original design of gui-world.
+(provide-higher-order-primitive message (val-f))
+(provide-higher-order-primitive button (val-f callback))
+(provide-higher-order-primitive button/enabled (val-f callback enabled?-f))
+(provide-higher-order-primitive slider (val-f min-f max-f callback))
+(provide-higher-order-primitive slider/enabled (val-f min-f max-f callback enabled?-f))
+(provide-higher-order-primitive drop-down (val-f choices-f callback))
+(provide-higher-order-primitive drop-down/enabled (val-f choices-f callback enabled?-f))
+(provide-higher-order-primitive text-field (val-f callback))
+(provide-higher-order-primitive text-field/enabled (val-f callback enabled?-f))
+(provide-higher-order-primitive checkbox (val-f callback))
+(provide-higher-order-primitive check-box/enabled (val-f callback enabled?-f))
+(provide-higher-order-primitive canvas (scene-f))
+(provide-higher-order-primitive canvas/callback (scene-f callback))
+(provide-higher-order-primitive box-group (val-f _))
+(provide-higher-order-primitive box-group/enabled (val-f _ enabled?-f))
+
+(provide-higher-order-primitive project-inject-gui (_ projection-f injection-f))
+
+
 
 (provide/contract [struct elt ()]
                   
@@ -258,53 +303,53 @@
                                               [enabled?-f (gvalueof boolean?)])]
 
                   
-                  [message ((gvalueof* string?) . -> . string-elt?)]
+                  #;[message ((gvalueof* string?) . -> . string-elt?)]
                   
-                  [button (((gvalueof* string?) 
+                  #;[button (((gvalueof* string?) 
                             callback/c)
                            ((gvalueof* boolean?)) 
                            . ->* . button-elt?)]
                   
-                  [slider (((gvalueof* number?) 
+                  #;[slider (((gvalueof* number?) 
                             (gvalueof* number?)
                             (gvalueof* number?)
                             (gcallbackof number?))
                            ((gvalueof* boolean?))
                            . ->* . slider-elt?)]
                   
-                  [drop-down (((gvalueof* string?)
+                  #;[drop-down (((gvalueof* string?)
                                (gvalueof* (listof string?))
                                (gcallbackof string?)) 
                               ((gvalueof* boolean?))
                               . ->* . drop-down-elt?)]
                   
-                  [text-field (((gvalueof* string?)
+                  #;[text-field (((gvalueof* string?)
                                 (gcallbackof string?))
                                ((gvalueof* boolean?))
                                . ->* . text-field-elt?)]
                   
-                  [checkbox (((gvalueof* boolean?)
+                  #;[checkbox (((gvalueof* boolean?)
                               (gcallbackof boolean?))
                              ((gvalueof* boolean?))
                              . ->* . checkbox-elt?)]
                   
-                  [canvas (((gvalueof* scene?)) 
+                  #;[canvas (((gvalueof* scene?)) 
                            ((gcallbackof-2 number? number?)) 
                            . ->* .
                            canvas-elt?)]
                   
-                  [row (() () #:rest (listof (or/c elt? string? scene?)) . ->* . row-elt?)]
-                  [col (() () #:rest (listof (or/c elt? string? scene?)) . ->* . column-elt?)]
-                  [box-group (((gvalueof* string?) elt?)
+                  #;[row (() () #:rest (listof (or/c elt? string? scene?)) . ->* . row-elt?)]
+                  #;[col (() () #:rest (listof (or/c elt? string? scene?)) . ->* . column-elt?)]
+                  #;[box-group (((gvalueof* string?) elt?)
                               ((gvalueof* boolean?))
                               . ->* .
                               box-group-elt?)]
                   
-                  [project/inject/gui (elt? 
+                  #;[project/inject/gui (elt? 
                                  (world/c . -> . subworld/c) 
                                  (world/c subworld/c . -> . world/c)
                                  . -> . 
                                  elt?)]
                   
-                  [coerse-primitive-to-elt
-                   ((or/c elt? string? scene?) . -> . elt?)])
+                  #;[coerse-primitive-to-elt
+                     ((or/c elt? string? scene?) . -> . elt?)])
