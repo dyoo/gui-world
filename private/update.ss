@@ -166,14 +166,20 @@
               (color-green a-color)
               val))
 
+;; Posns
+(define (update-posn-x a-posn val)
+  (make-posn val (posn-y a-posn)))
+
+(define (update-posn-y a-posn val)
+  (make-posn (posn-x a-posn) val))
+
 (begin-for-syntax
   (register-accessor-updater #'color-red #'update-color-red)
   (register-accessor-updater #'color-green #'update-color-green)
-  (register-accessor-updater #'color-blue #'update-color-blue))
+  (register-accessor-updater #'color-blue #'update-color-blue)
+  (register-accessor-updater #'posn-x #'update-posn-x)
+  (register-accessor-updater #'posn-y #'update-posn-y))
 
-
-;; Posns
-(define-updaters posn)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
