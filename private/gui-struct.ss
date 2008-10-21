@@ -3,7 +3,7 @@
 (require scheme/contract
          htdp/image
          scheme/match
-         lang/prim
+         "prim.ss"
          (only-in lang/htdp-beginner image?))
 
 
