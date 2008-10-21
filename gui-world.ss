@@ -4,5 +4,4 @@
          scheme/local)
 
 (provide (all-from-out "private/gui-world.ss")
-         (all-from-out lang/posn)
-         (all-from-out scheme/local))
+         (all-from-out lang/posn))
