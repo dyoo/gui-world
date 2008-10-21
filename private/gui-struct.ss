@@ -89,12 +89,14 @@
 
 
 (define (button/enabled val callback [enabled #t])
+  ;; fixme: add function checks.
   (make-button-elt (wrap-primitive string? val)
                    callback
                    (wrap-primitive boolean? enabled)))
 (define button button/enabled)
 
 (define (slider/enabled val min max callback [enabled? #t])
+  ;; fixme: add function checks.
   (make-slider-elt (wrap-primitive number? val)
                    (wrap-primitive number? min)
                    (wrap-primitive number? max)
@@ -104,6 +106,7 @@
 (define slider slider/enabled)
 
 (define (drop-down/enabled val choices callback [enabled? #t])
+  ;; fixme: add function checks.
   (make-drop-down-elt (wrap-primitive string? val)
                       (wrap-primitive (flat-contract-predicate (listof string?))
                                       choices)
@@ -113,6 +116,7 @@
 
 
 (define (text-field/enabled val callback [enabled? #t])
+  ;; fixme: add function checks.
   (make-text-field-elt (wrap-primitive string? val)
                        callback
                        (wrap-primitive boolean? enabled?)))
@@ -120,6 +124,7 @@
 
 
 (define (canvas/callback a-scene [callback (lambda (world x y) world)])
+  ;; fixme: add function checks.
   (make-canvas-elt (wrap-primitive scene? a-scene) callback))
 
 (define canvas canvas/callback)
@@ -178,34 +183,34 @@
     
     [(struct canvas-elt (scene-f callback))
      (make-canvas-elt (project scene-f w->s) 
-                      (project/inject callback w->s s->w))]
+                      (project/inject-2 callback w->s s->w))]
     
     [(struct button-elt (val-f callback enabled?-f))
      (make-button-elt (project val-f w->s)
-                      (project/inject callback w->s s->w)
+                      (project/inject-0 callback w->s s->w)
                       (project enabled?-f w->s))]
     
     [(struct drop-down-elt (val-f choices-f callback enabled?-f))
      (make-drop-down-elt (project val-f w->s)
                          (project choices-f w->s)
-                         (project/inject callback w->s s->w)
+                         (project/inject-1 callback w->s s->w)
                          (project enabled?-f w->s))]
     
     [(struct text-field-elt (val-f callback enabled?-f))
      (make-text-field-elt (project val-f w->s)
-                          (project/inject callback w->s s->w)
+                          (project/inject-1 callback w->s s->w)
                           (project enabled?-f w->s))]
     
     [(struct slider-elt (val-f min-f max-f callback enabled?-f))
      (make-slider-elt (project val-f w->s)
                       (project min-f w->s)
                       (project max-f w->s)
-                      (project/inject callback w->s s->w)
+                      (project/inject-1 callback w->s s->w)
                       (project enabled?-f w->s))]
   
     [(struct checkbox-elt (val-f callback enabled?-f))
      (make-checkbox-elt (project val-f w->s)
-                        (project/inject callback w->s s->w)
+                        (project/inject-1 callback w->s s->w)
                         (project enabled?-f w->s))]))
 
 
@@ -216,20 +221,24 @@
 
 
 
-;; project/inject: (S X Y -> S) (W -> S) (W S -> W) -> (W X Y -> W)
-;; project/inject: (S X -> S) (W -> S) (W S -> W) -> (W X -> W)
-;; project/inject: (S -> S) (W -> S) (W S -> W) -> (W -> W)
-(define (project/inject a-gcallback w->s s->w)
-  (cond
-    [(procedure-arity-includes? a-gcallback 3)
-     (lambda (a-world v1 v2)
-       (s->w a-world (a-gcallback (w->s a-world) v1 v2)))]
-    [(procedure-arity-includes? a-gcallback 2)
-     (lambda (a-world a-val)
-       (s->w a-world (a-gcallback (w->s a-world) a-val)))]
-    [(procedure-arity-includes? a-gcallback 1)
-     (lambda (a-world)
-       (s->w a-world (a-gcallback (w->s a-world))))]))
+;; project/inject-2: (S X Y -> S) (W -> S) (W S -> W) -> (W X Y -> W)
+;; project/inject-1: (S X -> S) (W -> S) (W S -> W) -> (W X -> W)
+;; project/inject-0: (S -> S) (W -> S) (W S -> W) -> (W -> W)
+(define (project/inject-2 a-gcallback w->s s->w)
+  (lambda (a-world v1 v2)
+    (s->w a-world (a-gcallback (w->s a-world) v1 v2))))
+
+(define (project/inject-1 a-gcallback w->s s->w)
+  (lambda (a-world a-val)
+    (s->w a-world (a-gcallback (w->s a-world) a-val))))
+
+(define (project/inject-0 a-gcallback w->s s->w)
+  (lambda (a-world)
+    (s->w a-world (a-gcallback (w->s a-world)))))
+  
+  
+  
+
 
 
 (provide-primitives col row)

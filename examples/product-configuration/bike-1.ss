@@ -1,4 +1,6 @@
-#lang scheme/base
+;; The first three lines of this file were inserted by DrScheme. They record metadata
+;; about the language level of this file in a form that our tools can easily process.
+#reader(lib "htdp-beginner-reader.ss" "lang")((modname bike-1) (read-case-sensitive #t) (teachpacks ()) (htdp-settings #(#t constructor repeating-decimal #f #t none #f ())))
 (require "../../gui-world.ss")
 
 
@@ -50,24 +52,24 @@
 
 (define initial-rim (make-rim "Unknown" "Unknown" "Unknown"))
 
-(define RIMS '("Unknown"
-               "Campagnolo Atlanta Aero"
-               "Campagnolo Mexico Aero"
-               "Campagnolo Moskva Aero"
-               "Campagnolo Proton"
-               "Cosmos"
-               "Cross"
-               "CXP 33"
-               "Helium"
-               "MA3"
-               "Open Pro"
-               "T519"
-               "X221")) 
-(define HEIGHTS '("Unknown"
-                  "50 cm"
-                  "65 cm"
-                  "70 cm"))
-(define WIDTHS '("Unknown"
+(define RIMS (list "Unknown"
+                   "Campagnolo Atlanta Aero"
+                   "Campagnolo Mexico Aero"
+                   "Campagnolo Moskva Aero"
+                   "Campagnolo Proton"
+                   "Cosmos"
+                   "Cross"
+                   "CXP 33"
+                   "Helium"
+                   "MA3"
+                   "Open Pro"
+                   "T519"
+                   "X221")) 
+(define HEIGHTS (list "Unknown"
+                      "50 cm"
+                      "65 cm"
+                      "70 cm"))
+(define WIDTHS (list "Unknown"
                      "0.85 cm"
                      "1.00 cm"
                      "1.25 cm"
@@ -116,36 +118,36 @@
                      profile))  ;; in TIRE-PROFILES
 (define-updaters tire)
 
-(define TIRES '("Unknown"
-                "All Weather"
-                "Atlanta"
-                "Beaumont"
-                "Courier"
-                "Extreme"
-                "Kenda"
-                "Lizzard"
-                "Panaracer Avventura"
-                "Panaracer Category Pro"
-                "Panaracer Everride"
-                "Panaracer Stradius"
-                "Panaracer Tourguard"
-                "Roma"
-                "Tecno"
-                "Track"
-                "Triatlon"))
+(define TIRES (list "Unknown"
+                    "All Weather"
+                    "Atlanta"
+                    "Beaumont"
+                    "Courier"
+                    "Extreme"
+                    "Kenda"
+                    "Lizzard"
+                    "Panaracer Avventura"
+                    "Panaracer Category Pro"
+                    "Panaracer Everride"
+                    "Panaracer Stradius"
+                    "Panaracer Tourguard"
+                    "Roma"
+                    "Tecno"
+                    "Track"
+                    "Triatlon"))
 
-(define TIRE-PROFILES '("Unknown"
-                        "19 mm"
-                        "20 mm"
-                        "21 mm"
-                        "22 mm"
-                        "23 mm"
-                        "25 mm"
-                        "28 mm"
-                        "30 mm"
-                        "32 mm"
-                        "35 mm"
-                        "38 mm"))
+(define TIRE-PROFILES (list "Unknown"
+                            "19 mm"
+                            "20 mm"
+                            "21 mm"
+                            "22 mm"
+                            "23 mm"
+                            "25 mm"
+                            "28 mm"
+                            "30 mm"
+                            "32 mm"
+                            "35 mm"
+                            "38 mm"))
 
 (define initial-tire (make-tire "Unknown" 
                                 "Unknown"
@@ -199,34 +201,18 @@
 ;; Returns true if the pedal configuration is legal.
 (define (legal-pedal-config? a-pedal)
   (and (member (list (pedal-sku a-pedal) (pedal-pedaltype a-pedal))
-               '(("PD 6600" "SPD")
-                 ("PD 5500" "SPD")
-                 ("PD M545" "Clip")
-                 ("PD M434" "Clip")
-                 ("Campagnolo Record" "SPD")
-                 ("Campagnolo Chorus" "SPD")
-                 ("PD C105" "Standard")
-                 ("Black Plastic" "Standard")
-                 ("PD C101" "Standard")))
+               (list (list "PD 6600" "SPD")
+                     (list "PD 5500" "SPD")
+                     (list "PD M545" "Clip")
+                     (list "PD M434" "Clip")
+                     (list "Campagnolo Record" "SPD")
+                     (list "Campagnolo Chorus" "SPD")
+                     (list "PD C105" "Standard")
+                     (list "Black Plastic" "Standard")
+                     (list "PD C101" "Standard")))
        #t))
 
 
-;; rule-conj: rule ... -> rule
-;; Conjoins all of the rules.
-(define (rule-conj . rules)
-  (lambda (world)
-    (andmap (lambda (a-rule)
-              (a-rule world))
-            rules)))
-
-
-;; rule-disj: rule ... -> rule
-;; Disjoins all of the rules.
-(define (rule-disj . rules)
-  (lambda (world)
-    (andmap (lambda (a-rule)
-              (a-rule world))
-            rules)))
 
 
 
@@ -309,7 +295,7 @@
                     (checkbox extra-propstand? update-extra-propstand?))))
    config-extra
    update-config-extra))
-  
+
 
 (define rim-gui
   (project/inject/gui 

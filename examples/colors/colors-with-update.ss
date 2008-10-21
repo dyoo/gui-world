@@ -7,7 +7,7 @@
 (define-updaters world)
 
 
-;; render-color-block: (world -> color) -> (world -> scene)
+;; make-render-color-block: (world -> color) -> (world -> scene)
 ;; Draws a small colored block.
 (define (make-render-color-block get-color)  
   (local [(define (make-a-scene a-world)
@@ -16,8 +16,6 @@
                          0
                          (empty-scene 50 50)))]
     make-a-scene))
-
-
 
 ;; make-color-gui: (world -> color) (world color -> world) -> gui
 (define (make-color-gui world-color update-world-color)
