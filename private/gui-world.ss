@@ -548,6 +548,8 @@
          text-field text-field/enabled
          box-group box-group/enabled
          checkbox checkbox/enabled
+
+         project/inject/gui
          
          ;; Other helpers
          define-updaters
