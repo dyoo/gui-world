@@ -15,8 +15,10 @@
   
   (provide define-primitive
 	   define-higher-order-primitive
+           define-maybe-higher-order-primitive
 	   provide-primitive
 	   provide-higher-order-primitive
+           provide-maybe-higher-order-primitive
 	   provide-primitives)
 
   (define-syntax (define-primitive stx)
@@ -131,9 +133,89 @@
                       ((syntax-local-certifier #t)
                        #'impl))))))))]))
 
+  
+  
+  ;; Conditionally allow higher order primitives in is-proc-arg? position.
+  (define-syntax (define-maybe-higher-order-primitive stx)
+    (define (is-proc-arg? arg)
+      (not (eq? '_ (syntax-e arg))))
+    (syntax-case stx ()
+      [(_ name implementation (arg ...))
+       (let ([args (syntax->list (syntax (arg ...)))])
+         (for-each (lambda (id)
+                     (unless (identifier? id)
+                       (raise-syntax-error #f "not an identifier" stx id)))
+                   (cons (syntax name)
+                         args))
+	 (let ([new-args (generate-temporaries args)])
+	   (with-syntax ([(new-arg ...) new-args]
+			 [(checks ...)
+			  (map (lambda (arg new-arg)
+				 #'(void))
+			       args new-args)]
+			 [(wrapped-arg ...)
+			  (map (lambda (arg new-arg)
+				 (cond
+				  [(not (is-proc-arg? arg)) new-arg]
+				  [else 
+                                   #`(fo->ho #,new-arg)]))
+			       args new-args)]
+			 [num-arguments (length args)])
+	     (with-syntax ([impl #'(let ([name (lambda (new-arg ...)
+                                                 (implementation new-arg ...))])
+                                     name)])
+	       (syntax/loc stx
+		   (define-syntax name
+                     (make-first-order
+                      (lambda (s)
+                        (with-syntax ([tagged-impl (stepper-syntax-property
+                                                    (stepper-syntax-property (quote-syntax impl) 'stepper-skip-completely #t)
+                                                    'stepper-prim-name
+                                                    (quote-syntax name))])
+                          (syntax-case s ()
+                            [(_ . body)
+                             ;; HACK: see above
+                             (not (module-identifier=? #'beginner-app (datum->syntax-object s '#%app)))
+                             (syntax/loc s (tagged-impl . body))]
+                            [_
+                             ;; HACK: see above
+                             (not (module-identifier=? #'beginner-app (datum->syntax-object s '#%app)))
+                             (syntax/loc s tagged-impl)]
+                            [(_ new-arg ...)
+                             (begin
+                               checks ...
+                               ;; s is a well-formed use of the primitive;
+                               ;; generate the primitive implementation
+                               (syntax/loc s (tagged-impl wrapped-arg ...))
+                               )]
+                            [(_ . rest)
+                             (raise-syntax-error
+                              #f
+                              (format
+                               "primitive operator requires ~a arguments"
+                               num-arguments)
+                              s)]
+                            [_
+                             (raise-syntax-error
+                              #f
+                              (string-append
+                               "this primitive operator must be applied to arguments; "
+                               "expected an open parenthesis before the operator name")
+                              s)])))
+                      ((syntax-local-certifier #t)
+                       #'impl))))))))]))
+
+  
+  
+  
+  
   (define-syntax (fo->ho stx)
     (syntax-case stx ()
-      [(_ id) (first-order->higher-order #'id)]))
+      [(_ thing) 
+       (cond [(identifier? #'thing)
+              (first-order->higher-order #'thing)]
+             [else
+              #'thing])]))
 
   (define-syntax (provide-primitive stx)
     (syntax-case stx ()
@@ -156,6 +238,15 @@
        (with-syntax ([ex-name ((make-syntax-introducer) #'name)])
 	 #'(begin
 	     (define-higher-order-primitive ex-name name (arg ...))
+	     (provide ex-name)))]))
+  
+  
+  (define-syntax (provide-maybe-higher-order-primitive stx)
+    (syntax-case stx ()
+      [(_ name (arg ...))
+       (with-syntax ([ex-name ((make-syntax-introducer) #'name)])
+	 #'(begin
+	     (define-maybe-higher-order-primitive ex-name name (arg ...))
 	     (provide ex-name)))])))
 
 

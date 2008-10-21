@@ -7,7 +7,7 @@
          scheme/bool
          scheme/contract
          htdp/image
-         lang/prim
+         "prim.ss"
          (only-in lang/htdp-beginner image?)
          (only-in srfi/1 list-index)
 
