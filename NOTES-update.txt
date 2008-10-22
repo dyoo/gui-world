@@ -12,23 +12,20 @@ ackward to express.  For example, given the following definitions:
 then updating the red component of the color-1 of a world to 255 is
 the expression:
 
-   (make-world (make-color 255 
-                           (color-green (world-color-1 a-world))
-                           (color-blue (world-color-1 a-world)))
-               (world-color-2 a-world))
+   (update-world-color-1 a-world
+                         (update-color-red (world-color-1 a-world)
+                                           255))
 
 
-We propose a setf-style "update" form to concisely express
-substructure update.  In the example above, we'd use update as:
-
+We propose a setf-style "update" form to concisely express this
+substructure update.  The expression above can be written using
+update:
 
    (update (color-red (world-color-1 a-world)) 17)
 
-which will evaluate to the functional update expression above.  update
-takes in a target --- some expression involving selectors --- and
-produces the updating expression based on the structure of the target,
-using the shallow structure updaters that are defined by our extended
-define-struct.
+This will desugar to the functional update expression.  update
+examines the first argument as a target that involving selectors.  It
+produces the updating expression based on the structure of the target.
 
 
 There is one complication that I ran across: the update form may not
@@ -45,28 +42,51 @@ that make-color does not syntactically look like a selector, so the
 target pattern matching stops at make-color.
 
 
+
 In a higher order context, selectors may be bound to identifiers that
 update won't automatically recognize.
 
-    (define-struct color (r g b))
+    ;; change-red-to-255: world (world -> color) -> world
+    ;; Changes the red component of the color extracted with a-selector.
+    ;; BROKEN
+    (define (change-red-to-255 a-world a-selector)
+      (update (color-red (a-selector a-world) 255)))
 
-    (define (update-some-value selector)
-       (update (selector ...) 42))      ;; does not work
+    (change-red-to-255 world-color-1)
 
-    (update-some-value color-r)
+
+update will recognize color-red as a selector, but won't recognize
+a-selector, so the definition desugars to:
+
+    (define (change-red-to-255 a-world a-selector)
+      (update-color-red (a-selector a-world) 255))
+
+which is not the intended update.
+
 
 
 Update can't syntactically tell if an identifier is a selector without
 some hinting.  To address this, I'm currently adding a scoped
 with-selector/updater form that locally introduces that hint.
 
-    (define-struct color (r g b))
+    (with-selector/updater ([selector updater] ...) body ...)
 
-    (define (update-some-value selector updater)
-       (with-selector/updater ([selector updater])
-         (update (selector ...) 42)))
-
-    (update-some-value color-r update-color-r)
+Within the lexical scope of body, uses of selector in an update form
+will be recognized.
 
 
-See examples/colors/colors-with-update.ss where this is used.
+    ;; change-red-to-255: world (world -> color) (world color -> world) -> world
+    ;; Changes the red component of the color extracted with a-selector.
+    (define (change-red-to-255 a-world a-selector an-updater)
+      (with-selector/updater ([a-selector an-updater])
+        (update (color-red (a-selector a-world)) 255)))
+
+With the additional syntactic hint, update will recognize a-selector
+and the function body desugars to:
+
+    (an-updater a-world
+                (update-color-red (a-selector a-world) 255))
+
+
+See examples/colors/colors-with-update.ss where this is used to
+parameterize the guis based on the color component of the world.
