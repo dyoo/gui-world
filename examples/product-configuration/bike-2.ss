@@ -1,4 +1,6 @@
-#lang scheme/base
+;; The first three lines of this file were inserted by DrScheme. They record metadata
+;; about the language level of this file in a form that our tools can easily process.
+#reader(lib "htdp-intermediate-reader.ss" "lang")((modname bike-2) (read-case-sensitive #t) (teachpacks ()) (htdp-settings #(#t constructor repeating-decimal #f #t none #f ())))
 (require "../../gui-world.ss")
 
 
@@ -67,43 +69,25 @@
 ;; Returns true if the pedal configuration is legal.
 (define (legal-pedal-config? a-pedal)
   (and (member (list (pedal-sku a-pedal) (pedal-pedaltype a-pedal))
-               '(("PD 6600" "SPD")
-                 ("PD 5500" "SPD")
-                 ("PD M545" "Clip")
-                 ("PD M434" "Clip")
-                 ("Campagnolo Record" "SPD")
-                 ("Campagnolo Chorus" "SPD")
-                 ("PD C105" "Standard")
-                 ("Black Plastic" "Standard")
-                 ("PD C101" "Standard")))
+               (list (list "PD 6600" "SPD")
+                     (list "PD 5500" "SPD")
+                     (list "PD M545" "Clip")
+                     (list "PD M434" "Clip")
+                     (list "Campagnolo Record" "SPD")
+                     (list "Campagnolo Chorus" "SPD")
+                     (list "PD C105" "Standard")
+                     (list "Black Plastic" "Standard")
+                     (list "PD C101" "Standard")))
        #t))
-
-
-;; rule-conj: rule ... -> rule
-;; Conjoins all of the rules.
-(define (rule-conj . rules)
-  (lambda (world)
-    (andmap (lambda (a-rule)
-              (a-rule world))
-            rules)))
-
-
-;; rule-disj: rule ... -> rule
-;; Disjoins all of the rules.
-(define (rule-disj . rules)
-  (lambda (world)
-    (andmap (lambda (a-rule)
-              (a-rule world))
-            rules)))
 
 
 
 ;; legal-configuration?: config -> boolean
 ;; Returns true if the global configuration given is a legal one.
-(define legal-configuration?
-  (rule-conj (project carrier-needs-mudguard-rule? config-extra)
-             (project pump-bottle-exclusive-rule? config-extra)
-             (project legal-pedal-config? config-pedal)))
+(define (legal-configuration? a-config)
+  (and (carrier-needs-mudguard-rule? (config-extra a-config))
+       (pump-bottle-exclusive-rule? (config-extra a-config))
+       (legal-pedal-config? (config-pedal a-config))))
 
 
 
@@ -131,9 +115,9 @@
 ;; Creates a dropdown whose choices are limited to the ones that lead to a valid configuration.
 (define (drop-down/rule val-f choices-f callback)
   (local [(define (good-choices a-world)
-            (filter (lambda (a-choice)
-                      (legal-configuration? (callback a-world a-choice)))
-                    (choices-f a-world)))]
+            (local [(define (good-choice? a-choice)
+                      (legal-configuration? (callback a-world a-choice)))]
+              (filter good-choice? (choices-f a-world))))]
     (drop-down val-f good-choices callback)))
 
 

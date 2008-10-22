@@ -1,0 +1,72 @@
+On update (2008/10/15):
+
+
+Problem: if we have structure definitions with deep structure, then
+doing a functional update on a subcomponent of the structure is
+ackward to express.  For example, given the following definitions:
+
+   (define-struct world (color-1 color-2))
+   (define-struct color (red green blue))
+   (define a-world (make-world (make-color 0 0 0) (make-color 0 0 0)))
+
+then updating the red component of the color-1 of a world to 255 is
+the expression:
+
+   (make-world (make-color 255 
+                           (color-green (world-color-1 a-world))
+                           (color-blue (world-color-1 a-world)))
+               (world-color-2 a-world))
+
+
+We propose a setf-style "update" form to concisely express
+substructure update.  In the example above, we'd use update as:
+
+
+   (update (color-red (world-color-1 a-world)) 17)
+
+which will evaluate to the functional update expression above.  update
+takes in a target --- some expression involving selectors --- and
+produces the updating expression based on the structure of the target,
+using the shallow structure updaters that are defined by our extended
+define-struct.
+
+
+There is one complication that I ran across: the update form may not
+always tell how to decompose a target form.  If the target uses
+top-level selectors, it's clear how to process the target form.  i.e. in
+
+    (define-struct color (r g b))
+    ...
+    (update (color-r (make-color 3 4 5)) 42)
+
+update recognizes color-r is a selector by statically looking up
+information that is stored at compile-time by define-struct.  It sees
+that make-color does not syntactically look like a selector, so the
+target pattern matching stops at make-color.
+
+
+In a higher order context, selectors may be bound to identifiers that
+update won't automatically recognize.
+
+    (define-struct color (r g b))
+
+    (define (update-some-value selector)
+       (update (selector ...) 42))      ;; does not work
+
+    (update-some-value color-r)
+
+
+Update can't syntactically tell if an identifier is a selector without
+some hinting.  To address this, I'm currently adding a scoped
+with-selector/updater form that locally introduces that hint.
+
+    (define-struct color (r g b))
+
+    (define (update-some-value selector updater)
+       (with-selector/updater ([selector updater])
+         (update (selector ...) 42)))
+
+    (update-some-value color-r update-color-r)
+
+
+See examples/colors/colors-with-update.ss where this is used.
