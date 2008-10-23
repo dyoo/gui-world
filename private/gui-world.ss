@@ -403,7 +403,9 @@
                [new-choices (choices-f *world*)]
                [new-enabled? (enabled?-f *world*)])
            
-           (unless (andmap string=? (get-choices) new-choices)
+           (unless (and (= (length (get-choices))
+                           (length new-choices))
+                        (andmap string=? (get-choices) new-choices))
              (clear)
              (for ([choice new-choices])
                (append choice)))
