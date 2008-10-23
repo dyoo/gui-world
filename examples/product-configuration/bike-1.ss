@@ -27,30 +27,6 @@
 ;                                                         ;  ; ;;;
 
 
-(define-struct person (gender
-                       height
-                       biketype))
-
-(define GENDERS (list UNKNOWN
-                      "Male"
-                      "Female"))
-
-(define PERSON-HEIGHTS (list UNKNOWN 
-                             "150-160 cm"
-                             "160-170 cm"
-                             "170-180 cm"
-                             "180-190 cm"
-                             "190-200 cm"))
-
-(define BIKE-TYPES (list UNKNOWN
-                           "City Bike"
-                           "Grandma Bike"
-                           "Mountain Bike"
-                           "Racer Bike"))
-
-(define initial-person (make-person UNKNOWN UNKNOWN UNKNOWN))
-
-
 
 
 ;; Extra
@@ -66,7 +42,7 @@
                       propstand?))   ;; boolean
 (define-updaters extra)
 
-(define initial-extra (make-extra #f #f #f #f #f #f #f #f #f #f))
+(define initial-extra (make-extra false false false false false false false false false false))
 
 
 
@@ -153,19 +129,6 @@
 
 
 
-
-(define HEIGHTS (list UNKNOWN
-                      "50 cm"
-                      "65 cm"
-                      "70 cm"))
-(define WIDTHS (list UNKNOWN
-                     "0.85 cm"
-                     "1.00 cm"
-                     "1.25 cm"
-                     "1.50 cm"
-                     "1.75 cm"))
-
-
 ;; Pedals
 (define PEDALS (list UNKNOWN
                      "Black Plastic"
@@ -178,10 +141,6 @@
                      "PD M434"
                      "PD M545" ))
 
-(define PEDAL-TYPES (list UNKNOWN
-                          "Standard"
-                          "SPD"
-                          "Clip"))
 
 (define-struct pedal (sku))               ;; (in PEDALS)
 (define-updaters pedal)
@@ -246,116 +205,6 @@
 
 
 
-(define-struct gear (sku        ;; (in GEARS)
-                     gears      ;; (in GEAR-NUMBER)
-                     biketype   ;; (in BIKE-TYPES)
-                     internal)) ;; boolean
-
-(define GEARS (list UNKNOWN
-                     "Acera"
-                     "Campagnolo Avanti Ergopower"
-                     "Campagnolo Mirage Ergopower"
-                     "Campagnolo Veloce"
-                     "Dura Ace"
-                     "No gears"
-                     "Shimano 105 STI"
-                     "Shimano Acer"
-                     "Shimano Deore"
-                     "Shimano Nexus"
-                     "Shimano RSX STI"
-                     "Sora"
-                     "Tiagra"
-                     "Torpedo"
-                     "Ultegra"))
-
-(define GEAR-NUMBER (list "1"
-                          "3"
-                          "4"
-                          "5"
-                          "7"
-                          "16"
-                          "18"
-                          "21"
-                          "24"
-                          "27"))
-
-
-(define initial-gear (make-gear UNKNOWN UNKNOWN UNKNOWN #t))
-
-
-(define-struct frame (sku color size))
-(define FRAMES (list UNKNOWN
-                     "Butterfly Classic"
-                     "Centurion Basic"
-                     "Centurion Basic Free"
-                     "Centurion Basic Free Meral"
-                     "Centurion Basic Light"
-                     "Centurion Basic Light Meral"
-                     "Centurion Basic Meral"
-                     "Centurion Boulevard"
-                     "Centurion Challenger"
-                     "Centurion Challenger Lady"
-                     "Centurion Crazy Point"
-                     "Centurion Crazy Point Lady"
-                     "Centurion Dark Image"
-                     "Centurion Discovery"
-                     "Centurion Discovery Lady"
-                     "Centurion Eternity"
-                     "Centurion Eternity Lady"
-                     "Centurion Far Out"
-                     "Centurion Helium"
-                     "Centurion Invincible"
-                     "Centurion Nitrogen"
-                     "Centurion Off Duty"
-                     "Centurion Oxygen"
-                     "Centurion Oxygen Meral"
-                     "Centurion Ultimate"
-                     "Colibri Street Bike Plus"
-                     "Faggin 7005"
-                     "Faggin 7020"
-                     "Faggin Easton"
-                     "Jupiter Cruiser"
-                     "Jupiter Inside"
-                     "Jupiter Millenium"
-                     "Jupiter Straight"
-                     "Kildemoes Logic 32 Derailleur"
-                     "Kildemoes Primates"
-                     "Schwinn Mesa"
-                     "Schwinn Moab 3"))
-
-(define FRAME-COLORS (list UNKNOWN
-                           "Black"
-                           "Black Purple"
-                           "Blue"
-                           "Brown"
-                           "Creme"
-                           "Green"
-                           "Grey"
-                           "Light Blue"
-                           "Light Green"
-                           "Purple"
-                           "Red"
-                           "Silver"
-                           "White"
-                           "Yellow"))                             
-(define FRAME-SIZES (list UNKNOWN
-                          "13\""
-                          "14\""
-                          "15\""
-                          "16\""
-                          "17\""
-                          "18\""
-                          "19\""
-                          "20\""
-                          "21\""
-                          "22\""
-                          "23\""
-                          "24\""
-                          "25\""
-                          "28\""))
-
-(define initial-frame (make-frame UNKNOWN UNKNOWN UNKNOWN))
-
 
 
 (define-struct shoes (sku))
@@ -373,27 +222,21 @@
 
 
 (define-struct config
-  (person       ;; person
-   extra        ;; extra
+  (extra        ;; extra
    pedal        ;; pedal
    rim          ;; rim
    tire         ;; tire
-   gear         ;; gear
-   frame        ;; frame
    shoes        ;; shoe
-
    ))
+
 (define-updaters config) 
 
 
 (define initial-config
-  (make-config initial-person
-               initial-extra
+  (make-config initial-extra
                initial-pedal
                initial-rim
                initial-tire
-               initial-gear
-               initial-frame
                initial-shoes))
 
 
@@ -535,7 +378,10 @@
 
 ;; implies: boolean boolean -> boolean
 (define (implies x y)
-  (if x y #t))
+  (cond
+    [x y]
+    [else
+     true]))
 
 
 
@@ -568,19 +414,19 @@
     [(legal-configuration? a-config)
      "Legal configuration."]
     [else
-     (string-append "Illegal configuration. ["
-                    (broken-rule-message "Extra." (rule-extra? a-config))
-                    (broken-rule-message "Shoes." (rule-shoes? a-config))
-                    (broken-rule-message "Tires." (rule-tire? a-config))
+     (string-append "Illegal configuration. "
+                    (broken-rule-message "Extra" (rule-extra? a-config))
+                    (broken-rule-message "Shoes" (rule-shoes? a-config))
+                    (broken-rule-message "Tires" (rule-tire? a-config))
                     "]")]))
                     
 
 ;; broken-rule-message: string boolean -> string
 (define (broken-rule-message category ok?)
   (cond
-    [ok?
-     ""]
-    [else category]))
+    [ok? ""]
+    [else 
+     (string-append category " has a problem. ")]))
 
 
 (define pedal-gui
@@ -607,14 +453,20 @@
   (project/inject/gui
    (box-group "Extra Accessories"
               (col
-               (row "Carrier?" (checkbox extra-carrier? update-extra-carrier?))
-               (row "Mudguard?" (checkbox extra-mudguard?
-                                          update-extra-mudguard?))
-               (row "Lock?" (checkbox extra-lock? update-extra-lock?))
-               (row "Pump?" (checkbox extra-pump? update-extra-pump?))
-               (row "Bottle?" (checkbox extra-bottle? update-extra-bottle?))
-               (row "Basket?" (checkbox extra-basket? update-extra-basket?))
-               (row "Cateye?" (checkbox extra-cateye? update-extra-cateye?))
+               (row "Carrier?" 
+                    (checkbox extra-carrier? update-extra-carrier?))
+               (row "Mudguard?" 
+                    (checkbox extra-mudguard? update-extra-mudguard?))
+               (row "Lock?" 
+                    (checkbox extra-lock? update-extra-lock?))
+               (row "Pump?"
+                    (checkbox extra-pump? update-extra-pump?))
+               (row "Bottle?" 
+                    (checkbox extra-bottle? update-extra-bottle?))
+               (row "Basket?"
+                    (checkbox extra-basket? update-extra-basket?))
+               (row "Cateye?"
+                    (checkbox extra-cateye? update-extra-cateye?))
                (row "Side reflex?"
                     (checkbox extra-sidereflex? update-extra-sidereflex?))
                (row "Front reflex?" 

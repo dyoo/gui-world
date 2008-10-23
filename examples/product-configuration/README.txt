@@ -1,7 +1,14 @@
+The model is a simplification of the Bike.pm that only includes
+Pedals, Shoes, Rims, Tires, and Extra accessories.
+
+
+
 bike-1.ss: tell the user if a rule is being violated.
 
 bike-2.ss: restrict user choices if a change in an attribute will
 violate a rule.
+
+bike-3.ss: automatically adjust 
 
 
 
