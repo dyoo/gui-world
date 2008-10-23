@@ -508,7 +508,19 @@
 
 ;; update-config-pedal-sku: config string -> config
 (define (update-config-pedal-sku a-config an-sku)
-  (update (pedal-sku (config-pedal a-config)) an-sku))
+  (cond [(not (rule-shoes? 
+               (update (pedal-sku (config-pedal a-config)) an-sku)))
+         (repair-config-shoes-sku        
+          (update (pedal-sku (config-pedal a-config)) an-sku))]
+        [else
+         (update (pedal-sku (config-pedal a-config)) an-sku)]))
+
+
+;; repair-config-shoes-sku: config -> config
+(define (repair-config-shoes-sku a-config)
+  (update (shoes-sku (config-shoes a-config))
+          (second (config-shoes-sku-choices a-config))))
+
 
 
 ;; config-pedal-pedaltype: config -> string
@@ -573,24 +585,32 @@
 ;; update-config-extra-carrier?: config boolean -> config
 (define (update-config-extra-carrier? a-config a-bool)
   (cond [(and a-bool (not (extra-mudguard? (config-extra a-config))))
-         (update (extra-mudguard? 
-                  (config-extra
-                   (update (extra-carrier? (config-extra a-config)) a-bool)))
-                 true)]
+         (repair-config-extra-mudguard?
+          (update (extra-carrier? (config-extra a-config)) a-bool))]
         [else
          (update (extra-carrier? (config-extra a-config)) a-bool)]))
+
+
+;; repair-config-extra-mudguard?: config -> config
+(define (repair-config-extra-mudguard? a-config)
+  (update (extra-mudguard? (config-extra a-config))
+          true))
+  
 
 
 ;; update-config-extra-mudguard?: config -> boolean
 (define (update-config-extra-mudguard? a-config a-bool)
   (cond [(and (not a-bool)
               (extra-carrier? (config-extra a-config)))
-         (update (extra-carrier? 
-                  (config-extra
-                   (update (extra-mudguard? (config-extra a-config)) a-bool)))
-                 false)]
+         (repair-config-extra-carrier?
+          (update (extra-mudguard? (config-extra a-config)) a-bool))]
         [else
          (update (extra-mudguard? (config-extra a-config)) a-bool)]))
+
+;; repair-config-extra-carrier?: config -> config
+(define (repair-config-extra-carrier? a-config)
+  (update (extra-carrier? (config-extra a-config))
+          false))
 
 
 ;; config-extra-lock?: config -> boolean
@@ -598,28 +618,37 @@
   (update (extra-lock? (config-extra a-config)) a-bool))
 
 
-;; config-extra-pump?: config -> boolean
+;; update-config-extra-pump?: config -> boolean
 (define (update-config-extra-pump? a-config a-bool)
   (cond
     [(and a-bool (extra-bottle? (config-extra a-config)))
-     (update (extra-bottle? 
-              (config-extra
-               (update (extra-pump? (config-extra a-config)) a-bool)))
-             false)]
+     (repair-config-extra-bottle?
+      (update (extra-pump? (config-extra a-config)) a-bool))]
     [else
      (update (extra-pump? (config-extra a-config)) a-bool)]))
 
+
+;; repair-config-extra-bottle?: config -> config
+(define (repair-config-extra-bottle? a-config)
+     (update (extra-bottle? (config-extra a-config))
+             false))
+  
 
 ;; config-extra-bottle?: config -> boolean
 (define (update-config-extra-bottle? a-config a-bool)
   (cond
     [(and a-bool (extra-pump? (config-extra a-config)) a-bool)
-     (update (extra-pump? 
-              (config-extra
-               (update (extra-bottle? (config-extra a-config)) a-bool)))
-             false)]
+     (repair-config-extra-pump?
+      (update (extra-bottle? (config-extra a-config)) a-bool))]
     [else
      (update (extra-bottle? (config-extra a-config)) a-bool)]))
+
+
+;; repair-config-extra-pump?: config -> config
+(define (repair-config-extra-pump? a-config)
+  (update (extra-pump? (config-extra a-config)) false))
+
+
 
 
 (define extra-gui
@@ -642,9 +671,22 @@
 (define (config-rim-sku a-config)
   (rim-sku (config-rim a-config)))
 
+
 ;; update-config-rim-sku: config string -> config
 (define (update-config-rim-sku a-config a-sku)
-  (update (rim-sku (config-rim a-config)) a-sku))
+  (cond [(not (rule-tire? (update (rim-sku (config-rim a-config)) a-sku)))
+         (repair-config-tire-sku
+          (update (rim-sku (config-rim a-config)) a-sku))]
+        [else
+         (update (rim-sku (config-rim a-config)) a-sku)]))
+
+
+;; repair-config-tire-sku: config -> config
+(define (repair-config-tire-sku a-config)
+  (update (tire-sku (config-tire a-config))
+          (second (config-tire-sku-choices  a-config))))
+        
+
 
 ;; config-rim-height: config -> string
 (define (config-rim-height a-config)
