@@ -129,7 +129,12 @@
 ;; Update the widgets in the frame with the new contents in the world.
 (define (refresh-widgets!)
   (let ([top-widget (first (send *frame* get-children))])
-    (send top-widget update-with! *gui*)))
+    (dynamic-wind (lambda ()
+                    (send *frame* begin-container-sequence))
+                  (lambda ()
+                    (send top-widget update-with! *gui*))
+                  (lambda ()
+                    (send *frame* end-container-sequence)))))
 
 
 

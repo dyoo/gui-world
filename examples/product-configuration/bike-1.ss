@@ -35,14 +35,10 @@
                       lock?          ;; boolean
                       pump?          ;; boolean
                       bottle?        ;; boolean
-                      basket?        ;; boolean 
-                      cateye?        ;; boolean
-                      sidereflex?    ;; boolean
-                      frontreflex?   ;; boolean
-                      propstand?))   ;; boolean
+                      basket?))        ;; boolean 
 (define-updaters extra)
 
-(define initial-extra (make-extra false false false false false false false false false false))
+(define initial-extra (make-extra false false false false false false))
 
 
 
@@ -274,7 +270,9 @@
        (not (and (extra-pump? an-extra)
                  (extra-bottle? an-extra)))))
 
+
 ;; rule-extra?: config -> boolean
+;; Returns true if the extra accessories match the rules.
 (define (rule-extra? a-config)
   (extra-is-good? (config-extra a-config)))
 
@@ -385,7 +383,6 @@
 
 
 
-
 ;                             
 ;                             
 ;                             
@@ -429,74 +426,155 @@
      (string-append category " has a problem. ")]))
 
 
+;; config-pedal-sku: config -> config
+(define (config-pedal-sku a-config)
+  (pedal-sku (config-pedal a-config)))
+
+
+;; update-config-pedal-sku: config string -> config
+(define (update-config-pedal-sku a-config an-sku)
+  (update (pedal-sku (config-pedal a-config)) an-sku))
+
+
+;; config-pedal-pedaltype: config -> string
+(define (config-pedal-pedaltype a-config)
+  (pedal-pedaltype (config-pedal a-config)))
+
+
 (define pedal-gui
-  (project/inject/gui 
-   (box-group "Pedal"
-              (col (row "SKU" 
-                        (drop-down pedal-sku PEDALS update-pedal-sku))
-                   (row "Pedal type" 
-                        (message pedal-pedaltype))))
-   config-pedal
-   update-config-pedal))
+  (box-group
+   "Pedal"
+   (col (row "SKU" 
+             (drop-down config-pedal-sku PEDALS update-config-pedal-sku))
+        (row "Pedal type" 
+             (message config-pedal-pedaltype)))))
+
+
+
+;; config-shoes-sku: config -> string
+(define (config-shoes-sku a-config)
+  (shoes-sku (config-shoes a-config)))
+
+
+;; update-config-shoes-sku: config string -> string
+(define (update-config-shoes-sku a-config a-sku)
+  (update (shoes-sku (config-shoes a-config)) a-sku))
 
 
 (define shoes-gui
-  (project/inject/gui
-   (box-group "Shoes"
-              (col (row "SKU"
-                        (drop-down shoes-sku SHOES update-shoes-sku))))
-   config-shoes
-   update-config-shoes))
+   (box-group 
+    "Shoes"
+    (col (row "SKU"
+              (drop-down config-shoes-sku SHOES update-config-shoes-sku)))))
+
+
+;; config-extra-carrier?: config -> boolean
+(define (config-extra-carrier? a-config)
+  (extra-carrier? (config-extra a-config)))
+
+
+;; config-extra-mudguard?: config -> boolean
+(define (config-extra-mudguard? a-config)
+  (extra-mudguard? (config-extra a-config)))
+
+
+;; config-extra-lock?: config -> boolean
+(define (config-extra-lock? a-config)
+  (extra-lock? (config-extra a-config)))
+
+
+;; config-extra-pump?: config -> boolean
+(define (config-extra-pump? a-config)
+  (extra-pump? (config-extra a-config)))
+
+
+;; config-extra-bottle?: config -> boolean
+(define (config-extra-bottle? a-config)
+  (extra-bottle? (config-extra a-config)))
+
+
+;; update-config-extra-carrier?: config boolean -> config
+(define (update-config-extra-carrier? a-config a-bool)
+  (update (extra-carrier? (config-extra a-config)) a-bool))
+
+
+;; update-config-extra-mudguard?: config -> boolean
+(define (update-config-extra-mudguard? a-config a-bool)
+  (update (extra-mudguard? (config-extra a-config)) a-bool))
+
+
+;; config-extra-lock?: config -> boolean
+(define (update-config-extra-lock? a-config a-bool)
+  (update (extra-lock? (config-extra a-config)) a-bool))
+
+
+;; config-extra-pump?: config -> boolean
+(define (update-config-extra-pump? a-config a-bool)
+  (update (extra-pump? (config-extra a-config)) a-bool))
+
+
+;; config-extra-bottle?: config -> boolean
+(define (update-config-extra-bottle? a-config a-bool)
+  (update (extra-bottle? (config-extra a-config)) a-bool))
 
 
 (define extra-gui
-  (project/inject/gui
-   (box-group "Extra Accessories"
-              (col
-               (row "Carrier?" 
-                    (checkbox extra-carrier? update-extra-carrier?))
-               (row "Mudguard?" 
-                    (checkbox extra-mudguard? update-extra-mudguard?))
-               (row "Lock?" 
-                    (checkbox extra-lock? update-extra-lock?))
-               (row "Pump?"
-                    (checkbox extra-pump? update-extra-pump?))
-               (row "Bottle?" 
-                    (checkbox extra-bottle? update-extra-bottle?))
-               (row "Basket?"
-                    (checkbox extra-basket? update-extra-basket?))
-               (row "Cateye?"
-                    (checkbox extra-cateye? update-extra-cateye?))
-               (row "Side reflex?"
-                    (checkbox extra-sidereflex? update-extra-sidereflex?))
-               (row "Front reflex?" 
-                    (checkbox extra-frontreflex? update-extra-frontreflex?))
-               (row "Propstand?" 
-                    (checkbox extra-propstand? update-extra-propstand?))))
-   config-extra
-   update-config-extra))
+  (box-group 
+   "Extra Accessories"
+   (col
+    (row "Carrier?" 
+         (checkbox config-extra-carrier? update-config-extra-carrier?))
+    (row "Mudguard?" 
+         (checkbox config-extra-mudguard? update-config-extra-mudguard?))
+    (row "Lock?" 
+         (checkbox config-extra-lock? update-config-extra-lock?))
+    (row "Pump?"
+         (checkbox config-extra-pump? update-config-extra-pump?))
+    (row "Bottle?" 
+         (checkbox config-extra-bottle? update-config-extra-bottle?)))))
+
+
+;; config-rim-sku: config -> string
+(define (config-rim-sku a-config)
+  (rim-sku (config-rim a-config)))
+
+;; update-config-rim-sku: config string -> config
+(define (update-config-rim-sku a-config a-sku)
+  (update (rim-sku (config-rim a-config)) a-sku))
+
+;; config-rim-height: config -> string
+(define (config-rim-height a-config)
+  (rim-height (config-rim a-config)))
+
+;; config-rim-width: config -> string
+(define (config-rim-width a-config)
+  (rim-width (config-rim a-config)))
 
 
 (define rim-gui
-  (project/inject/gui 
-   (box-group "Rims"
-              (col (row "SKU"
-                        (drop-down rim-sku RIMS update-rim-sku))
-                   (row "Height"
-                        (message rim-height))
-                   (row "Width" 
-                        (message rim-width)))) 
-   config-rim
-   update-config-rim))
+  (box-group "Rims"
+             (col (row "SKU"
+                       (drop-down config-rim-sku RIMS update-config-rim-sku))
+                  (row "Height"
+                       (message config-rim-height))
+                  (row "Width" 
+                       (message config-rim-width))))) 
+
+
+;; config-tire-sku: config -> string
+(define (config-tire-sku a-config)
+  (tire-sku (config-tire a-config)))
+
+;; update-config-tire-sku: config string -> config
+(define (update-config-tire-sku a-config a-sku)
+  (update (tire-sku (config-tire a-config)) a-sku))
 
 
 (define tire-gui
-  (project/inject/gui 
-   (box-group "Tires"
-              (col (row "SKU"
-                        (drop-down tire-sku TIRES update-tire-sku))))
-   config-tire
-   update-config-tire))
+  (box-group 
+   "Tires"
+   (col (row "SKU"
+             (drop-down config-tire-sku TIRES update-config-tire-sku)))))
 
 
 (define main-gui
