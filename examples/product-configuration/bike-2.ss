@@ -1,6 +1,6 @@
 ;; The first three lines of this file were inserted by DrScheme. They record metadata
 ;; about the language level of this file in a form that our tools can easily process.
-#reader(lib "htdp-beginner-reader.ss" "lang")((modname bike-1) (read-case-sensitive #t) (teachpacks ()) (htdp-settings #(#t constructor repeating-decimal #f #t none #f ())))
+#reader(lib "htdp-beginner-reader.ss" "lang")((modname bike-2) (read-case-sensitive #t) (teachpacks ()) (htdp-settings #(#t constructor repeating-decimal #f #t none #f ())))
 (require "../../gui-world.ss")
 
 
@@ -298,10 +298,10 @@
   (filter-config-shoes-sku-candidates a-config SHOES))
 
 
-;; legal-config-sku-candidate?: config string -> boolean
+;; legal-config-shoes-sku-candidate?: config string -> boolean
 ;; Produces true if the candidate sku leads to a legal configuration
 ;; in terms of shoes.
-(define (legal-config-sku-candidate? a-config a-candidate)
+(define (legal-config-shoes-sku-candidate? a-config a-candidate)
   (cond
     [(string=? a-candidate UNKNOWN)
      true]
@@ -317,7 +317,7 @@
      empty]
     [else
      (cond       
-       [(legal-config-sku-candidate? a-config (first candidates))
+       [(legal-config-shoes-sku-candidate? a-config (first candidates))
         (cons (first candidates) 
               (filter-config-shoes-sku-candidates a-config
                                                   (rest candidates)))]
@@ -400,6 +400,46 @@
                (string=? (rim-width (config-rim a-config)) "1.50 cm")))))
 
       
+
+
+
+;; config-tire-sku-choices: config -> (listof string)
+;; Returns a list of the legal tires we can use with the given configuration.
+(define (config-tire-sku-choices a-config)
+  (filter-config-tire-sku-candidates a-config TIRES))
+
+
+;; legal-config-tire-sku-candidate?: config string -> boolean
+;; Produces true if the candidate sku leads to a legal configuration
+;; in terms of shoes.
+(define (legal-config-tire-sku-candidate? a-config a-candidate)
+  (cond
+    [(string=? a-candidate UNKNOWN)
+     true]
+    [else
+     (rule-tire? (update (tire-sku (config-tire a-config)) 
+                          a-candidate))]))
+
+
+;; filter-config-tire-sku-candidates: config (listof string) -> (listof string)
+(define (filter-config-tire-sku-candidates a-config candidates)
+  (cond
+    [(empty? candidates)
+     empty]
+    [else
+     (cond       
+       [(legal-config-tire-sku-candidate? a-config (first candidates))
+        (cons (first candidates) 
+              (filter-config-tire-sku-candidates a-config
+                                                 (rest candidates)))]
+       [else
+        (filter-config-tire-sku-candidates a-config 
+                                           (rest candidates))])]))
+
+
+
+
+
       
 ;; legal-configuration?: config -> boolean
 ;; Returns true if the global configuration given is a legal one.
@@ -611,7 +651,9 @@
   (box-group 
    "Tires"
    (col (row "SKU"
-             (drop-down config-tire-sku TIRES update-config-tire-sku)))))
+             (drop-down config-tire-sku 
+                        config-tire-sku-choices 
+                        update-config-tire-sku)))))
 
 
 (define main-gui
