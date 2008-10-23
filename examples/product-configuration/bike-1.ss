@@ -27,6 +27,30 @@
 ;                                                         ;  ; ;;;
 
 
+(define-struct person (gender
+                       height
+                       biketype))
+
+(define GENDERS (list UNKNOWN
+                      "Male"
+                      "Female"))
+
+(define PERSON-HEIGHTS (list UNKNOWN 
+                             "150-160 cm"
+                             "160-170 cm"
+                             "170-180 cm"
+                             "180-190 cm"
+                             "190-200 cm"))
+
+(define BIKE-TYPES (list UNKNOWN
+                           "City Bike"
+                           "Grandma Bike"
+                           "Mountain Bike"
+                           "Racer Bike"))
+
+(define initial-person (make-person UNKNOWN UNKNOWN UNKNOWN))
+
+
 
 
 ;; Extra
@@ -43,7 +67,6 @@
 (define-updaters extra)
 
 (define initial-extra (make-extra #f #f #f #f #f #f #f #f #f #f))
-
 
 
 
@@ -79,19 +102,6 @@
                      "1.75 cm"))
 
 
-
-;; carrier-needs-mudguard-rule: extra -> boolean
-(define (carrier-needs-mudguard-rule? extra)
-  (implies (extra-carrier? extra)
-           (extra-mudguard? extra)))
-
-
-;; pump-bottle-exclusive-rule: extra -> boolean
-(define (pump-bottle-exclusive-rule? extra)
-  (not (and (extra-pump? extra)
-            (extra-bottle? extra))))
-
-
 ;; Pedals
 (define PEDALS (list UNKNOWN
                      "Black Plastic"
@@ -109,11 +119,42 @@
                           "SPD"
                           "Clip"))
 
-(define-struct pedal (sku               ;; (in PEDALS)
-                      pedaltype))       ;; (in PEDAL-TYPES)
+(define-struct pedal (sku))               ;; (in PEDALS)
 (define-updaters pedal)
 
-(define initial-pedal (make-pedal UNKNOWN UNKNOWN))
+(define initial-pedal (make-pedal UNKNOWN))
+
+
+
+;; pedal-pedaltype: pedal -> string
+;; Returns the pedaltype of a-pedal.
+(define (pedal-pedaltype a-pedal)
+  (cond
+    [(string=? (pedal-sku a-pedal) "Black Plastic")
+     "Standard"]
+    [(string=? (pedal-sku a-pedal) "Campagnolo Chorus")
+     "SPD"]
+    [(string=? (pedal-sku a-pedal) "Campagnolo Record")
+     "SPD"]
+    [(string=? (pedal-sku a-pedal) "PD 5500")
+     "SPD"]
+    [(string=? (pedal-sku a-pedal) "PD 6600")
+     "SPD"]
+    [(string=? (pedal-sku a-pedal) "PD C101")
+     "Standard"]
+    [(string=? (pedal-sku a-pedal) "PD C105")
+     "Standard"]
+    [(string=? (pedal-sku a-pedal) "PD M434")
+     "Clip"]
+    [(string=? (pedal-sku a-pedal) "PD M545")
+     "Clip"]
+    [else
+     UNKNOWN]))
+
+
+
+
+
 
 
 (define-struct tire (sku        ;; in TIRES
@@ -159,21 +200,157 @@
                                 UNKNOWN))
 
 
+
+(define-struct gear (sku        ;; (in GEARS)
+                     gears      ;; (in GEAR-NUMBER)
+                     biketype   ;; (in BIKE-TYPES)
+                     internal)) ;; boolean
+
+(define GEARS (list UNKNOWN
+                     "Acera"
+                     "Campagnolo Avanti Ergopower"
+                     "Campagnolo Mirage Ergopower"
+                     "Campagnolo Veloce"
+                     "Dura Ace"
+                     "No gears"
+                     "Shimano 105 STI"
+                     "Shimano Acer"
+                     "Shimano Deore"
+                     "Shimano Nexus"
+                     "Shimano RSX STI"
+                     "Sora"
+                     "Tiagra"
+                     "Torpedo"
+                     "Ultegra"))
+
+(define GEAR-NUMBER (list "1"
+                          "3"
+                          "4"
+                          "5"
+                          "7"
+                          "16"
+                          "18"
+                          "21"
+                          "24"
+                          "27"))
+
+
+(define initial-gear (make-gear UNKNOWN UNKNOWN UNKNOWN #t))
+
+
+(define-struct frame (sku color size))
+(define FRAMES (list UNKNOWN
+                     "Butterfly Classic"
+                     "Centurion Basic"
+                     "Centurion Basic Free"
+                     "Centurion Basic Free Meral"
+                     "Centurion Basic Light"
+                     "Centurion Basic Light Meral"
+                     "Centurion Basic Meral"
+                     "Centurion Boulevard"
+                     "Centurion Challenger"
+                     "Centurion Challenger Lady"
+                     "Centurion Crazy Point"
+                     "Centurion Crazy Point Lady"
+                     "Centurion Dark Image"
+                     "Centurion Discovery"
+                     "Centurion Discovery Lady"
+                     "Centurion Eternity"
+                     "Centurion Eternity Lady"
+                     "Centurion Far Out"
+                     "Centurion Helium"
+                     "Centurion Invincible"
+                     "Centurion Nitrogen"
+                     "Centurion Off Duty"
+                     "Centurion Oxygen"
+                     "Centurion Oxygen Meral"
+                     "Centurion Ultimate"
+                     "Colibri Street Bike Plus"
+                     "Faggin 7005"
+                     "Faggin 7020"
+                     "Faggin Easton"
+                     "Jupiter Cruiser"
+                     "Jupiter Inside"
+                     "Jupiter Millenium"
+                     "Jupiter Straight"
+                     "Kildemoes Logic 32 Derailleur"
+                     "Kildemoes Primates"
+                     "Schwinn Mesa"
+                     "Schwinn Moab 3"))
+
+(define FRAME-COLORS (list UNKNOWN
+                           "Black"
+                           "Black Purple"
+                           "Blue"
+                           "Brown"
+                           "Creme"
+                           "Green"
+                           "Grey"
+                           "Light Blue"
+                           "Light Green"
+                           "Purple"
+                           "Red"
+                           "Silver"
+                           "White"
+                           "Yellow"))                             
+(define FRAME-SIZES (list UNKNOWN
+                          "13\""
+                          "14\""
+                          "15\""
+                          "16\""
+                          "17\""
+                          "18\""
+                          "19\""
+                          "20\""
+                          "21\""
+                          "22\""
+                          "23\""
+                          "24\""
+                          "25\""
+                          "28\""))
+
+(define initial-frame (make-frame UNKNOWN UNKNOWN UNKNOWN))
+
+
+
+(define-struct shoes (sku))
+(define-updaters shoes)
+
+(define SHOES (list UNKNOWN
+                    "No shoes"
+                    "SH R072"
+                    "SH R090"
+                    "SH R150"
+                    "SH R212"))
+(define initial-shoes (make-shoes UNKNOWN))
+
+
+
+
 (define-struct config
-  (extra        ;; extra
+  (person       ;; person
+   extra        ;; extra
    pedal        ;; pedal
    rim          ;; rim
    tire         ;; tire
-   ;; Add more when we figure out what to do here...
+   gear         ;; gear
+   frame        ;; frame
+   shoes        ;; shoe
+
    ))
 (define-updaters config) 
 
 
 (define initial-config
-  (make-config initial-extra
+  (make-config initial-person
+               initial-extra
                initial-pedal
                initial-rim
-               initial-tire))
+               initial-tire
+               initial-gear
+               initial-frame
+               initial-shoes))
+
 
 
 
@@ -201,20 +378,33 @@
 
 
 
-;; legal-pedal-config?: pedal -> boolean
-;; Returns true if the pedal configuration is legal.
-(define (legal-pedal-config? a-pedal)
-  (and (member (list (pedal-sku a-pedal) (pedal-pedaltype a-pedal))
-               (list (list "PD 6600" "SPD")
-                     (list "PD 5500" "SPD")
-                     (list "PD M545" "Clip")
-                     (list "PD M434" "Clip")
-                     (list "Campagnolo Record" "SPD")
-                     (list "Campagnolo Chorus" "SPD")
-                     (list "PD C105" "Standard")
-                     (list "Black Plastic" "Standard")
-                     (list "PD C101" "Standard")))
-       #t))
+;; extra-is-good?: extra -> boolean
+;; Returns true if the extra follows the rules.
+(define (extra-is-good? an-extra)
+  (and (implies (extra-carrier? an-extra)
+                (extra-mudguard? an-extra))
+       (not (and (extra-pump? an-extra)
+                 (extra-bottle? an-extra)))))
+
+;; rule-extra?: config -> boolean
+(define (rule-extra? a-config)
+  (extra-is-good? (config-extra a-config)))
+
+
+
+;; rule-shoes?: config -> boolean 
+(define (rule-shoes? a-config)
+  (or (and (string=? (shoes-sku (config-shoes a-config)) "SH R212")
+           (string=? (pedal-pedaltype (config-pedal a-config)) "SPD"))
+      (and (string=? (shoes-sku (config-shoes a-config)) "SH R150")
+           (string=? (pedal-pedaltype (config-pedal a-config)) "Clip"))
+      (and (string=? (shoes-sku (config-shoes a-config)) "SH R090")
+           (string=? (pedal-pedaltype (config-pedal a-config)) "SPD"))
+      (and (string=? (shoes-sku (config-shoes a-config)) "SH R072")
+           (string=? (pedal-pedaltype (config-pedal a-config)) "Clip"))
+      
+      (string=? (shoes-sku (config-shoes a-config)) "No shoes")))
+
 
 
 
@@ -223,26 +413,14 @@
 ;; legal-configuration?: config -> boolean
 ;; Returns true if the global configuration given is a legal one.
 (define (legal-configuration? a-config)
-  (and (carrier-needs-mudguard-rule? (config-extra a-config))
-       (pump-bottle-exclusive-rule? (config-extra a-config))
-       (legal-pedal-config? (config-pedal a-config))))
-
-
-;; legal-configuration-status: config -> string
-(define (legal-configuration-status a-config)
-  (cond
-    [(legal-configuration? a-config)
-     "Legal configuration."]
-    [else
-     "Illegal configuration."]))
+  (and (rule-extra? a-config)
+       (rule-shoes? a-config)))
 
 
 
 ;; implies: boolean boolean -> boolean
 (define (implies x y)
   (if x y #t))
-
-
 
 
 
@@ -266,17 +444,36 @@
 ;                             
 ;                     ;;      
 
+
+;; legal-configuration-status: config -> string
+;; Given a config, produces a string that reports on
+;; that configuration's legality.
+(define (legal-configuration-status a-config)
+  (cond
+    [(legal-configuration? a-config)
+     "Legal configuration."]
+    [else
+     "Illegal configuration."]))
+
+
 (define pedal-gui
   (project/inject/gui 
    (box-group "Pedal"
               (col (row "SKU" 
                         (drop-down pedal-sku PEDALS update-pedal-sku))
                    (row "Pedal type" 
-                        (drop-down pedal-pedaltype 
-                                   PEDAL-TYPES
-                                   update-pedal-pedaltype))))
+                        (message pedal-pedaltype))))
    config-pedal
    update-config-pedal))
+
+
+(define shoes-gui
+  (project/inject/gui
+   (box-group "Shoes"
+              (col (row "SKU"
+                        (drop-down shoes-sku SHOES update-shoes-sku))))
+   config-shoes
+   update-config-shoes))
 
 
 (define extra-gui
@@ -331,7 +528,9 @@
 
 
 (define main-gui
-  (col (row pedal-gui extra-gui rim-gui)
+  (col (row (col pedal-gui shoes-gui) 
+            extra-gui 
+            rim-gui)
        (row tire-gui)
        (message legal-configuration-status)))
 
