@@ -408,7 +408,12 @@
                         (andmap string=? (get-choices) new-choices))
              (clear)
              (for ([choice new-choices])
-               (append choice)))
+               (append choice))
+             (set-selection (or (list-index
+                                 (lambda (x) 
+                                   (string=? x internal-selection-string))
+                                 new-choices)
+                                0)))
            
            (unless (string=? internal-selection-string new-val)
              (set-selection (list-index (lambda (x) 
