@@ -70,12 +70,10 @@
 
 
 
-(define-struct rim (sku         ;; (in RIMS)
-                    height      ;; (in HEIGHTS)
-                    width))     ;; (in WIDTHS)
+(define-struct rim (sku))         ;; (in RIMS)
 (define-updaters rim)
 
-(define initial-rim (make-rim UNKNOWN UNKNOWN UNKNOWN))
+(define initial-rim (make-rim UNKNOWN))
 
 (define RIMS (list UNKNOWN
                    "Campagnolo Atlanta Aero"
@@ -90,6 +88,72 @@
                    "Open Pro"
                    "T519"
                    "X221")) 
+
+;; rim-height: rim -> string
+(define (rim-height a-rim)
+  (cond
+    [(string=? (rim-sku a-rim) "MA3")
+     "70 cm"]
+    [(string=? (rim-sku a-rim) "T519")
+     "70 cm"]
+    [(string=? (rim-sku a-rim) "CXP 33")
+     "70 cm"]
+    [(string=? (rim-sku a-rim) "Open Pro")
+     "70 cm"]
+    [(string=? (rim-sku a-rim) "X221")
+     "65 cm"]
+    [(string=? (rim-sku a-rim) "Cosmos")
+     "65 cm"]
+    [(string=? (rim-sku a-rim) "Cross")
+     "50 cm"]
+    [(string=? (rim-sku a-rim) "Campagnolo Mexico Aero")
+     "65 cm"]
+    [(string=? (rim-sku a-rim) "Campagnolo Proton")
+     "65 cm"]
+    [(string=? (rim-sku a-rim) "Campagnolo Moskva Aero")
+     "65 cm"]
+    [(string=? (rim-sku a-rim) "Campagnolo Atlanta Aero")
+     "65 cm"]
+    [(string=? (rim-sku a-rim) "Helium")
+     "50 cm"]
+    [else 
+     UNKNOWN]))
+
+
+
+;; rim-width: rim -> string
+(define (rim-width a-rim)
+  (cond
+    [(string=? (rim-sku a-rim) "MA3")
+     ".85 cm"]
+    [(string=? (rim-sku a-rim) "T519")
+     "1.00 cm"]
+    [(string=? (rim-sku a-rim) "CXP 33")
+     "1.25 cm"]
+    [(string=? (rim-sku a-rim) "Open Pro")
+     "1.00 cm"]
+    [(string=? (rim-sku a-rim) "X221")
+     "1.50 cm"]
+    [(string=? (rim-sku a-rim) "Cosmos")
+     "1.25 cm"]
+    [(string=? (rim-sku a-rim) "Cross")
+     "1.50 cm"]
+    [(string=? (rim-sku a-rim) "Campagnolo Mexico Aero")
+     "1.00 cm"]
+    [(string=? (rim-sku a-rim) "Campagnolo Proton")
+     "0.85 cm"]
+    [(string=? (rim-sku a-rim) "Campagnolo Moskva Aero")
+     "0.85 cm"]
+    [(string=? (rim-sku a-rim) "Campagnolo Atlanta Aero")
+     "1.00 cm"]
+    [(string=? (rim-sku a-rim) "Helium")
+     "1.25 cm"]
+    [else 
+     UNKNOWN]))
+
+
+
+
 (define HEIGHTS (list UNKNOWN
                       "50 cm"
                       "65 cm"
@@ -410,6 +474,7 @@
 
 
 
+
 ;; legal-configuration?: config -> boolean
 ;; Returns true if the global configuration given is a legal one.
 (define (legal-configuration? a-config)
@@ -503,10 +568,10 @@
    (box-group "Rims"
               (col (row "SKU"
                         (drop-down rim-sku RIMS update-rim-sku))
-                   (row "Height" 
-                        (drop-down rim-height HEIGHTS update-rim-height))
+                   (row "Height"
+                        (message rim-height))
                    (row "Width" 
-                        (drop-down rim-width WIDTHS update-rim-width))))
+                        (message rim-width)))) 
    config-rim
    update-config-rim))
 
