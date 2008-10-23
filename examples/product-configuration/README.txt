@@ -4,7 +4,13 @@ bike-2.ss: restrict user choices if a change in an attribute will
 violate a rule.
 
 
-References
 
+
+Simplifications
+   Tires don't have a profile
+
+
+
+References
 
 Bike.pm configuration description: http://www.itu.dk/research/cla/externals/clib/

@@ -221,10 +221,7 @@
 
 
 
-(define-struct tire (sku        ;; in TIRES
-                     height     ;; in HEIGHTS
-                     width      ;; in WIDTHS
-                     profile))  ;; in TIRE-PROFILES
+(define-struct tire (sku))        ;; in TIRES
 (define-updaters tire)
 
 (define TIRES (list UNKNOWN
@@ -245,23 +242,7 @@
                     "Track"
                     "Triatlon"))
 
-(define TIRE-PROFILES (list UNKNOWN
-                            "19 mm"
-                            "20 mm"
-                            "21 mm"
-                            "22 mm"
-                            "23 mm"
-                            "25 mm"
-                            "28 mm"
-                            "30 mm"
-                            "32 mm"
-                            "35 mm"
-                            "38 mm"))
-
-(define initial-tire (make-tire UNKNOWN 
-                                UNKNOWN
-                                UNKNOWN
-                                UNKNOWN))
+(define initial-tire (make-tire UNKNOWN))
 
 
 
@@ -471,16 +452,85 @@
 
 
 
+;; rule-tire?: config -> boolean
+;; Note: simplification doesn't take profile into account.
+(define (rule-tire? a-config)
+  (or (and (string=? (tire-sku (config-tire a-config)) "Triathlon")
+           (string=? (rim-height (config-rim a-config)) "20 cm")
+           (string=? (rim-width (config-rim a-config)) "1.00 cm"))
+      (and (string=? (tire-sku (config-tire a-config)) "Courier")
+           (string=? (rim-height (config-rim a-config)) "70 cm")
+           (or (string=? (rim-width (config-rim a-config)) "0.85 cm")
+               (string=? (rim-width (config-rim a-config)) "1.25 cm")))
+      (and (string=? (tire-sku (config-tire a-config)) "Tecno")
+           (string=? (rim-height (config-rim a-config)) "70 cm")
+           (or (string=? (rim-width (config-rim a-config)) "1.00 cm")
+               (string=? (rim-width (config-rim a-config)) "1.25 cm")))
+      (and (string=? (tire-sku (config-tire a-config)) "Roma")
+           (string=? (rim-height (config-rim a-config)) "70 cm")
+           (or (string=? (rim-width (config-rim a-config)) "0.85 cm")
+               (string=? (rim-width (config-rim a-config)) "1.00 cm")))
+      (and (string=? (tire-sku (config-tire a-config)) "Lizzard")
+           (string=? (rim-height (config-rim a-config)) "70 cm")
+           (or (string=? (rim-width (config-rim a-config)) "1.50 cm")
+               (string=? (rim-width (config-rim a-config)) "1.75 cm")))
+      (and (string=? (tire-sku (config-tire a-config)) "Atlanta")
+           (string=? (rim-height (config-rim a-config)) "70 cm")
+           (string=? (rim-width (config-rim a-config)) "1.00 cm"))
+      (and (string=? (tire-sku (config-tire a-config)) "Track")
+           (string=? (rim-height (config-rim a-config)) "70 cm")
+           (string=? (rim-width (config-rim a-config)) "0.85 cm"))
+      (and (string=? (tire-sku (config-tire a-config)) "Extreme")
+           (string=? (rim-height (config-rim a-config)) "70 cm")
+           (string=? (rim-width (config-rim a-config)) "1.00 cm"))
+      (and (string=? (tire-sku (config-tire a-config)) "All Weather")
+           (string=? (rim-height (config-rim a-config)) "70 cm")
+           (string=? (rim-width (config-rim a-config)) "1.25 cm"))
+      (and (string=? (tire-sku (config-tire a-config)) "Beaumont")
+           (string=? (rim-height (config-rim a-config)) "65 cm")
+           (or (string=? (rim-width (config-rim a-config)) "1.25 cm")
+               (string=? (rim-width (config-rim a-config)) "1.50 cm")))
+      (and (string=? (tire-sku (config-tire a-config)) "Panaracer Avventura")
+           (string=? (rim-height (config-rim a-config)) "65 cm")
+           (or (string=? (rim-width (config-rim a-config)) "1.25 cm")
+               (string=? (rim-width (config-rim a-config)) "1.50 cm")))
+      (and (string=? (tire-sku (config-tire a-config)) 
+                     "Panaracer Category Pro")
+           (or (string=? (rim-height (config-rim a-config)) "65 cm")
+               (string=? (rim-height (config-rim a-config)) "70 cm"))
+           (or (string=? (rim-width (config-rim a-config)) "1.00 cm")
+               (string=? (rim-width (config-rim a-config)) "1.25 cm")))
+      (and (string=? (tire-sku (config-tire a-config)) 
+                     "Panaracer Everride")
+           (or (string=? (rim-height (config-rim a-config)) "65 cm")
+               (string=? (rim-height (config-rim a-config)) "70 cm"))
+           (or (string=? (rim-width (config-rim a-config)) "1.00 cm")
+               (string=? (rim-width (config-rim a-config)) "1.25 cm")))
+      (and (string=? (tire-sku (config-tire a-config)) 
+                     "Panaracer Tourguard")
+           (or (string=? (rim-height (config-rim a-config)) "65 cm")
+               (string=? (rim-height (config-rim a-config)) "70 cm"))
+           (or (string=? (rim-width (config-rim a-config)) "1.00 cm")
+               (string=? (rim-width (config-rim a-config)) "1.25 cm")))
+      (and (string=? (tire-sku (config-tire a-config)) 
+                     "Panaracer Stradius")
+           (or (string=? (rim-height (config-rim a-config)) "65 cm")
+               (string=? (rim-height (config-rim a-config)) "70 cm"))
+           (or (string=? (rim-width (config-rim a-config)) "0.85 cm")
+               (string=? (rim-width (config-rim a-config)) "1.25 cm")))
+      (and (string=? (tire-sku (config-tire a-config)) "Kenda")
+           (string=? (rim-height (config-rim a-config)) "50 cm")
+           (or (string=? (rim-width (config-rim a-config)) "1.25 cm")
+               (string=? (rim-width (config-rim a-config)) "1.50 cm")))))
 
-
-
-
+      
+      
 ;; legal-configuration?: config -> boolean
 ;; Returns true if the global configuration given is a legal one.
 (define (legal-configuration? a-config)
   (and (rule-extra? a-config)
-       (rule-shoes? a-config)))
-
+       (rule-shoes? a-config)
+       (rule-tire? a-config)))
 
 
 ;; implies: boolean boolean -> boolean
@@ -518,7 +568,19 @@
     [(legal-configuration? a-config)
      "Legal configuration."]
     [else
-     "Illegal configuration."]))
+     (string-append "Illegal configuration. ["
+                    (broken-rule-message "Extra." (rule-extra? a-config))
+                    (broken-rule-message "Shoes." (rule-shoes? a-config))
+                    (broken-rule-message "Tires." (rule-tire? a-config))
+                    "]")]))
+                    
+
+;; broken-rule-message: string boolean -> string
+(define (broken-rule-message category ok?)
+  (cond
+    [ok?
+     ""]
+    [else category]))
 
 
 (define pedal-gui
@@ -580,23 +642,15 @@
   (project/inject/gui 
    (box-group "Tires"
               (col (row "SKU"
-                        (drop-down tire-sku TIRES update-tire-sku))
-                   (row "Height" 
-                        (drop-down tire-height HEIGHTS update-tire-height))
-                   (row "Width" 
-                        (drop-down tire-width WIDTHS update-tire-width))
-                   (row "Profile" 
-                        (drop-down tire-profile TIRE-PROFILES
-                                   update-tire-profile))))
+                        (drop-down tire-sku TIRES update-tire-sku))))
    config-tire
    update-config-tire))
 
 
 (define main-gui
-  (col (row (col pedal-gui shoes-gui) 
-            extra-gui 
-            rim-gui)
-       (row tire-gui)
+  (col (row (col pedal-gui shoes-gui
+                 rim-gui tire-gui) 
+            extra-gui)
        (message legal-configuration-status)))
 
 
