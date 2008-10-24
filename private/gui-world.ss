@@ -167,18 +167,19 @@
      (let ([a-group-box
             (new world-gui:group-box%
                  [parent a-container]
-                 [label (label-f *world*)]
+                 [label (displayable->string (label-f *world*))]
                  [enabled (enabled?-f *world*)])])
        (render-elt! sub-elt a-group-box)
        a-group-box)]
     
-    [(struct string-elt (s-f))
-     (new world-gui:string% [label (s-f *world*)]
+    [(struct displayable-elt (s-f))
+     (new world-gui:string% [label 
+                             (displayable->string (s-f *world*))]
           [parent a-container])]
     
     [(struct button-elt (label-f callback enabled?-f))
      (new world-gui:button% 
-          [label (label-f *world*)]
+          [label (displayable->string (label-f *world*))]
           [parent a-container]
           [world-callback callback]
           [enabled (enabled?-f *world*)])]
@@ -187,13 +188,13 @@
      (new world-gui:text-field% 
           [label #f]
           [parent a-container]
-          [init-value (v-f *world*)]
+          [init-value (displayable->string (v-f *world*))]
           [enabled (enabled?-f *world*)]
           [world-callback callback])]
     
     [(struct drop-down-elt (val-f choices-f callback enabled?-f))
-     (let ([val (val-f *world*)]
-           [choices (choices-f *world*)])
+     (let ([val (displayable->string (val-f *world*))]
+           [choices (map displayable->string (choices-f *world*))])
        (new world-gui:drop-down% 
             [label #f]
             [choices choices]
@@ -308,7 +309,7 @@
     (define/public (update-with! an-elt)
       (match an-elt
         [(struct box-group-elt (val-f sub-elt enabled?-f))
-         (let ([new-val (val-f *world*)]
+         (let ([new-val (displayable->string (val-f *world*))]
                [new-enabled? (enabled?-f *world*)])
            (unless (string=? new-val (get-label))
              (set-label new-val))
@@ -326,8 +327,8 @@
         
     (define/public (update-with! an-elt)
       (match an-elt 
-        [(struct string-elt (val-f))
-         (let ([a-str (val-f *world*)])
+        [(struct displayable-elt (val-f))
+         (let ([a-str (displayable->string (val-f *world*))])
            (unless (string=? a-str (get-label))
              (set-label a-str)))]))
         
@@ -343,7 +344,7 @@
     (define/public (update-with! an-elt)
       (match an-elt
         [(struct button-elt (val-f callback enabled?-f))
-         (let ([new-val (val-f *world*)]
+         (let ([new-val (displayable->string (val-f *world*))]
                [new-enabled? (enabled?-f *world*)])
            (unless (string=? new-val (get-label))
              (set-label new-val))
@@ -364,7 +365,7 @@
     (define/public (update-with! an-elt)
       (match an-elt
         [(struct text-field-elt (val-f callback enabled?-f))
-         (let ([new-text (val-f *world*)]
+         (let ([new-text (displayable->string (val-f *world*))]
                [new-enabled? (enabled?-f *world*)])
            (unless (string=? new-text (get-value))
              (set-value new-text))
@@ -399,8 +400,8 @@
     (define/public (update-with! an-elt)
       (match an-elt
         [(struct drop-down-elt (val-f choices-f callback enabled?-f))
-         (let ([new-val (val-f *world*)]
-               [new-choices (choices-f *world*)]
+         (let ([new-val (displayable->string (val-f *world*))]
+               [new-choices (map displayable->string (choices-f *world*))]
                [new-enabled? (enabled?-f *world*)])
            
            (unless (and (= (length (get-choices))

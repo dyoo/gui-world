@@ -13,7 +13,7 @@
 (define-struct (row-elt elt) (elts) #:transparent)
 (define-struct (column-elt elt) (elts) #:transparent)
 (define-struct (box-group-elt elt) (val-f elt enabled?-f) #:transparent)
-(define-struct (string-elt elt) (val-f) #:transparent)
+(define-struct (displayable-elt elt) (val-f) #:transparent)
 (define-struct (canvas-elt elt) (scene-f callback) #:transparent)
 (define-struct (button-elt elt) (val-f callback enabled?-f) #:transparent)
 (define-struct (drop-down-elt elt) (val-f choices-f callback enabled?-f) #:transparent)
@@ -46,7 +46,8 @@
 ;; displayable?: any -> boolean
 (define (displayable? datum)
   (or (string? datum)
-      (number? datum)))
+      (number? datum)
+      (boolean? datum)))
 
 
 ;; displayable->string: displayable -> string
@@ -55,7 +56,10 @@
     [(? string?)
      datum]
     [(? number?) 
-     (number->string datum)]))
+     (number->string datum)]
+    [(? boolean?)
+     (cond [datum "true"]
+           [else "false"])]))
 
 
 
@@ -85,12 +89,12 @@
 
 
 (define (message a-gvalue)
-  (make-string-elt (wrap-primitive string? a-gvalue)))
+  (make-displayable-elt (wrap-primitive displayable? a-gvalue)))
 
 
 (define (button/enabled val callback [enabled #t])
   ;; fixme: add function checks.
-  (make-button-elt (wrap-primitive string? val)
+  (make-button-elt (wrap-primitive displayable? val)
                    callback
                    (wrap-primitive boolean? enabled)))
 (define button button/enabled)
@@ -107,8 +111,8 @@
 
 (define (drop-down/enabled val choices callback [enabled? #t])
   ;; fixme: add function checks.
-  (make-drop-down-elt (wrap-primitive string? val)
-                      (wrap-primitive (flat-contract-predicate (listof string?))
+  (make-drop-down-elt (wrap-primitive displayable? val)
+                      (wrap-primitive (flat-contract-predicate (listof displayable?))
                                       choices)
                       callback
                       (wrap-primitive boolean? enabled?)))
@@ -117,7 +121,7 @@
 
 (define (text-field/enabled val callback [enabled? #t])
   ;; fixme: add function checks.
-  (make-text-field-elt (wrap-primitive string? val)
+  (make-text-field-elt (wrap-primitive displayable? val)
                        callback
                        (wrap-primitive boolean? enabled?)))
 (define text-field text-field/enabled)
@@ -131,7 +135,7 @@
 
 
 (define (box-group/enabled val a-gui [enabled? #t])
-  (make-box-group-elt (wrap-primitive string? val)
+  (make-box-group-elt (wrap-primitive displayable? val)
                       a-gui
                       (wrap-primitive boolean? enabled?)))
 (define box-group box-group/enabled)
@@ -145,14 +149,14 @@
 
 
 
-;; coerse-primitive-types-to-elts: (listof (or/c elt string scene)) -> (listof elt)
-;; Helper to turn strings into string-elts, and images into image-elts.
+;; coerse-primitive-types-to-elts: (listof (or/c elt displayable scene)) -> (listof elt)
+;; Helper to turn displayables into displayable-elts, and images into image-elts.
 (define (coerse-primitive-types-to-elts elts)
   (map coerse-primitive-to-elt elts))
 
-;; coerse-primitive-type-to-elt: (or/c elt string scene) -> elt
+;; coerse-primitive-type-to-elt: (or/c elt displayable scene) -> elt
 (define (coerse-primitive-to-elt an-elt)
-  (cond [(string? an-elt)
+  (cond [(displayable? an-elt)
          (message an-elt)]
         [(scene? an-elt)
          (canvas an-elt)]
@@ -178,8 +182,8 @@
                          (project/inject/gui a-subelt w->s s->w)
                          (project enabled?-f w->s))]
 
-    [(struct string-elt (val-f))
-     (make-string-elt (project val-f w->s))]
+    [(struct displayable-elt (val-f))
+     (make-displayable-elt (project val-f w->s))]
     
     [(struct canvas-elt (scene-f callback))
      (make-canvas-elt (project scene-f w->s) 
@@ -279,26 +283,26 @@
                   
                   [struct (column-elt elt) ([elts (listof elt?)])]
                   
-                  [struct (box-group-elt elt) ([val-f (gvalueof string?)]
+                  [struct (box-group-elt elt) ([val-f (gvalueof displayable?)]
                                                [elt elt?]
                                                [enabled?-f (gvalueof boolean?)])]
 
-                  [struct (string-elt elt) ([val-f (gvalueof string?)])]
+                  [struct (displayable-elt elt) ([val-f (gvalueof displayable?)])]
                   
                   [struct (canvas-elt elt) ([scene-f (gvalueof scene?)]
                                             [callback (gcallbackof-2 number? number?)])]
                   
-                  [struct (button-elt elt) ([val-f (gvalueof string?)]
+                  [struct (button-elt elt) ([val-f (gvalueof displayable?)]
                                             [callback callback/c]
                                             [enabled?-f (gvalueof boolean?)])]
                   
-                  [struct (drop-down-elt elt) ([val-f (gvalueof string?)]
-                                               [choices-f (gvalueof (listof string?))]
-                                               [callback (gcallbackof string?)]
+                  [struct (drop-down-elt elt) ([val-f (gvalueof displayable?)]
+                                               [choices-f (gvalueof (listof displayable?))]
+                                               [callback (gcallbackof displayable?)]
                                                [enabled?-f (gvalueof boolean?)])]
                   
-                  [struct (text-field-elt elt) ([val-f (gvalueof string?)]
-                                                [callback (gcallbackof string?)]
+                  [struct (text-field-elt elt) ([val-f (gvalueof displayable?)]
+                                                [callback (gcallbackof displayable?)]
                                                 [enabled?-f (gvalueof boolean?)])]
                   
                   [struct (slider-elt elt) ([val-f (gvalueof number?)]
@@ -311,10 +315,13 @@
                                               [callback (gcallbackof boolean?)]
                                               [enabled?-f (gvalueof boolean?)])]
 
+                  [displayable? (any/c . -> . boolean?)]
+                  [displayable->string (displayable? . -> . displayable?)]
                   
-                  #;[message ((gvalueof* string?) . -> . string-elt?)]
                   
-                  #;[button (((gvalueof* string?) 
+                  #;[message ((gvalueof* displayable?) . -> . displayable-elt?)]
+                  
+                  #;[button (((gvalueof* displayable?) 
                             callback/c)
                            ((gvalueof* boolean?)) 
                            . ->* . button-elt?)]
@@ -326,14 +333,14 @@
                            ((gvalueof* boolean?))
                            . ->* . slider-elt?)]
                   
-                  #;[drop-down (((gvalueof* string?)
-                               (gvalueof* (listof string?))
-                               (gcallbackof string?)) 
+                  #;[drop-down (((gvalueof* displayable?)
+                               (gvalueof* (listof displayable?))
+                               (gcallbackof displayable?)) 
                               ((gvalueof* boolean?))
                               . ->* . drop-down-elt?)]
                   
-                  #;[text-field (((gvalueof* string?)
-                                (gcallbackof string?))
+                  #;[text-field (((gvalueof* displayable?)
+                                (gcallbackof displayable?))
                                ((gvalueof* boolean?))
                                . ->* . text-field-elt?)]
                   
@@ -347,9 +354,9 @@
                            . ->* .
                            canvas-elt?)]
                   
-                  #;[row (() () #:rest (listof (or/c elt? string? scene?)) . ->* . row-elt?)]
-                  #;[col (() () #:rest (listof (or/c elt? string? scene?)) . ->* . column-elt?)]
-                  #;[box-group (((gvalueof* string?) elt?)
+                  #;[row (() () #:rest (listof (or/c elt? displayable? scene?)) . ->* . row-elt?)]
+                  #;[col (() () #:rest (listof (or/c elt? displayable? scene?)) . ->* . column-elt?)]
+                  #;[box-group (((gvalueof* displayable?) elt?)
                               ((gvalueof* boolean?))
                               . ->* .
                               box-group-elt?)]
@@ -361,4 +368,4 @@
                                  elt?)]
                   
                   #;[coerse-primitive-to-elt
-                     ((or/c elt? string? scene?) . -> . elt?)])
+                     ((or/c elt? displayable? scene?) . -> . elt?)])
