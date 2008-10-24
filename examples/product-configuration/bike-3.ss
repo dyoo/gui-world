@@ -97,7 +97,7 @@
 (define (rim-width a-rim)
   (cond
     [(string=? (rim-sku a-rim) "MA3")
-     ".85 cm"]
+     "0.85 cm"]
     [(string=? (rim-sku a-rim) "T519")
      "1.00 cm"]
     [(string=? (rim-sku a-rim) "CXP 33")
@@ -280,7 +280,8 @@
 
 ;; rule-shoes?: config -> boolean 
 (define (rule-shoes? a-config)
-  (or (and (string=? (shoes-sku (config-shoes a-config)) "SH R212")
+  (or (pedal-incomplete? a-config)
+      (and (string=? (shoes-sku (config-shoes a-config)) "SH R212")
            (string=? (pedal-pedaltype (config-pedal a-config)) "SPD"))
       (and (string=? (shoes-sku (config-shoes a-config)) "SH R150")
            (string=? (pedal-pedaltype (config-pedal a-config)) "Clip"))
@@ -295,7 +296,10 @@
 ;; config-shoes-sku-choices: config -> (listof string)
 ;; Returns a list of the legal shoes we can use with the given configuration.
 (define (config-shoes-sku-choices a-config)
-  (filter-config-shoes-sku-candidates a-config SHOES))
+  (cond [(pedal-incomplete? a-config)
+         (list UNKNOWN)]
+        [else
+         (filter-config-shoes-sku-candidates a-config SHOES)]))
 
 
 ;; legal-config-shoes-sku-candidate?: config string -> boolean
@@ -331,7 +335,8 @@
 ;; rule-tire?: config -> boolean
 ;; Note: simplification doesn't take profile into account.
 (define (rule-tire? a-config)
-  (or (and (string=? (tire-sku (config-tire a-config)) "Triathlon")
+  (or (rim-incomplete? a-config)
+      (and (string=? (tire-sku (config-tire a-config)) "Triathlon")
            (string=? (rim-height (config-rim a-config)) "20 cm")
            (string=? (rim-width (config-rim a-config)) "1.00 cm"))
       (and (string=? (tire-sku (config-tire a-config)) "Courier")
@@ -402,11 +407,13 @@
       
 
 
-
 ;; config-tire-sku-choices: config -> (listof string)
 ;; Returns a list of the legal tires we can use with the given configuration.
 (define (config-tire-sku-choices a-config)
-  (filter-config-tire-sku-candidates a-config TIRES))
+  (cond [(rim-incomplete? a-config)
+         (list UNKNOWN)]
+        [else
+         (filter-config-tire-sku-candidates a-config TIRES)]))
 
 
 ;; legal-config-tire-sku-candidate?: config string -> boolean
@@ -438,6 +445,38 @@
 
 
 
+
+;; pedal-incomplete?: config -> boolean
+(define (pedal-incomplete? a-config)
+  (string=? (pedal-sku (config-pedal a-config))
+            UNKNOWN))
+
+
+;; rim-incomplete: config -> boolean
+(define (rim-incomplete? a-config)
+  (string=? (rim-sku (config-rim a-config))
+            UNKNOWN))
+
+;; shoes-incomplete?: config -> boolean
+;; Returns true if a shoe hasn't been chosen yet.
+(define (shoes-incomplete? a-config)
+  (string=? (shoes-sku (config-shoes a-config)) 
+            UNKNOWN))
+
+;; tire-incomplete?: config -> boolean
+;; Retursn true if the tires are incomplete.
+(define (tire-incomplete? a-config)
+  (string=? (tire-sku (config-tire a-config))
+            UNKNOWN))
+
+      
+;; incomplete-configuration?: config -> boolean
+;; Returns true if the configuration hasn't been fully defined yet.
+(define (incomplete-configuration? a-config)
+  (or (pedal-incomplete? a-config)
+      (rim-incomplete? a-config)
+      (shoes-incomplete? a-config)
+      (tire-incomplete? a-config)))
 
 
       
@@ -484,14 +523,23 @@
 (define (legal-configuration-status a-config)
   (cond
     [(legal-configuration? a-config)
-     "Legal configuration."]
+     "No rules broken."]
     [else
      (string-append "Illegal configuration. "
                     (broken-rule-message "Extra" (rule-extra? a-config))
                     (broken-rule-message "Shoes" (rule-shoes? a-config))
-                    (broken-rule-message "Tires" (rule-tire? a-config))
-                    "]")]))
+                    (broken-rule-message "Tires" (rule-tire? a-config)))]))
                     
+
+;; complete-configuration-status: config -> string
+;; Given a config, produces a string that reports
+;; that configuration's completeness.
+(define (complete-configuration-status a-config)
+  (cond
+    [(incomplete-configuration? a-config)
+     "Incomplete configuration."]
+    [else
+     "Complete configuration."]))
 
 ;; broken-rule-message: string boolean -> string
 (define (broken-rule-message category ok?)
@@ -729,6 +777,7 @@
   (col (row (col pedal-gui shoes-gui
                  rim-gui tire-gui) 
             extra-gui)
+       (message complete-configuration-status)
        (message legal-configuration-status)))
 
 
