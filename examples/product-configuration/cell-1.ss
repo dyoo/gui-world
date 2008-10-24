@@ -39,13 +39,6 @@
 (define NO-ACCESSORIES (make-accessories false false 0))
 
 
-;; We have two simple constraints on our model:
-;;
-;; The number of lines in a plan should be less than or equal to the maximum
-;; allowed.
-;;
-;; If weekends or friends are included in a plan already, accessories must
-;; not allow additions.
 
 
 
@@ -142,7 +135,7 @@
      (shared-base-friends-included? a-base)]))
 
 
-;; base-max-lines: plan -> number
+;; base-max-lines: base -> number
 ;; Consumes a base and produces how many lines it will allow.
 (define (base-max-lines a-base)
   (cond [(single-base? a-base)
@@ -175,10 +168,66 @@
 ;; plan-lines: plan -> number
 ;; Consumes a plan and produces how many lines it has.
 (define (plan-lines a-plan)
-  (cond [(single-base? (plan-base a-plan))
-         1]
-        [(shared-base? (plan-base a-plan))
-         (+ 1 (accessories-extra-lines (plan-accessories a-plan)))]))
+  (+ 1 (accessories-extra-lines (plan-accessories a-plan))))
+
+
+
+;; We have two simple constraints on our model:
+;;
+;; The number of lines in a plan should be less than or equal to the maximum
+;; allowed.
+;;
+;; If weekends or friends are included in a plan already, accessories must
+;; not allow additions.
+
+
+;; legal-plan?: plan -> boolean
+;; Consumes a plan and produces true if the plan satisfies 
+;; the simple constraint described above.
+(define (legal-plan? a-plan)
+  (and (<= (plan-lines a-plan)
+           (base-max-lines (plan-base a-plan)))
+       (implies (base-weekends-included? (plan-base a-plan))
+                (not (accessories-weekends? 
+                      (plan-accessories a-plan))))
+
+       (implies (base-friends-included? (plan-base a-plan))
+                (not (accessories-friends? 
+                      (plan-accessories a-plan))))))
+  
+
+;; implies: boolean boolean -> boolean
+;; logical implication
+(define (implies x y)
+  (or (not x) y))
+
+
+(check-expect (legal-plan? 
+               (make-plan (first SINGLE-BASES)
+                          NO-ACCESSORIES))
+              true)
+
+(check-expect (legal-plan? 
+               (make-plan (first SINGLE-BASES)
+                          (make-accessories false false 1)))
+              false)
+
+(check-expect (legal-plan? 
+               (make-plan (first SHARED-BASES)
+                          (make-accessories false false 1)))
+              true)
+
+(check-expect (legal-plan?
+               (make-plan (third SINGLE-BASES)
+                          NO-ACCESSORIES))
+              true)
+
+(check-expect (legal-plan?
+               (make-plan (third SINGLE-BASES)
+                          (make-accessories true false 0)))
+              false)
+
+
 
 ;                             
 ;                             
@@ -225,4 +274,4 @@
 (define a-gui (row (col base-plan-gui
                         accessories-gui)
                    summary-gui))
-(big-bang 0 a-gui)
+#;(big-bang 0 a-gui)
