@@ -8,27 +8,14 @@
 (define-struct plan (base accessories))
 (define-updaters plan)
 
-;; A base is either a single-base, or a shared-base.
-;;
-;;
-;; A single-base-plan is a
-(define-struct single-base (name
-                            minutes             ;; number
-                            price               ;; number
-                            weekends-included?  ;; boolean
-                            friends-included?)) ;; boolean
-;; A single-base doesn't allow for additional lines.
-(define-updaters single-base)
-
-;; A shared-base is a:
-(define-struct shared-base (name
-                            minutes             ;; number
-                            price               ;; number
-                            weekends-included?  ;; boolean
-                            friends-included?   ;; boolean
-                            max-lines))  ;; number
-;; It allows for multiple lines.
-(define-updaters shared-base)
+;; A base is a:
+(define-struct base (name
+                     minutes             ;; number
+                     price               ;; number
+                     weekends-included?  ;; boolean
+                     friends-included?   ;; boolean
+                     max-lines))         ;; number
+(define-updaters base)
 
 
 ;; Accessories allow us to add extensions to the base plan.
@@ -40,113 +27,56 @@
 (define NO-ACCESSORIES (make-accessories false false 0))
 
 
-
-
-
 ;; Examples of base plans that we will present to the user.
 (define SINGLE-BASES 
-  (list (make-single-base "Economy single"
-                          450
-                          39.99
-                          false
-                          false)
+  (list (make-base "Economy single"
+                   450
+                   39.99
+                   false
+                   false
+                   1)
         
-        (make-single-base "Moderate single"
-                          900
-                          49.99
-                          true
-                          false)
+        (make-base "Moderate single"
+                   900
+                   49.99
+                   true
+                   false
+                   1)
         
-        (make-single-base "Heavy single"
-                          1350
-                          59.99
-                          true
-                          true)))
+        (make-base "Heavy single"
+                   1350
+                   59.99
+                   true
+                   true
+                   1)))
 
 (define SHARED-BASES
-  (list (make-shared-base "Economy family"
-                          550
-                          59.99
-                          false
-                          false
-                          3)
+  (list (make-base "Economy family"
+                   550
+                   59.99
+                   false
+                   false
+                   3)
         
-        (make-shared-base "Moderate family"
-                          700
-                          69.99
-                          true
-                          false
-                          5)
+        (make-base "Moderate family"
+                   700
+                   69.99
+                   true
+                   false
+                   5)
         
-        (make-shared-base "Heavy family"
-                          1400
-                          89.99
-                          true
-                          true
-                          5)))
+        (make-base "Heavy family"
+                   1400
+                   89.99
+                   true
+                   true
+                   5)))
 
 
 ;; We keep a list of all base plans.
 (define ALL-BASES (append SINGLE-BASES SHARED-BASES))
 
 
-
-;; base-name: base -> string
-;; Consumes a base and produces its name.
-(define (base-name a-base)
-  (cond [(single-base? a-base)
-         (single-base-name a-base)]
-        [(shared-base? a-base)
-         (shared-base-name a-base)]))
-
-
-;; base-minutes: base -> number
-;; Consumes a base plan and produces its minutes.
-(define (base-minutes a-base)
-  (cond
-    [(single-base? a-base)
-     (single-base-minutes a-base)]
-    [(shared-base? a-base)
-     (shared-base-minutes a-base)]))
-
-
-;; base-price: base -> number
-;; Consumes a base plan and produces its price.
-(define (base-price a-base)
-  (cond
-    [(single-base? a-base)
-     (single-base-price a-base)]
-    [(shared-base? a-base)
-     (shared-base-price a-base)]))
-
-
-;; base-weekends-included?: base -> boolean
-;; Consumes a base plan and produces if weekends are already included.
-(define (base-weekends-included? a-base)
-  (cond
-    [(single-base? a-base)
-     (single-base-weekends-included? a-base)]
-    [(shared-base? a-base)
-     (shared-base-weekends-included? a-base)]))
-
-
-;; base-friends-included?: base -> boolean
-;; Consumes a base plan and produces if friends are already included.
-(define (base-friends-included? a-base)
-  (cond
-    [(single-base? a-base)
-     (single-base-friends-included? a-base)]
-    [(shared-base? a-base)
-     (shared-base-friends-included? a-base)]))
-
-
-;; base-max-lines: base -> number
-;; Consumes a base and produces how many lines it will allow.
-(define (base-max-lines a-base)
-  (cond [(single-base? a-base)
-         1]
-        [(shared-base? a-base)
-         (shared-base-max-lines a-base)]))
 
 
 ;; accessories-price: accessories -> number
@@ -364,7 +294,7 @@
         [else
          a-plan]))
 
-         
+
 
 
 
@@ -465,18 +395,27 @@
              (list (number->string n)))]))
 
 
+
+;; weekends-checkbox-enabled?: plan -> boolean
+;; Produces true if the gui should enable the weekends accessories check box.
+(define (weekends-checkbox-enabled? a-plan)
+  (not (base-weekends-included? (plan-base a-plan))))
+
+;; friends-checkbox-enabled?: plan -> boolean
+;; Produces true if the gui should enable the friends accessories check box.
+(define (friends-checkbox-enabled? a-plan)
+  (not (base-friends-included? (plan-base a-plan))))
+
+
 (define accessories-gui 
   (box-group 
    "Accessories"
    (col
     (row "Number of lines" 
          (drop-down current-line-choice line-choices update-line-choice))
-    (row "Add unlimited weekends"
-         (checkbox plan-added-weekends? update-plan-added-weekends?))
-    (row "Add unlimited friends"
-         (checkbox plan-added-friends? update-plan-added-friends?))
-    (row "Add unlimited calls to friends"))))
-
+    (checkbox/enabled "Add unlimited weekends" plan-added-weekends? update-plan-added-weekends? weekends-checkbox-enabled?)
+    (checkbox/enabled "Add unlimited friends" plan-added-friends? update-plan-added-friends? friends-checkbox-enabled?))))
+    
 
 
 (define a-gui (col (box-group "Configuration"

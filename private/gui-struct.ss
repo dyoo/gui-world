@@ -19,7 +19,7 @@
 (define-struct (drop-down-elt elt) (val-f choices-f callback enabled?-f) #:transparent)
 (define-struct (text-field-elt elt) (val-f callback enabled?-f) #:transparent)
 (define-struct (slider-elt elt) (val-f min-f max-f callback enabled?-f) #:transparent)
-(define-struct (checkbox-elt elt) (val-f callback enabled?-f) #:transparent)
+(define-struct (checkbox-elt elt) (label-f val-f callback enabled?-f) #:transparent)
 
 
 
@@ -141,8 +141,9 @@
 (define box-group box-group/enabled)
 
 
-(define (checkbox/enabled val callback [enabled? #t])
-  (make-checkbox-elt (wrap-primitive boolean? val)
+(define (checkbox/enabled label val callback [enabled? #t])
+  (make-checkbox-elt (wrap-primitive displayable? label)
+                     (wrap-primitive boolean? val)
                      callback
                      (wrap-primitive boolean? enabled?)))
 (define checkbox checkbox/enabled)
@@ -212,8 +213,9 @@
                       (project/inject-1 callback w->s s->w)
                       (project enabled?-f w->s))]
   
-    [(struct checkbox-elt (val-f callback enabled?-f))
-     (make-checkbox-elt (project val-f w->s)
+    [(struct checkbox-elt (label-f val-f callback enabled?-f))
+     (make-checkbox-elt (project label-f w->s)
+                        (project val-f w->s)
                         (project/inject-1 callback w->s s->w)
                         (project enabled?-f w->s))]))
 
@@ -266,8 +268,8 @@
 (provide-maybe-higher-order-primitive drop-down/enabled (val-f choices-f callback enabled?-f))
 (provide-maybe-higher-order-primitive text-field (val-f callback))
 (provide-maybe-higher-order-primitive text-field/enabled (val-f callback enabled?-f))
-(provide-maybe-higher-order-primitive checkbox (val-f callback))
-(provide-maybe-higher-order-primitive checkbox/enabled (val-f callback enabled?-f))
+(provide-maybe-higher-order-primitive checkbox (label-f val-f callback))
+(provide-maybe-higher-order-primitive checkbox/enabled (label-f val-f callback enabled?-f))
 (provide-maybe-higher-order-primitive canvas (scene-f))
 (provide-maybe-higher-order-primitive canvas/callback (scene-f callback))
 (provide-maybe-higher-order-primitive box-group (val-f _))
@@ -311,7 +313,8 @@
                                             [callback (gcallbackof number?)]
                                             [enabled?-f (gvalueof boolean?)])]
 
-                  [struct (checkbox-elt elt) ([val-f (gvalueof boolean?)]
+                  [struct (checkbox-elt elt) ([label-f (gvalueof displayable?)]
+                                              [val-f (gvalueof boolean?)]
                                               [callback (gcallbackof boolean?)]
                                               [enabled?-f (gvalueof boolean?)])]
 

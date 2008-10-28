@@ -215,9 +215,9 @@
           [enabled (enabled?-f *world*)]
           [world-callback callback])]
     
-    [(struct checkbox-elt (val-f callback enabled?-f))
+    [(struct checkbox-elt (label-f val-f callback enabled?-f))
      (new world-gui:checkbox%
-          [label ""]
+          [label (displayable->string (label-f *world*))]
           [parent a-container]
           [value (val-f *world*)]
           [enabled (enabled?-f *world*)]
@@ -487,13 +487,17 @@
 (define world-gui:checkbox%
   (class* (on-subwindow-char-mixin check-box%) (world-gui<%>)
     (init-field world-callback)
-    (inherit get-value set-value is-enabled? enable)
+    (inherit get-value set-value get-label set-label is-enabled? enable)
     
     (define/public (update-with! an-elt)
       (match an-elt
-        [(struct checkbox-elt (val-f callback enabled?-f))
-         (let ([new-val (val-f *world*)]
+        [(struct checkbox-elt (label-f val-f callback enabled?-f))
+         (let ([new-label (displayable->string (label-f *world*))]
+               [new-val (val-f *world*)]
                [new-enabled? (enabled?-f *world*)])
+           (unless (string=? new-label (get-label))
+             (set-label new-label))
+           
            (unless (boolean=? new-val (get-value))
              (set-value new-val))
            
