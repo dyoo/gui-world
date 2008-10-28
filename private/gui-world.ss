@@ -414,7 +414,8 @@
                                  (lambda (x) 
                                    (string=? x internal-selection-string))
                                  new-choices)
-                                0)))
+                                0))
+             (queue-callback (lambda () (internal-callback))))
            
            (unless (string=? internal-selection-string new-val)
              (set-selection (list-index (lambda (x) 
@@ -433,14 +434,16 @@
               [else
                (cons (get-string i)
                      (loop (add1 i)))])))
-            
-    (super-new
-     [callback (lambda (c e)
-                 (set! internal-selection-string (get-string-selection))
+    
+    
+    (define (internal-callback)
+      (set! internal-selection-string (get-string-selection))
                  (change-world/f!
                   (lambda (a-world)
                     (world-callback 
-                     a-world (get-string-selection)))))])))
+                     a-world (get-string-selection)))))
+    (super-new
+     [callback (lambda (c e) (internal-callback))])))
 
 
 ;; clamp: number number number -> number
