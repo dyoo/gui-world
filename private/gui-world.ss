@@ -72,8 +72,11 @@
   (call-with-semaphore 
    world-sema
    (lambda ()
-     (set! *world* (new-world-f *world*))
-     (refresh-widgets!))))
+     (with-handlers ([void (lambda (exn)
+                             (shutdown-on-tick-thread)
+                             (raise exn))])
+       (set! *world* (new-world-f *world*))
+       (refresh-widgets!)))))
 
 
 
@@ -109,6 +112,12 @@
                                         ;; Stops the thread.
                                         (void))))))))
   (void))
+
+
+;; shutdown-on-tick-thread: -> void
+(define (shutdown-on-tick-thread)
+  (when (and *on-tick-thread* (thread-running? *on-tick-thread*))
+    (thread-send *on-tick-thread* 'shutdown)))
 
 
 ;; big-bang: world gui -> void
@@ -253,8 +262,7 @@
   (class frame%
     (define/augment (on-close)
       (inner (void) on-close)
-      (when *on-tick-thread*
-        (thread-send *on-tick-thread* 'shutdown)))
+      (shutdown-on-tick-thread))
     (super-new)))
 
 

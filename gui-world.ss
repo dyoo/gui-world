@@ -1,7 +1,4 @@
 #lang scheme/base
-(require "private/gui-world.ss"
-         lang/posn
-         scheme/local)
+(require "private/gui-world.ss")
 
-(provide (all-from-out "private/gui-world.ss")
-         (all-from-out lang/posn))
+(provide (all-from-out "private/gui-world.ss"))

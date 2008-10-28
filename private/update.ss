@@ -36,7 +36,7 @@
                                     accessor
                                     (lambda () #f))]
       [(free-identifier=? (first (first local-accessor-updater-bindings))
-                           accessor)
+                          accessor)
        (second (first local-accessor-updater-bindings))]
       [else
        (loop (rest local-accessor-updater-bindings))])))
@@ -72,46 +72,57 @@
      (begin
        (check-struct-type! #'a-struct-type stx)
        (let* ([info (extract-struct-info (syntax-local-value #'a-struct-type))]
-            [accessors (fourth info)]
-            [fields 
-             (map (lambda (accessor)
-                    (datum->syntax accessor
-                                   (string->symbol
-                                    (substring
-                                     (symbol->string (syntax-e accessor))
-                                     (add1 (string-length
-                                            (symbol->string
-                                             (syntax-e
-                                              #'a-struct-type))))))))
-                  accessors)])
-       (with-syntax ([(field ...) fields]
-                     [(accessor ...) accessors]
-                     [(-updater ...) (generate-temporaries fields)]
-                     [(updater ...) (map (lambda (id)
-                                           (datum->syntax 
-                                            stx
-                                            (string->symbol
-                                             (string-append "update-"
-                                                            (symbol->string (syntax-e #'a-struct-type))
-                                                            "-"
-                                                            (symbol->string (syntax-e id))))))
-                                         fields)])
-         (let ([result
-                (syntax/loc stx
-                  (begin
-                    (let-syntax ([do-compile-time-registration (lambda (stx)
-                      ;; mark the accessors for the updater to cooperate
-                                        (register-accessor-updater #'accessor #'updater) ...
-                                        (syntax (void)))])
-                      (do-compile-time-registration))
-                    (define (-updater a-struct-val new-val)
-                      (struct-copy a-struct-type a-struct-val
-                                   (field new-val)))
-                    ...
-                    (define-primitive updater -updater) ...
-                    
-                                                     ))])
-           result))))]))
+              [descriptor (first info)]
+              [predicate (third info)]
+              [accessors (fourth info)]
+              [fields 
+               (map (lambda (accessor)
+                      (datum->syntax accessor
+                                     (string->symbol
+                                      (substring
+                                       (symbol->string (syntax-e accessor))
+                                       (add1 (string-length
+                                              (symbol->string
+                                               (syntax-e
+                                                #'a-struct-type))))))))
+                    accessors)])
+         (with-syntax ([(field ...) fields]
+                       [descriptor descriptor]
+                       [predicate predicate]
+                       [(accessor ...) accessors]
+                       [(-updater ...) (generate-temporaries fields)]
+                       [(updater ...) (map (lambda (id)
+                                             (datum->syntax 
+                                              stx
+                                              (string->symbol
+                                               (string-append "update-"
+                                                              (symbol->string (syntax-e #'a-struct-type))
+                                                              "-"
+                                                              (symbol->string (syntax-e id))))))
+                                           fields)])
+           (let ([result
+                  (syntax/loc stx
+                    (begin
+                      (let-syntax ([do-compile-time-registration (lambda (stx)
+                                                                   ;; mark the accessors for the updater to cooperate
+                                                                   (register-accessor-updater #'accessor #'updater) ...
+                                                                   (syntax (void)))])
+                        (do-compile-time-registration))
+                      (define (-updater a-struct-val new-val)
+                        (unless (predicate a-struct-val)
+                          (raise (make-exn:fail
+                                  (format "~s: expects argument of type <~s>, but got ~s instead"
+                                          'updater
+                                          'descriptor 
+                                          a-struct-val)
+                                  (current-continuation-marks))))
+                        (struct-copy a-struct-type a-struct-val
+                                     (field new-val)))
+                      ...
+                      (define-primitive updater -updater) ...
+                      
+                      ))])
+             result))))]))
 
 
 
