@@ -218,6 +218,7 @@
      (new world-gui:slider% 
           [label #f]
           [parent a-container]
+          [min-width 50]
           [min-value (min-f *world*)]
           [max-value (max-f *world*)]
           [init-value (val-f *world*)]
