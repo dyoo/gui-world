@@ -370,6 +370,7 @@
                   update-plan-by-name)))
 
 
+
 ;; plan-added-weekends?: plan -> boolean
 ;; Consumes a plan and produces true if we've added unlimited weekends.
 (define (plan-added-weekends? a-plan)
@@ -393,12 +394,37 @@
           a-bool))
 
 
+
+;; current-line-choice: plan -> string
+(define (current-line-choice a-plan)
+  (number->string (plan-lines a-plan)))
+
+;; update-line-choice: plan string -> plan
+(define (update-line-choice a-plan a-choice)
+  (update-plan-lines a-plan (string->number a-choice)))
+
+;; line-choices: plan -> (listof string)
+;; Returns a list of line choices up to the maximum list of choices.
+(define (line-choices a-plan)
+  (string-range (plan-max-lines a-plan)))
+
+;; string-range: number -> string
+;; Produces a list of strings from 1 .. n
+(define (string-range n)
+  (cond
+    [(= n 0)
+     empty]
+    [else
+     (append (string-range (sub1 n))
+             (list (number->string n)))]))
+
+
 (define accessories-gui 
   (box-group 
    "Accessories"
    (col
     (row "Number of lines" 
-         (slider plan-lines 1 10 update-plan-lines))
+         (drop-down current-line-choice line-choices update-line-choice))
     (row "Add unlimited weekends"
          (checkbox plan-added-weekends? update-plan-added-weekends?))
     (row "Add unlimited friends"
