@@ -1,6 +1,6 @@
 ;; The first three lines of this file were inserted by DrScheme. They record metadata
 ;; about the language level of this file in a form that our tools can easily process.
-#reader(lib "htdp-beginner-reader.ss" "lang")((modname cell-1) (read-case-sensitive #t) (teachpacks ()) (htdp-settings #(#t constructor repeating-decimal #f #t none #f ())))
+#reader(lib "htdp-beginner-reader.ss" "lang")((modname cell-2) (read-case-sensitive #t) (teachpacks ()) (htdp-settings #(#t constructor repeating-decimal #f #t none #f ())))
 ;; Cell phone plan configuration
 (require "../../gui-world.ss")
 
@@ -330,13 +330,43 @@
 
 ;; update-plan-by-name.
 ;; Given a change in name, update the plan appropriately.
-;; If the plan changes, clear off the accessories list.
+;; If the plan changes, clear off the accessories list
+;; of accessories that are incompatible with the plan.
 (define (update-plan-by-name a-plan a-plan-name)
   (cond [(string=? (plan-name a-plan) a-plan-name)
          a-plan]
         [else
-         (make-plan (find-base-by-name a-plan-name ALL-BASES)
-                    NO-ACCESSORIES)]))
+         (clear-accessories-provided-by-base 
+          (update (plan-base a-plan) 
+                  (find-base-by-name a-plan-name ALL-BASES)))]))
+
+
+;; clear-accessories-provided-by-base: plan -> plan
+;; Given a plan, clear out any of the accessories that are
+;; already included in the base plan.
+(define (clear-accessories-provided-by-base a-plan)
+  (clear-weekends-if-base-provided
+   (clear-friends-if-base-provided a-plan)))
+
+
+;; clear-weekends-if-base-provided: plan -> plan
+(define (clear-weekends-if-base-provided a-plan)
+  (cond [(base-weekends-included? (plan-base a-plan))
+         (update (accessories-weekends? (plan-accessories a-plan)) false)]
+        [else
+         a-plan]))
+
+
+;; clear-friends-if-base-provided: plan -> plan
+(define (clear-friends-if-base-provided a-plan)
+  (cond [(base-friends-included? (plan-base a-plan))
+         (update (accessories-friends? (plan-accessories a-plan)) false)]
+        [else
+         a-plan]))
+
+         
+
+
 
 
 ;; base-names: (listof base) -> (listof String)
@@ -379,8 +409,10 @@
 
 ;; update-plan-added-weekends?: plan boolean -> plan
 (define (update-plan-added-weekends? a-plan a-bool)
-  (update (accessories-weekends? (plan-accessories a-plan))
-          a-bool))
+  (revert-to-old-plan-if-illegal
+   (update (accessories-weekends? (plan-accessories a-plan))
+           a-bool)
+   a-plan))
 
 
 ;; plan-added-friends?: plan -> boolean
@@ -388,10 +420,24 @@
 (define (plan-added-friends? a-plan)
   (accessories-friends? (plan-accessories a-plan)))
 
+
 ;; update-plan-added-friends?: plan boolean -> plan
 (define (update-plan-added-friends? a-plan a-bool)
-  (update (accessories-friends? (plan-accessories a-plan))
-          a-bool))
+  (revert-to-old-plan-if-illegal
+   (update (accessories-friends? (plan-accessories a-plan))
+           a-bool)
+   a-plan))
+
+
+;; revert-to-old-plan-if-illegal: plan plan -> plan
+;; If the new-plan is legal, produces it.  Otherwise, produces the
+;; old plan.
+(define (revert-to-old-plan-if-illegal new-plan old-plan)
+  (cond
+    [(legal-plan? new-plan)
+     new-plan]
+    [else
+     old-plan]))
 
 
 
@@ -445,9 +491,6 @@
                                     (message plan-has-unlimited-weekends?))
                                (row "Has unlimited calls to friends? "
                                     (message plan-has-unlimited-friends?))
-                               (row "Price: " (message plan-price-string))
+                               (row "Price: " (message plan-price-string))))))
 
-                               
-                               (row "Legal?: " (message legal-plan?))
-                               ))))
 (big-bang initial-world a-gui)
