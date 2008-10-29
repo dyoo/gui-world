@@ -16,7 +16,7 @@
                                   ""
                                   "Unknown"
                                   "Unknown"
-                                  #f))
+                                  false))
 
 (define TITLES (list "Unknown"
                      "Mr."
@@ -49,7 +49,7 @@
 ;; on-submit: world -> world
 ;; Submits the form, not allowing any further changes.
 (define (on-submit a-world)
-  (update-world-submitted? a-world #t))
+  (update-world-submitted? a-world true))
 
 
 ;; not-submitted?: world -> boolean
