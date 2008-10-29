@@ -131,9 +131,9 @@ This needs to be fixed to represent as a posn and a color structure.
    (define-struct misc-state (posn color))
 
 
-The example also suggests that we might want a gui element form that
-hides its children: if we have the "circle" tool selected, we may want
-to graphically hide the other tools rather than disable them.
+The flag example also suggests that we might want a gui element form
+that hides its children: if we have the "circle" tool selected, we may
+want to graphically hide the other tools rather than disable them.
 
 
 -------
@@ -150,6 +150,9 @@ their contents fit.  We're doing this for messages with auto-resize,
 but we haven't done this with the other widget types.  In particular,
 the buttons used in the flag examples don't make themselves large, and
 cut off a portion of the label when we select "circle".
+
+I need better names for the functions that take an enabled? or
+callback argument.
 
 
 -------
