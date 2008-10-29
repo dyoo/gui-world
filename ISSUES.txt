@@ -1,0 +1,157 @@
+Issues remaining for release
+
+- Better error messages
+- Structure updating
+- Event handling
+- Example programs
+- Other bugs
+- Documentation
+
+
+Details below:
+
+
+-------
+
+Better error messages
+
+If an error occurs during a call to a higher-order primitive, we don't
+get good error highlighting back to the user's source.  Something
+about the use of the provide-higher-order-primitive is interfering
+with the error reporting.
+
+We currently coerse constants to functions in gvalue position: if the
+user provides us a function, we should add a wrapper that properly
+reports blame.  I'm using htdp/error's check-fun-res function, but I
+haven't exercised its effect yet.
+
+
+
+-------
+
+Structure updating
+
+Beginner level should provide the functional updaters that we
+currently define through our define-updaters form.  I need to talk
+with plt-internal to argue for the updaters.
+
+Although we have the update form for doing deep functional update,
+it's not a perfect solution:
+
+    * it doesn't work under a higher-order context.
+
+    * it doesn't provide good error messages when the target is
+      unrecognizable or malformed.
+
+The colors example demonstrates the problem of defining update in a
+higher-order setting.  In colors, we try to define a reusable gui
+element that injects values into different portions of the world
+state.  We have a few possible solutions:
+
+    1. don't do anything (colors.ss)
+
+    2. use project/inject/gui (colors-inject.ss)
+
+    3. use update in combination with the with-accessors form
+
+#2's project/inject/gui specializes a gui to a portion of the world
+structure, but it too has problems: we may not want to do this
+projection to the entirety of a gui.
+
+#3 is untenable: it's too complex and ugly and doesn't address the
+higher-order concern very well.
+
+
+We may want to consider having a form for composing updaters, similar
+to the compose function.  Just as we can compose selectors:
+
+    (define (compose f g)
+      (lambda (x)
+        (f (g x))))
+
+we may want a similar form for composing functional updaters.
+
+But because functional updaters need selectors to do their work, we
+may want to have a form for defining a selector&updater pair, which
+I'll call an "accessor".  Then we may compose accessors together: as
+first-class values, accessors should be composable without any
+problem.
+
+
+
+-------
+
+Event handling
+
+
+We don't yet support a key handler as in the original world design.
+One concern is that widgets may hold onto keyboard focus in a way
+that's incompatible with a global key handler.  i.e. if keyboard focus
+is on a drop-down or on a text field, we wouldn't want the global
+keyboard handler to capture keystrokes at that time.
+
+
+Another issue with event handling is the temporal treatment of certain
+event sources.  Not all event sources are instantaneous.  Button
+clicks are instantaneous: once a user presses a button, we should
+immediately react to that.  But there are event sources where
+instantaneous reaction might lead to a poor user experience.
+
+We categorize events that come from
+
+     * typing into a text field,
+
+     * selecting through a list of drop-down selections, or
+
+     * moving a slider,
+
+as "gradual" events that take some extended period of time to
+generate.  During that time, intermediate event handling might do bad
+things like shift the widget away from the cursor or destroy the
+drop-down selection items as we're merely scrolling down the list.
+
+One possible solution is to treat such gradual events as being in a
+"critical region", during which we may want to halt the processing of
+new events from the outside (like from on-tick) until the gradual
+event has been fully generated.
+
+
+-------
+
+Example programs
+
+Flag needs to be revised to expose the deep structure updating problem
+more severely.  In particular, misc-state currently stores the
+position and color in a flat structure
+
+   (define-struct misc-state (x y r g b))
+
+This needs to be fixed to represent as a posn and a color structure.
+
+   (define-struct misc-state (posn color))
+
+
+The example also suggests that we might want a gui element form that
+hides its children: if we have the "circle" tool selected, we may want
+to graphically hide the other tools rather than disable them.
+
+
+-------
+
+Other bugs
+
+Sliders have a fixed min-value and max-value in MrEd.  This conflicts
+with gui-world's design, which allows those values to vary.  We need
+to cooperate with Robby or the MrEd maintainer to see if the constant
+range restriction can be lifted.
+
+Widgets with dynamic content need to resize themselves to make sure
+their contents fit.  We're doing this for messages with auto-resize,
+but we haven't done this with the other widget types.  In particular,
+the buttons used in the flag examples don't make themselves large, and
+cut off a portion of the label when we select "circle".
+
+
+-------
+
+Documentation
