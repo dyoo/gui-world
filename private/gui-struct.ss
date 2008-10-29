@@ -300,7 +300,8 @@
          canvas
          canvas/callback
          box-group
-         box-group/enabled)
+         box-group/enabled
+         project/inject/gui)
 
 
 (provide/contract [struct elt ()]

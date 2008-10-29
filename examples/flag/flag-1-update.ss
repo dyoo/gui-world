@@ -193,8 +193,8 @@
 
 ;; The rect tool part of the gui.
 (define rect-gui
-  (col (row "Width" (slider rect-width 1 FLAG-WIDTH update-rect-width)
-            (row "Height" (slider rect-height 1 FLAG-WIDTH update-rect-height)))))
+  (col (row "Width" (slider rect-width 1 FLAG-WIDTH update-rect-width))
+       (row "Height" (slider rect-height 1 FLAG-WIDTH update-rect-height))))
 
 
 
