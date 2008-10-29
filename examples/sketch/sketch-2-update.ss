@@ -18,7 +18,6 @@
 (define-struct world (posn dots direction))
 (define-updaters world)
 
-
 ;; We start things off by putting the position at the very center, on an empty
 ;; canvas, with no drifting.
 (define initial-world 

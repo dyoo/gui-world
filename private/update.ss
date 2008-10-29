@@ -3,11 +3,13 @@
          lang/posn
          scheme/stxparam
          lang/prim
+         (prefix-in beginner: lang/htdp-beginner)
          (for-syntax scheme/base
                      scheme/struct-info
                      scheme/list
                      syntax/boundmap
                      scheme/stxparam))
+
 
 (begin-for-syntax
   (define accessor-updater-mappings (make-free-identifier-mapping)))
@@ -34,8 +36,10 @@
       [(empty? local-accessor-updater-bindings)
        (free-identifier-mapping-get accessor-updater-mappings
                                     accessor
-                                    (lambda () #f))]
-      [(free-identifier=? (first (first local-accessor-updater-bindings))
+                                    (lambda ()
+                                      #f))]
+      [(free-identifier=? 
+        (first (first local-accessor-updater-bindings))
                           accessor)
        (second (first local-accessor-updater-bindings))]
       [else
@@ -186,10 +190,15 @@
 
 (begin-for-syntax
   (register-accessor-updater #'color-red #'update-color-red)
+  (register-accessor-updater #'beginner:color-red #'update-color-red)
   (register-accessor-updater #'color-green #'update-color-green)
+  (register-accessor-updater #'beginner:color-green #'update-color-green)
   (register-accessor-updater #'color-blue #'update-color-blue)
+  (register-accessor-updater #'beginner:color-blue #'update-color-blue)
   (register-accessor-updater #'posn-x #'update-posn-x)
-  (register-accessor-updater #'posn-y #'update-posn-y))
+  (register-accessor-updater #'beginner:posn-x #'update-posn-x)
+  (register-accessor-updater #'posn-y #'update-posn-y)
+  (register-accessor-updater #'beginner:posn-y #'update-posn-y))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
