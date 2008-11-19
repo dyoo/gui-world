@@ -145,6 +145,9 @@ with gui-world's design, which allows those values to vary.  We need
 to cooperate with Robby or the MrEd maintainer to see if the constant
 range restriction can be lifted.
 
+    20081118: fixed by hacking at it.  I might still want to mention
+    this to Robby, but it's not critical anymore.
+
 Widgets with dynamic content need to resize themselves to make sure
 their contents fit.  We're doing this for messages with auto-resize,
 but we haven't done this with the other widget types.  In particular,

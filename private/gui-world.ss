@@ -462,6 +462,9 @@
 ;; Slightly special: the slider is really held in an inner widget.  We do this
 ;; because we may need to replace the whole widget on update time, and we want to
 ;; do this without disrupting parent widgets.
+;;
+;; There's also some special logic to ensure the value's between the min and max,
+;; and to propagate such clamping into the world if necessary.  Slightly fragile.
 (define world-gui:slider%
   (class* horizontal-panel% (world-gui<%>)
     
