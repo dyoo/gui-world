@@ -1,0 +1,33 @@
+Product configuration example
+
+stage 1: basic gui to let user configure plans, all options okay
+
+stage 2: write function to determine whether options are legal
+         ugly conditional version
+
+stage 3: separate out the logic
+         setting one option auto-deselects others
+         keeping some of the state invisible
+
+stage 4: GUI changes in response to program constraints (BDDs)
+         language for constraints
+         constraint solving
+         solving constraints efficiently
+
+-----------------------------------------
+Cell phone configuration model:
+  - how many minutes included? 
+  - free weekends?
+  - text messaging?
+  - enhanced data package?
+  - family plan? (cheaper, but no extra frequent callers)
+  - free frequent caller?
+  - account profiles:
+    * economy -- few minutes, no extras
+    * moderate -- more minutes, free weekends
+    * deluxe -- even more minutes, free weekends, free messaging
+
+Constraints:
+  - can't ask for a feature included in a profile
+  - text messaging is included in the enhanced data package
+  - can't have both family plan and free frequent callers
