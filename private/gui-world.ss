@@ -465,7 +465,8 @@
 (define world-gui:slider%
   (class* horizontal-panel% (world-gui<%>)
     
-    (init min-value max-value world-callback init-value label)
+    (init-field min-value max-value world-callback)
+    (init init-value label)
     (inherit delete-child)
     
     ;; We maintain an inner class that represents the real slider.
@@ -473,13 +474,12 @@
       (class* (on-subwindow-char-mixin slider%) ()
         (inherit get-value set-value
                  is-enabled? enable)
-        (init min-value max-value world-callback)
-        (define-values (-min-value -max-value) (values min-value max-value))
+        (init-field min-value max-value world-callback)
 
         (define/public (get-min-value)
-          -min-value)
+          min-value)
         (define/public (get-max-value)
-          -max-value)
+          max-value)
         
         (super-new
          [min-value min-value]
@@ -500,7 +500,11 @@
            (unless (and (= new-min (send inner-slider get-min-value))
                         (= new-max (send inner-slider get-max-value)))
              (delete-child inner-slider)
-             (set! inner-slider (make-inner-slider new-min new-max new-val)))
+             (set! inner-slider (make-inner-slider new-min new-max new-val))
+             (queue-callback (lambda () 
+                               (change-world/f!
+                                (lambda (a-world)
+                                  (world-callback a-world (send inner-slider get-value)))))))
            
            (unless (= new-val (send inner-slider get-value))
              (send inner-slider set-value new-val))
@@ -517,7 +521,7 @@
            [world-callback world-callback]
            [min-value min-value]
            [max-value max-value]
-           [init-value init-value]
+           [init-value (clamp init-value min-value max-value)]
            [min-width 50]
            [label label]))
     
