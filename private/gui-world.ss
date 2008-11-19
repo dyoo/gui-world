@@ -218,7 +218,6 @@
      (new world-gui:slider% 
           [label #f]
           [parent a-container]
-          [min-width 50]
           [min-value (min-f *world*)]
           [max-value (max-f *world*)]
           [init-value (val-f *world*)]
@@ -460,14 +459,36 @@
   (min (max x low) high))
 
 
+;; Slightly special: the slider is really held in an inner widget.  We do this
+;; because we may need to replace the whole widget on update time, and we want to
+;; do this without disrupting parent widgets.
 (define world-gui:slider%
-  (class* (on-subwindow-char-mixin slider%) (world-gui<%>)
-    (inherit get-value set-value
-             is-enabled? enable)
-    (init min-value
-          max-value)
-    (init-field world-callback)
+  (class* horizontal-panel% (world-gui<%>)
+    
+    (init min-value max-value world-callback init-value label)
+    (inherit delete-child)
+    
+    ;; We maintain an inner class that represents the real slider.
+    (define inner-slider%
+      (class* (on-subwindow-char-mixin slider%) ()
+        (inherit get-value set-value
+                 is-enabled? enable)
+        (init min-value max-value world-callback)
+        (define-values (-min-value -max-value) (values min-value max-value))
+
+        (define/public (get-min-value)
+          -min-value)
+        (define/public (get-max-value)
+          -max-value)
         
+        (super-new
+         [min-value min-value]
+         [max-value max-value]
+         [callback (lambda (s e)
+                     (change-world/f!
+                      (lambda (a-world)
+                        (world-callback a-world (get-value)))))])))
+    
     (define/public (update-with! an-elt)
       (match an-elt
         [(struct slider-elt (val-f min-f max-f callback enabled?-f))
@@ -475,22 +496,33 @@
                 [new-max (max-f *world*)]
                 [new-val (clamp (val-f *world*) new-min new-max)]
                 [new-enabled? (enabled?-f *world*)])
-           ;; fixme: handle changes to min/max ranges
-           (unless (= new-val (get-value))
-             (set-value new-val))
            
-           (unless (boolean=? (is-enabled?) new-enabled?)
-             (enable new-enabled?)))]))
+           (unless (and (= new-min (send inner-slider get-min-value))
+                        (= new-max (send inner-slider get-max-value)))
+             (delete-child inner-slider)
+             (set! inner-slider (make-inner-slider new-min new-max new-val)))
+           
+           (unless (= new-val (send inner-slider get-value))
+             (send inner-slider set-value new-val))
+           
+           (unless (boolean=? (send inner-slider is-enabled?) new-enabled?)
+             (send inner-slider enable new-enabled?)))]))
     
-    (define -min-value min-value)
-    (define -max-value max-value)
-    (super-new
-     [min-value min-value]
-     [max-value max-value]
-     [callback (lambda (s e)
-                 (change-world/f!
-                  (lambda (a-world)
-                    (world-callback a-world (get-value)))))])))
+    
+    ;; make-inner-slider: number number number -> inner-slider%
+    ;; Makes the inner slider.
+    (define (make-inner-slider min-value max-value init-value)
+      (new inner-slider% 
+           [parent this]
+           [world-callback world-callback]
+           [min-value min-value]
+           [max-value max-value]
+           [init-value init-value]
+           [min-width 50]
+           [label label]))
+    
+    (super-new)
+    (define inner-slider (make-inner-slider min-value max-value init-value))))
 
 
 (define world-gui:checkbox%
