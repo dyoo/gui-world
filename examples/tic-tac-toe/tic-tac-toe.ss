@@ -1,6 +1,7 @@
 ;; The first three lines of this file were inserted by DrScheme. They record metadata
 ;; about the language level of this file in a form that our tools can easily process.
-#reader(lib "htdp-beginner-reader.ss" "lang")((modname |tic tac toe|) (read-case-sensitive #t) (teachpacks ((lib "world.ss" "teachpack" "htdp") (lib "image.ss" "teachpack" "htdp"))) (htdp-settings #(#t constructor repeating-decimal #f #t none #f ((lib "world.ss" "teachpack" "htdp") (lib "image.ss" "teachpack" "htdp")))))
+#reader(lib "htdp-beginner-reader.ss" "lang")((modname tic-tac-toe) (read-case-sensitive #t) (teachpacks ((lib "image.ss" "teachpack" "htdp"))) (htdp-settings #(#t constructor repeating-decimal #f #t none #f ((lib "image.ss" "teachpack" "htdp")))))
+(require "../../gui-world.ss")
 
 ;; ==== PART #1 : Image practice ====
 
@@ -78,57 +79,57 @@ blank-square
 
 
 ;; TYPE DEFINITION
-(define-struct row (left mid right))
-;; make-row: square square square -> row
+(define-struct game-row (left mid right))
+;; make-game-row: square square square -> game-row
 
 ;; EXAMPLE DATA
-(define row1 (make-row 'circle 'blank 'cross))
-(define row2 (make-row 'circle 'cross 'blank))
-(define row3 (make-row 'blank 'blank 'blank))
-(define row4 (make-row 'blank 'blank 'circle))
-(define row5 (make-row 'cross 'blank 'circle))
+(define game-row1 (make-game-row 'circle 'blank 'cross))
+(define game-row2 (make-game-row 'circle 'cross 'blank))
+(define game-row3 (make-game-row 'blank 'blank 'blank))
+(define game-row4 (make-game-row 'blank 'blank 'circle))
+(define game-row5 (make-game-row 'cross 'blank 'circle))
 
 ;; TEMPLATE
-;(define (a-row-function a-row)
-;  ... (row-left a-row)      ;; is a square
-;  ... (row-mid a-row)       ;; is a square
-;  ... (row-right a-row))    ;; is a square
+;(define (a-game-row-function a-game-row)
+;  ... (game-row-left a-game-row)      ;; is a square
+;  ... (game-row-mid a-game-row)       ;; is a square
+;  ... (game-row-right a-game-row))    ;; is a square
 
-;; draw-row : Given a row, return its image, namely the three square next to each other.
-;; draw-row : row -> image
-(check-expect (draw-row (make-row 'circle 'blank 'cross))
+;; draw-game-row : Given a game-row, return its image, namely the three square next to each other.
+;; draw-game-row : game-row -> image
+(check-expect (draw-game-row (make-game-row 'circle 'blank 'cross))
               (beside (draw-square 'circle)
                       (beside (draw-square 'blank)
                               (draw-square 'cross))))
-(check-expect (draw-row (make-row 'circle 'cross 'blank))
+(check-expect (draw-game-row (make-game-row 'circle 'cross 'blank))
               (beside (draw-square 'circle)
                       (beside (draw-square 'cross)
                               (draw-square 'blank))))
-(check-expect (draw-row (make-row 'blank 'blank 'blank))
+(check-expect (draw-game-row (make-game-row 'blank 'blank 'blank))
               (beside (draw-square 'blank)
                       (beside (draw-square 'blank)
                               (draw-square 'blank))))
-(define (draw-row a-row)
-  (beside (draw-square (row-left a-row))
-          (beside (draw-square (row-mid a-row))
-                  (draw-square (row-right a-row)))))
-(draw-row (make-row 'circle 'blank 'cross))
+(define (draw-game-row a-game-row)
+  (beside (draw-square (game-row-left a-game-row))
+          (beside (draw-square (game-row-mid a-game-row))
+                  (draw-square (game-row-right a-game-row)))))
+(draw-game-row (make-game-row 'circle 'blank 'cross))
 
 ;; ==== PART #4 : Practice of nested structures (board) ====
 
 ;; TYPE DEFINITION
-(define-struct board (top-row center-row bottom-row))
-;; make-board : row row row -> board
+(define-struct board (top-game-row center-game-row bottom-game-row))
+;; make-board : game-row game-row game-row -> board
 
-(define empty-row (make-row 'blank 'blank 'blank))
-(define empty-board (make-board empty-row empty-row empty-row))
+(define empty-game-row (make-game-row 'blank 'blank 'blank))
+(define empty-board (make-board empty-game-row empty-game-row empty-game-row))
 
 
 ;; TEMPLATE
 ;(define (a-board-function a-board)
-;  ... (board-top-row a-board)  ;; is a row
-;  ... (board-middle-row a-board) ;; is a row
-;  ... (board-lower-row a-board)) ;; is a row
+;  ... (board-top-game-row a-board)  ;; is a game-row
+;  ... (board-middle-game-row a-board) ;; is a game-row
+;  ... (board-lower-game-row a-board)) ;; is a game-row
 
 ;; on-top : Given two images, returns an image consisting of the
 ;;          first placed on top of the other.
@@ -152,15 +153,15 @@ blank-square
 
 ;; draw-board : Given a board, returns its image.
 ;; draw-board : board -> image
-(check-expect (draw-board (make-board row1 row2 row3))
-              (on-top (on-top (draw-row row1)
-                              (draw-row row2))
-                      (draw-row row3)))
+(check-expect (draw-board (make-board game-row1 game-row2 game-row3))
+              (on-top (on-top (draw-game-row game-row1)
+                              (draw-game-row game-row2))
+                      (draw-game-row game-row3)))
 (define (draw-board a-board)
-  (on-top (on-top (draw-row (board-top-row a-board))  
-                  (draw-row (board-center-row a-board))) 
-          (draw-row (board-bottom-row a-board)))) 
-(define example-board-image (draw-board (make-board row1 row2 row3)))
+  (on-top (on-top (draw-game-row (board-top-game-row a-board))  
+                  (draw-game-row (board-center-game-row a-board))) 
+          (draw-game-row (board-bottom-game-row a-board)))) 
+(define example-board-image (draw-board (make-board game-row1 game-row2 game-row3)))
 
 ;; ==== PART #5 : Practice COND
 
@@ -179,88 +180,88 @@ blank-square
        [(and (>= x-pos (+ (* 2 square-width) 1))(<= x-pos (* 3 square-width)))'R]))
 
 
-;; which-row : Given the y coordinate of the mouse click and returns 
+;; which-game-row : Given the y coordinate of the mouse click and returns 
 ;;             the symbol 'T, the symbol 'C, or the symbol 'B,
 ;;             depending on whether that Y position falls on the top, 
 ;;             the center or the bottom of the board.
-;; which-row : number -> symbol
-(check-expect (which-row 50) 'T)
-(check-expect (which-row 130) 'C)
-(check-expect (which-row 230) 'B)
-(define (which-row y-pos)
+;; which-game-row : number -> symbol
+(check-expect (which-game-row 50) 'T)
+(check-expect (which-game-row 130) 'C)
+(check-expect (which-game-row 230) 'B)
+(define (which-game-row y-pos)
   (cond[(and (>= y-pos 0)(<= y-pos square-width))'T]
        [(and (>= y-pos (+ square-width 1))(<= y-pos (* 2 square-width)))'C]
        [(and (>= y-pos (+ (* 2 square-width) 1))(<= y-pos (* 3 square-width)))'B]))
 
 
-;; ==== PART #6 : Practice structure update (make-row) ====
+;; ==== PART #6 : Practice structure update (make-game-row) ====
 
-;; play-on-left: Update the left square of the row with the given play.
-;; play-on-left: row square -> row
-(check-expect (play-on-left (make-row 'blank 'cross 'circle) 'circle)
-              (make-row 'circle 'cross 'circle))
-(define (play-on-left row play)
-  (make-row play (row-mid row) (row-right row)))
+;; play-on-left: Update the left square of the game-row with the given play.
+;; play-on-left: game-row square -> game-row
+(check-expect (play-on-left (make-game-row 'blank 'cross 'circle) 'circle)
+              (make-game-row 'circle 'cross 'circle))
+(define (play-on-left game-row play)
+  (make-game-row play (game-row-mid game-row) (game-row-right game-row)))
 
-;; play-on-middle: Update the middle square of the row with the given play.
-;; play-on-middle: row square -> row
-(check-expect (play-on-middle (make-row 'blank 'cross 'circle) 'circle)
-              (make-row 'blank 'circle 'circle))
-(define (play-on-middle row play)
-  (make-row (row-left row) play (row-right row)))
+;; play-on-middle: Update the middle square of the game-row with the given play.
+;; play-on-middle: game-row square -> game-row
+(check-expect (play-on-middle (make-game-row 'blank 'cross 'circle) 'circle)
+              (make-game-row 'blank 'circle 'circle))
+(define (play-on-middle game-row play)
+  (make-game-row (game-row-left game-row) play (game-row-right game-row)))
 
-;; play-on-right: Update the right square of the row with the given play.
-;; play-on-right: row square -> row
-(check-expect (play-on-right (make-row 'blank 'cross 'circle) 'cross)
-              (make-row 'blank 'cross 'cross))
-(define (play-on-right row play)
-  (make-row (row-left row) (row-mid row) play))
+;; play-on-right: Update the right square of the game-row with the given play.
+;; play-on-right: game-row square -> game-row
+(check-expect (play-on-right (make-game-row 'blank 'cross 'circle) 'cross)
+              (make-game-row 'blank 'cross 'cross))
+(define (play-on-right game-row play)
+  (make-game-row (game-row-left game-row) (game-row-mid game-row) play))
 
 ;; ==== PART #7 : Praticing COND dispatch ====
 
-;; play-on-row : Update the row with the given play at the given location.
-;; play-on-row : row square symbol -> row
-(check-expect (play-on-row (make-row 'blank 'cross 'circle) 'circle 'L)
-              (make-row 'circle 'cross 'circle))
-(check-expect (play-on-row (make-row 'blank 'cross 'circle) 'circle 'M)
-              (make-row 'blank 'circle 'circle))
-(check-expect (play-on-row (make-row 'blank 'cross 'circle) 'cross 'R)
-              (make-row 'blank 'cross 'cross))
-(define (play-on-row row play a-hp)
-  (cond [(symbol=? a-hp 'L) (play-on-left row play)]
-        [(symbol=? a-hp 'M) (play-on-middle row play)]
-        [(symbol=? a-hp 'R) (play-on-right row play)]))
+;; play-on-game-row : Update the game-row with the given play at the given location.
+;; play-on-game-row : game-row square symbol -> game-row
+(check-expect (play-on-game-row (make-game-row 'blank 'cross 'circle) 'circle 'L)
+              (make-game-row 'circle 'cross 'circle))
+(check-expect (play-on-game-row (make-game-row 'blank 'cross 'circle) 'circle 'M)
+              (make-game-row 'blank 'circle 'circle))
+(check-expect (play-on-game-row (make-game-row 'blank 'cross 'circle) 'cross 'R)
+              (make-game-row 'blank 'cross 'cross))
+(define (play-on-game-row game-row play a-hp)
+  (cond [(symbol=? a-hp 'L) (play-on-left game-row play)]
+        [(symbol=? a-hp 'M) (play-on-middle game-row play)]
+        [(symbol=? a-hp 'R) (play-on-right game-row play)]))
 
 
 ;; ==== PART #8 : Pratice updating nested structures ====
 
-;; play-on-board-at-top : Update the board with the play, at the given horz. position, on the top row.
+;; play-on-board-at-top : Update the board with the play, at the given horz. position, on the top game-row.
 ;; play-on-board-at-top : board square symbol -> board
 (check-expect (play-on-board-at-top empty-board 'cross 'R)
-              (make-board (make-row 'blank 'blank 'cross)
-                          empty-row empty-row))
+              (make-board (make-game-row 'blank 'blank 'cross)
+                          empty-game-row empty-game-row))
 (define (play-on-board-at-top a-board play a-hp)
-  (make-board (play-on-row (board-top-row a-board) play a-hp)  
-              (board-center-row a-board) 
-              (board-bottom-row a-board))) 
+  (make-board (play-on-game-row (board-top-game-row a-board) play a-hp)  
+              (board-center-game-row a-board) 
+              (board-bottom-game-row a-board))) 
 
-;; play-on-board-at-middle : Update the board with the play, at the given horz. position, on the center row.
+;; play-on-board-at-middle : Update the board with the play, at the given horz. position, on the center game-row.
 ;; play-on-board-at-middle : board square symbol -> board
 (check-expect (play-on-board-at-center empty-board 'cross 'L)
-              (make-board empty-row (make-row 'cross 'blank 'blank) empty-row))
+              (make-board empty-game-row (make-game-row 'cross 'blank 'blank) empty-game-row))
 (define (play-on-board-at-center a-board play a-hp)
-  (make-board (board-top-row a-board)  
-              (play-on-row (board-center-row a-board) play a-hp)
-              (board-bottom-row a-board))) 
+  (make-board (board-top-game-row a-board)  
+              (play-on-game-row (board-center-game-row a-board) play a-hp)
+              (board-bottom-game-row a-board))) 
 
-;; play-on-board-at-bottom : Update the board with the play, at the given horz. position, on the bottom row.
+;; play-on-board-at-bottom : Update the board with the play, at the given horz. position, on the bottom game-row.
 ;; play-on-board-at-bottom : board square symbol -> board
 (check-expect (play-on-board-at-bottom empty-board 'circle 'M)
-              (make-board empty-row empty-row (make-row 'blank 'circle 'blank)))
+              (make-board empty-game-row empty-game-row (make-game-row 'blank 'circle 'blank)))
 (define (play-on-board-at-bottom a-board play a-hp)
-  (make-board (board-top-row a-board) 
-              (board-center-row a-board) 
-              (play-on-row (board-bottom-row a-board) play a-hp)))
+  (make-board (board-top-game-row a-board) 
+              (board-center-game-row a-board) 
+              (play-on-game-row (board-bottom-game-row a-board) play a-hp)))
 
 
 ;; ==== PART #9 : COND dispatch combined with updating nested structures ====
@@ -268,17 +269,17 @@ blank-square
 ;; play-on-board : Update the board with the given play at the given horz. and vert. position.
 ;; play-on-board : board square symbol symbol -> board
 (check-expect (play-on-board empty-board 'cross 'R 'T)
-              (make-board (make-row 'blank 'blank 'cross)
-                          empty-row
-                          empty-row))
+              (make-board (make-game-row 'blank 'blank 'cross)
+                          empty-game-row
+                          empty-game-row))
 (check-expect (play-on-board empty-board 'circle 'M 'C)
-              (make-board empty-row
-                          (make-row 'blank 'circle 'blank)
-                          empty-row))
+              (make-board empty-game-row
+                          (make-game-row 'blank 'circle 'blank)
+                          empty-game-row))
 (check-expect (play-on-board empty-board 'cross 'L 'B)
-              (make-board empty-row
-                          empty-row
-                          (make-row 'cross 'blank 'blank)))
+              (make-board empty-game-row
+                          empty-game-row
+                          (make-game-row 'cross 'blank 'blank)))
 (define (play-on-board board play a-hp a-vp)
   (cond [(symbol=? a-vp 'T) (play-on-board-at-top board play a-hp)]
         [(symbol=? a-vp 'C) (play-on-board-at-center board play a-hp)]
@@ -293,7 +294,8 @@ blank-square
 ;; board->scene : Draw a board.
 ;; board->scene : board -> scene
 (define (board->scene board)
-  (place-image (put-pinhole (draw-board board) 0 0)
+  ...
+  #;(place-image (put-pinhole (draw-board board) 0 0)
                0 0
                (empty-scene width height)))
 
@@ -301,15 +303,15 @@ blank-square
 ;; clack1 : board number number symbol -> board
 (check-expect (clack1 empty-board 40 50 'button-down) empty-board)
 (check-expect (clack1 empty-board 210 290 'button-up) 
-              (make-board empty-row
-                          empty-row
-                          (make-row 'blank 'blank 'cross)))
+              (make-board empty-game-row
+                          empty-game-row
+                          (make-game-row 'blank 'blank 'cross)))
 (check-expect (clack1 empty-board 40 50 'button-up) 
-              (make-board (make-row 'cross 'blank 'blank)
-                          empty-row empty-row))
+              (make-board (make-game-row 'cross 'blank 'blank)
+                          empty-game-row empty-game-row))
 (define (clack1 board x y event)
   (cond [(symbol=? event 'button-up)
-         (play-on-board board 'cross (which-column x) (which-row y))]
+         (play-on-board board 'cross (which-column x) (which-game-row y))]
         [else board]))
 
 
@@ -326,30 +328,30 @@ blank-square
         [else 'cross]))
 
 ;; lookup-square : Given a horz. pos, finds the content of that square
-;; lookup-square : row symbol -> square
-(define (lookup-square row a-hp)
-  (cond [(symbol=? a-hp 'L) (row-left row)]
-        [(symbol=? a-hp 'M) (row-mid row)]
-        [(symbol=? a-hp 'R) (row-right row)]))
+;; lookup-square : game-row symbol -> square
+(define (lookup-square game-row a-hp)
+  (cond [(symbol=? a-hp 'L) (game-row-left game-row)]
+        [(symbol=? a-hp 'M) (game-row-mid game-row)]
+        [(symbol=? a-hp 'R) (game-row-right game-row)]))
 
-;; lookup-square : Given a vert. pos, finds that row.
-;; lookup-square : board symbol -> row
-(define (lookup-row board a-vp)
-  (cond [(symbol=? a-vp 'T) (board-top-row board)]
-        [(symbol=? a-vp 'C) (board-center-row board)]
-        [(symbol=? a-vp 'B) (board-bottom-row board)]))
+;; lookup-square : Given a vert. pos, finds that game-row.
+;; lookup-square : board symbol -> game-row
+(define (lookup-game-row board a-vp)
+  (cond [(symbol=? a-vp 'T) (board-top-game-row board)]
+        [(symbol=? a-vp 'C) (board-center-game-row board)]
+        [(symbol=? a-vp 'B) (board-bottom-game-row board)]))
 
 ;; lookup : Given a horz. and a vert. pos, finds that square.
 ;; lookup : board symbol symbol -> square
 (define (lookup board a-hp a-vp)
-  (lookup-square (lookup-row board a-vp) a-hp))
+  (lookup-square (lookup-game-row board a-vp) a-hp))
 
 ;; move-legal? : Return true if the square at horz. and vert position is blank.
 ;; move-legal? : board square symbol symbol -> boolean
 (check-expect (move-legal? empty-board 'L 'C) true)
-(check-expect (move-legal? (make-board empty-row 
-                                       (make-row 'circle 'cross cross)
-                                       empty-row)                                        
+(check-expect (move-legal? (make-board empty-game-row 
+                                       (make-game-row 'circle 'cross cross)
+                                       empty-game-row)                                        
                            'M 'C) false)
 (define (move-legal? board horizontal-pos vertical-pos)
   (symbol=? (lookup board horizontal-pos vertical-pos)
@@ -363,9 +365,9 @@ blank-square
 ;;        plays in that square, if legal. The next player then switches hand.
 ;; play : game symbol symbol -> game
 (check-expect (play-game initial-game 'L 'C)
-              (make-game 'circle (make-board empty-row
-                                             (make-row 'cross 'blank 'blank)
-                                             empty-row)
+              (make-game 'circle (make-board empty-game-row
+                                             (make-game-row 'cross 'blank 'blank)
+                                             empty-game-row)
                          1))
 (define (play-game game horizontal-pos vertival-pos)
   (cond [(move-legal? (game-board game) horizontal-pos vertival-pos)
@@ -379,7 +381,7 @@ blank-square
 ;; clack2 : game number number symbol -> game
 (define (clack2 game x y event)
   (cond [(symbol=? event 'button-up)
-         (play-game game (which-column x) (which-row y))]
+         (play-game game (which-column x) (which-game-row y))]
         [else game]))
 
 ;; game->scene : Draw a game
@@ -407,17 +409,17 @@ blank-square
        (symbol=? player b)
        (symbol=? player c)))
 
-;; winning-row? : Returns true if the indicated row is a win for the given player.
-;; winning-row? : board square symbol -> boolean
-(check-expect (winning-row? (make-board (make-row 'circle 'circle 'circle) empty-row empty-row) 
+;; winning-game-row? : Returns true if the indicated game-row is a win for the given player.
+;; winning-game-row? : board square symbol -> boolean
+(check-expect (winning-game-row? (make-board (make-game-row 'circle 'circle 'circle) empty-game-row empty-game-row) 
                             'circle 'T) true)
-(check-expect (winning-row? (make-board (make-row 'circle 'cross 'circle) empty-row empty-row) 
+(check-expect (winning-game-row? (make-board (make-game-row 'circle 'cross 'circle) empty-game-row empty-game-row) 
                             'circle 'T) false)
-(check-expect (winning-row? empty-board
+(check-expect (winning-game-row? empty-board
                             'circle 'B) false)
-(check-expect (winning-row? (make-board empty-row (make-row 'circle 'circle 'circle) empty-row)
+(check-expect (winning-game-row? (make-board empty-game-row (make-game-row 'circle 'circle 'circle) empty-game-row)
                             'circle 'C) true)
-(define (winning-row? board player vertical-pos)
+(define (winning-game-row? board player vertical-pos)
   (winning-triple? player 
                    (lookup board 'L vertical-pos)
                    (lookup board 'M vertical-pos)
@@ -425,10 +427,10 @@ blank-square
 
 ;; winning-column? : Return true if the indicated column is a win for the given player.
 ;; winnnig-column? : board square symbol -> boolean
-(check-expect (winning-column? (make-board row1 row2 row2) 'circle 'L) true)
-(check-expect (winning-column? (make-board row1 row2 row2) 'cross 'L) false)
-(check-expect (winning-column? (make-board row1 row2 row2) 'cross 'M) false)
-(check-expect (winning-column? (make-board row4 row5 row5) 'circle 'R) true)
+(check-expect (winning-column? (make-board game-row1 game-row2 game-row2) 'circle 'L) true)
+(check-expect (winning-column? (make-board game-row1 game-row2 game-row2) 'cross 'L) false)
+(check-expect (winning-column? (make-board game-row1 game-row2 game-row2) 'cross 'M) false)
+(check-expect (winning-column? (make-board game-row4 game-row5 game-row5) 'circle 'R) true)
 (define (winning-column? board player horizontal-pos)
   (winning-triple? player 
                    (lookup board horizontal-pos 'T)
@@ -437,17 +439,17 @@ blank-square
 
 ;; winning-down-diagonal? : Return true if the top-left to bottom-right diagonal is a win.
 ;; winning-down-diagonal? : board square -> boolean
-(check-expect (winning-down-diagonal? (make-board row5 row2 row1) 'cross) true)
-(check-expect (winning-down-diagonal? (make-board row1 row2 row5) 'circle) false)
-(check-expect (winning-down-diagonal? (make-board row5 row2 row2) 'cross) false)
+(check-expect (winning-down-diagonal? (make-board game-row5 game-row2 game-row1) 'cross) true)
+(check-expect (winning-down-diagonal? (make-board game-row1 game-row2 game-row5) 'circle) false)
+(check-expect (winning-down-diagonal? (make-board game-row5 game-row2 game-row2) 'cross) false)
 (define (winning-down-diagonal? board player)
   (winning-triple? player (lookup board 'L 'T) (lookup board 'M 'C) (lookup board 'R 'B)))
 
 ;; winning-up-diagonal? : Return true if the bottom-left to top-right diagonal is a win.
 ;; winning-up-diagonal? : board square -> boolean
-(check-expect (winning-up-diagonal? (make-board row1 row2 row5) 'cross) true)
-(check-expect (winning-up-diagonal? (make-board row5 row2 row1) 'cross) false)
-(check-expect (winning-up-diagonal? (make-board row1 row2 row5) 'circle) false)
+(check-expect (winning-up-diagonal? (make-board game-row1 game-row2 game-row5) 'cross) true)
+(check-expect (winning-up-diagonal? (make-board game-row5 game-row2 game-row1) 'cross) false)
+(check-expect (winning-up-diagonal? (make-board game-row1 game-row2 game-row5) 'circle) false)
 (define (winning-up-diagonal? board player)
   (winning-triple? player (lookup board 'L 'B) (lookup board 'M 'C) (lookup board 'R 'T)))
 
@@ -455,12 +457,12 @@ blank-square
 ;; winning-board? : board square -> boolean
 (check-expect (winning-board? empty-board 'cross) false)
 (check-expect (winning-board? empty-board 'circle) false)
-(check-expect (winning-board? (make-board row1 row2 row5) 'cross) true)
-(check-expect (winning-board? (make-board row1 row2 row5) 'cross) true)
+(check-expect (winning-board? (make-board game-row1 game-row2 game-row5) 'cross) true)
+(check-expect (winning-board? (make-board game-row1 game-row2 game-row5) 'cross) true)
 (define (winning-board? board player)
-  (or (winning-row? board player 'T)
-      (winning-row? board player 'C)
-      (winning-row? board player 'B)
+  (or (winning-game-row? board player 'T)
+      (winning-game-row? board player 'C)
+      (winning-game-row? board player 'B)
       (winning-column? board player 'L)
       (winning-column? board player 'M)
       (winning-column? board player 'R)
@@ -479,11 +481,13 @@ blank-square
 ;;              the given board is a win for the given player.
 ;; win->scene : board square -> scene
 (define (win->scene board player)
-  (cond [(winning-row? board player 'T) 
+  ...
+  #;(cond [(winning-game-row? board player 'T) 
+         
          (place-image horz-line half-square half-square (board->scene board))]
-        [(winning-row? board player 'C) 
+        [(winning-game-row? board player 'C) 
          (place-image horz-line half-square (* 3 half-square) (board->scene board))]
-        [(winning-row? board player 'B)
+        [(winning-game-row? board player 'B)
          (place-image horz-line half-square (* 5 half-square) (board->scene board))]
         [(winning-column? board player 'L)
          (place-image vert-line half-square half-square (board->scene board))]
@@ -508,7 +512,7 @@ blank-square
 ;; game-over? : Returns true when the game is over.
 ;; game-over? : game -> boolean
 (check-expect (game-over? initial-game) false)
-(check-expect (game-over? (make-game 'circle (make-board row1 row2 row5) 4)) true)
+(check-expect (game-over? (make-game 'circle (make-board game-row1 game-row2 game-row5) 4)) true)
 (check-expect (game-over? (make-game 'circle empty-board 9)) true)
 (define (game-over? game)
   (or (winning-board? (game-board game) 'cross)
@@ -528,18 +532,18 @@ blank-square
 
 ;; winning-game? : Return true if the game has just been won by the player who just played.
 ;; winning-game? : game -> boolean
-(check-expect (winning-game? (make-game 'circle (make-board row1 row2 row5) 4)) true)
-(check-expect (winning-game? (make-game 'cross (make-board row1 row2 row5) 4)) false)
+(check-expect (winning-game? (make-game 'circle (make-board game-row1 game-row2 game-row5) 4)) true)
+(check-expect (winning-game? (make-game 'cross (make-board game-row1 game-row2 game-row5) 4)) false)
 (check-expect (winning-game? (make-game 'circle empty-board 9)) false)
 (define (winning-game? game)
   (winning-board? (game-board game) (other-player (game-next-player game))))
 
 ;; try-to-win : Try all the possible moves, play the first one that wins right away.
 ;; try-to-win : game -> game
-(check-expect (try-to-win (make-game 'circle (make-board row1 row1 row3) 3))
-              (make-game 'cross (make-board row1 row1 (make-row 'circle 'blank 'blank)) 4))
-(check-expect (try-to-win (make-game 'cross (make-board row1 row1 row3) 3))
-              (make-game 'circle (make-board row1 row1 (make-row 'blank 'blank 'cross)) 4))
+(check-expect (try-to-win (make-game 'circle (make-board game-row1 game-row1 game-row3) 3))
+              (make-game 'cross (make-board game-row1 game-row1 (make-game-row 'circle 'blank 'blank)) 4))
+(check-expect (try-to-win (make-game 'cross (make-board game-row1 game-row1 game-row3) 3))
+              (make-game 'circle (make-board game-row1 game-row1 (make-game-row 'blank 'blank 'cross)) 4))
 (check-expect (try-to-win initial-game) false)
 (define (try-to-win game)
   (cond [(winning-game? (play-game game 'L 'T))
@@ -572,10 +576,10 @@ blank-square
 ;; try-to-win : Try all the possible moves for the opponent,
 ;;              play where the opponent would play to win.
 ;; try-to-win : game -> game
-(check-expect (try-to-block (make-game 'circle (make-board row1 row1 row3) 3))
-              (make-game 'cross (make-board row1 row1 (make-row 'blank 'blank 'circle)) 4))
-(check-expect (try-to-block (make-game 'cross (make-board row1 row1 row3) 3))
-              (make-game 'circle (make-board row1 row1 (make-row 'cross 'blank 'blank)) 4))
+(check-expect (try-to-block (make-game 'circle (make-board game-row1 game-row1 game-row3) 3))
+              (make-game 'cross (make-board game-row1 game-row1 (make-game-row 'blank 'blank 'circle)) 4))
+(check-expect (try-to-block (make-game 'cross (make-board game-row1 game-row1 game-row3) 3))
+              (make-game 'circle (make-board game-row1 game-row1 (make-game-row 'cross 'blank 'blank)) 4))
 (check-expect (try-to-block initial-game) false)
 (define (try-to-block game)
   (cond [(winning-game? (play-game (pass game) 'L 'T))
@@ -599,20 +603,20 @@ blank-square
         [else false]))
 
 ;
-;(define row1 (make-row 'circle 'blank 'cross))
-;(define row2 (make-row 'circle 'cross 'blank))
-;(define row3 (make-row 'blank 'blank 'blank))
-;(define row4 (make-row 'blank 'blank 'circle))
-;(define row5 (make-row 'cross 'blank 'circle))
+;(define game-row1 (make-game-row 'circle 'blank 'cross))
+;(define game-row2 (make-game-row 'circle 'cross 'blank))
+;(define game-row3 (make-game-row 'blank 'blank 'blank))
+;(define game-row4 (make-game-row 'blank 'blank 'circle))
+;(define game-row5 (make-game-row 'cross 'blank 'circle))
 
 ;; try-to-play-somewhere-good : Try to play in the center, then in the corners, then in the edges.
 ;; try-to-play-somewhere-good : game -> game
-(check-expect (try-to-play-somewhere-good (make-game 'circle (make-board row1 row1 row3) 3))
-              (make-game 'cross (make-board row1 (make-row 'circle 'circle 'cross) row3) 4))
-(check-expect (try-to-play-somewhere-good (make-game 'cross (make-board row1 row2 row3) 3))
-              (make-game 'circle (make-board row1 row2 (make-row 'cross 'blank 'blank)) 4))
+(check-expect (try-to-play-somewhere-good (make-game 'circle (make-board game-row1 game-row1 game-row3) 3))
+              (make-game 'cross (make-board game-row1 (make-game-row 'circle 'circle 'cross) game-row3) 4))
+(check-expect (try-to-play-somewhere-good (make-game 'cross (make-board game-row1 game-row2 game-row3) 3))
+              (make-game 'circle (make-board game-row1 game-row2 (make-game-row 'cross 'blank 'blank)) 4))
 (check-expect (try-to-play-somewhere-good initial-game) 
-              (make-game 'circle (make-board empty-row (make-row 'blank 'cross 'blank) empty-row) 1))
+              (make-game 'circle (make-board empty-game-row (make-game-row 'blank 'cross 'blank) empty-game-row) 1))
 (define (try-to-play-somewhere-good game) 
   (cond  ;; Try the center
     [(move-legal? (game-board game) 'M 'C)
@@ -653,16 +657,16 @@ blank-square
 ;; clack3 : game number number symbol -> game
 (define (clack3 game x y event)
   (cond [(symbol=? event 'button-up)
-         (computer-play (play-game game (which-column x) (which-row y)))]
+         (computer-play (play-game game (which-column x) (which-game-row y)))]
         [else game]))
 
-(big-bang width
+#;(big-bang width
           height
           1
           initial-game)
-(on-redraw game->scene-with-win)
-(on-mouse-event clack3)
-(stop-when game-over?)
+#;(on-redraw game->scene-with-win)
+#;(on-mouse-event clack3)
+#;(stop-when game-over?)
 
 
 
