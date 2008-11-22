@@ -148,11 +148,17 @@ range restriction can be lifted.
     20081118: fixed by hacking at it.  I might still want to mention
     this to Robby, but it's not critical anymore.
 
+
 Widgets with dynamic content need to resize themselves to make sure
 their contents fit.  We're doing this for messages with auto-resize,
 but we haven't done this with the other widget types.  In particular,
 the buttons used in the flag examples don't make themselves large, and
 cut off a portion of the label when we select "circle".
+
+    20081122: fixed for button and checkbox.  The other
+widget types seem to work properly when the labels change.
+
+
 
 I need better names for the functions that take an enabled? or
 callback argument.

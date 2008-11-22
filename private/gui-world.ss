@@ -561,7 +561,7 @@
 (define world-gui:checkbox%
   (class* (on-subwindow-char-mixin check-box%) (world-gui<%>)
     (init-field world-callback)
-    (inherit get-value set-value get-label set-label is-enabled? enable)
+    (inherit get-value set-value get-label is-enabled? enable min-width min-height)
     
     (define/public (update-with! an-elt)
       (match an-elt
@@ -578,11 +578,35 @@
            (unless (boolean=? (is-enabled?) new-enabled?)
              (enable new-enabled?)))]))
 
+    
+    (define/override (set-label a-label)
+      (super set-label a-label)
+      (auto-resize))
+    
+    ;; auto-resize: -> void
+    ;; Automatically resize the button to fit the label.
+    (define (auto-resize)
+      (let ([s (get-label)])
+        (let-values ([(mw mh) (get-window-text-extent s normal-control-font #t)])
+          (min-width (+ dx mw))
+          (min-height (+ dy mh)))))
+    
+    
     (super-new
      [callback (lambda (s e)
                  (change-world/f!
                   (lambda (a-world)
-                    (world-callback a-world (get-value)))))])))
+                    (world-callback a-world (get-value)))))])
+    
+    
+    ;; We record the old space-padding values around the button's label.  For some
+    ;; reason, using horiz-margin and vert-margin isn't correct, but I don't
+    ;; know why.  dx and dy are only used with regard to auto-resize above.
+    (define-values (dx dy)
+      (let-values ([(mw mh) (get-window-text-extent (get-label) normal-control-font #t)])
+        (values (- (min-width) mw)
+                (- (min-height) mh))))))
+    
 
 
 
