@@ -367,7 +367,9 @@
       (super set-label new-label)
       (auto-resize))
     
-    ;; stripped functionality
+    
+    ;; auto-resize: -> void
+    ;; Automatically resize the button to fit the label.
     (define (auto-resize)
       (let ([s (get-label)])
         (let-values ([(mw mh) (get-window-text-extent s normal-control-font #t)])
@@ -379,6 +381,10 @@
                            (change-world/f!
                             (lambda (a-world)
                               (world-callback a-world))))])
+
+    ;; We record the old space-padding values around the button's label.  For some
+    ;; reason, using horiz-margin and vert-margin isn't correct, but I don't
+    ;; know why.  dx and dy are only used with regard to auto-resize above.
     (define-values (dx dy)
       (let-values ([(mw mh) (get-window-text-extent (get-label) normal-control-font #t)])
         (values (- (min-width) mw)
