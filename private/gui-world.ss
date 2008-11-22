@@ -345,7 +345,9 @@
 
 (define world-gui:button%
   (class* (on-subwindow-char-mixin button%) (world-gui<%>)
-    (inherit get-label set-label is-enabled? enable)
+    (inherit get-label is-enabled? enable
+             min-width min-height
+             vert-margin horiz-margin)
     
     (init-field world-callback)
     
@@ -358,11 +360,29 @@
              (set-label new-val))
            (unless (boolean=? (is-enabled?) new-enabled?)
              (enable new-enabled?)))]))
+
+    ;; set-label: string -> void
+    ;; Sets the label, but also auto-resizes based on the label's size.
+    (define/override (set-label new-label)
+      (super set-label new-label)
+      (auto-resize))
+    
+    ;; stripped functionality
+    (define (auto-resize)
+      (let ([s (get-label)])
+        (let-values ([(mw mh) (get-window-text-extent s normal-control-font #t)])
+          (min-width (+ dx mw))
+          (min-height (+ dy mh)))))
         
+    
     (super-new [callback (lambda (b e)
                            (change-world/f!
                             (lambda (a-world)
-                              (world-callback a-world))))])))
+                              (world-callback a-world))))])
+    (define-values (dx dy)
+      (let-values ([(mw mh) (get-window-text-extent (get-label) normal-control-font #t)])
+        (values (- (min-width) mw)
+                (- (min-height) mh))))))
 
 
 (define world-gui:text-field% 

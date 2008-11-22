@@ -9,14 +9,17 @@
 (define margin (* 2 trace-width))
 (define square-width 100)
 
+;; cross: image
 (define cross (overlay (rectangle trace-width (- square-width margin) 'solid 'red)
                        (rectangle (- square-width margin) trace-width 'solid 'red)))
 cross
 
+;; circ: image
 (define circ (overlay  (circle (/ (- square-width margin) 2) 'solid 'blue)
                        (circle (/ (- square-width margin (* 2 trace-width)) 2) 'solid 'white)))
 circ
 
+;; blank-square: image
 (define blank-square (overlay (rectangle square-width square-width 'solid 'SkyBlue)
                               (rectangle (- square-width trace-width)
                                          (- square-width trace-width)
