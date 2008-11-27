@@ -41,7 +41,7 @@ produces the updating expression based on the structure of the target.
 
 
 
-
+----------------------------------------------------------------------
 
 
 This proposal works as long as targets are first-order.  If the target
@@ -137,9 +137,12 @@ Then change-red-to-255 can be expressed as:
     ;; change-red-to-255: world accessor -> world
     ;; Changes the red component of the accessed color.
     (define (change-red-to-255 a-world world-color-accessor)
-      (update/accessor (chain-accessors world-color-1-accessor 
+      (update/accessor (chain-accessors world-color-accessor 
                                         color-r-accessor)
                        a-world
                        255))
 
     (change-red-to-255 world-color-1-accessor)
+
+
+----------------------------------------------------------------------
