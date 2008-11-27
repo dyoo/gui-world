@@ -109,13 +109,14 @@ Accessors can be composed by chaining them:
 
 ;; chain-accessors: (accessorof world subworld) (accessorof subworld x) -> (world -> x)
 (define (chain-accessors acc1 acc2)
-  (make-accessor (lambda (a-world) 
-                   ((accessor-getter acc2) 
+  (make-accessor (lambda (a-world)
+                   ((accessor-getter acc2)
                     ((accessor-getter acc1) a-world)))
-
+                 
                  (lambda (a-world a-val)
-		  ((accessor-updater acc1)
-                   ((accessor-updater acc2)
+                   ((accessor-updater acc1)
+                    a-world
+                    ((accessor-updater acc2)
                      ((accessor-getter acc1) a-world)
                      a-val)))))
 

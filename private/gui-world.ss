@@ -693,6 +693,9 @@
          
          update-color-red update-color-green update-color-blue
          update-posn-x update-posn-y
+         color-red-accessor color-green-accessor color-blue-accessor
+         posn-x-accessor posn-y-accessor
+         
          
          random-choice
          place-image

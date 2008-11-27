@@ -210,9 +210,19 @@
   (register-getter-updater #'posn-y #'update-posn-y)
   (register-getter-updater #'beginner:posn-y #'update-posn-y))
 
+
+(define color-red-accessor (make-accessor color-red update-color-red))
+(define color-green-accessor (make-accessor color-green update-color-green))
+(define color-blue-accessor (make-accessor color-blue update-color-blue))
+(define posn-x-accessor (make-accessor posn-x update-posn-x))
+(define posn-y-accessor (make-accessor posn-y update-posn-y))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
 (provide update define-updaters with-getter/updater
          update-color-red update-color-green update-color-blue
-         update-posn-x update-posn-y)
+         update-posn-x update-posn-y
+         
+         color-red-accessor color-green-accessor color-blue-accessor
+         posn-x-accessor posn-y-accessor)

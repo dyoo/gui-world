@@ -29,6 +29,7 @@
                  
                  (lambda (a-world a-val)
                    ((accessor-updater acc1)
+                    a-world
                     ((accessor-updater acc2)
                      ((accessor-getter acc1) a-world)
                      a-val)))))
