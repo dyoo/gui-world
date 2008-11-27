@@ -689,7 +689,7 @@
 (provide ;; Other helpers
          define-updaters
          update
-         with-accessor/updater
+         with-getter/updater
          
          update-color-red update-color-green update-color-blue
          update-posn-x update-posn-y

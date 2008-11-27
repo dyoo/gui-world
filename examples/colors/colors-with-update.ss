@@ -29,18 +29,18 @@
             (color-blue (world-color a-world)))
 
           (define (update-world-color-red a-world a-val)
-            (with-accessor/updater 
+            (with-getter/updater 
              ([world-color update-world-color])
              (update (color-red (world-color a-world)) a-val)))
           
           (define (update-world-color-green a-world a-val)
-            (with-accessor/updater
+            (with-getter/updater
              ([world-color update-world-color])
              (update (color-green (world-color a-world))
                      a-val)))
             
           (define (update-world-color-blue a-world a-val)
-            (with-accessor/updater
+            (with-getter/updater
              ([world-color update-world-color])
              (update (color-blue (world-color a-world))
                      a-val)))]
