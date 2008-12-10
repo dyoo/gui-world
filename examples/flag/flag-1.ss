@@ -21,9 +21,8 @@
 (define-struct star-state (n inner-radius outer-radius))
 
 ;; Misc-state records the state that's generic across all the shapes.
-;; x, y are coordinates
-;; r, g, b is the color triple.
-(define-struct misc-state (x y r g b))
+;; posn and color represent the cursor position and the selected color.
+(define-struct misc-state (posn color))
 
 
 ;; A world is a (make-world (listof shape) 
@@ -50,7 +49,8 @@
 
 (define initial-world 
   (make-world empty
-              (make-misc-state (quotient FLAG-WIDTH 2) (quotient FLAG-HEIGHT 2) 0 0 0)
+              (make-misc-state (make-posn (quotient FLAG-WIDTH 2) (quotient FLAG-HEIGHT 2))
+                               (make-color 0 0 0))
               "rect"
               (make-rect-state FLAG-WIDTH 10)
               (make-circle-state 30)
@@ -61,9 +61,7 @@
 ;; Draws a small square with the selected color.
 (define (render-current-color a-world)
   (place-image (nw:rectangle 30 30 "solid"
-                             (make-color (misc-state-r (world-misc-state a-world))
-                                         (misc-state-g (world-misc-state a-world))
-                                         (misc-state-b (world-misc-state a-world))))
+                             (misc-state-color (world-misc-state a-world)))
                0 
                0
                (empty-scene 30 30)))
@@ -72,14 +70,13 @@
 
 ;; world-current-color: world -> color
 (define (world-current-color a-world)
-  (make-color (misc-state-r (world-misc-state a-world))
-              (misc-state-g (world-misc-state a-world))
-              (misc-state-b (world-misc-state a-world))))
+  (misc-state-color (world-misc-state a-world)))
+
 
 ;; world-current-posn: world -> posn
 (define (world-current-posn a-world)
-  (make-posn (misc-state-x (world-misc-state a-world))
-             (misc-state-y (world-misc-state a-world))))
+  (misc-state-posn (world-misc-state a-world)))
+
 
 
 ;; world-current-editing-shape: world -> shape
@@ -265,60 +262,87 @@
 
 ;; world-misc-state-x: world -> number
 (define (world-misc-state-x a-world)
-  (misc-state-x 
-   (world-misc-state a-world)))
+  (posn-x
+   (misc-state-posn 
+    (world-misc-state a-world))))
 
 
 ;; update-world-misc-state-x: world number -> world
 (define (update-world-misc-state-x a-world x)
   (update-world-misc-state a-world
-                           (update-misc-state-x (world-misc-state a-world) x)))
+                           (update-misc-state-posn
+                            (world-misc-state a-world)
+                            (update-posn-x (misc-state-posn 
+                                            (world-misc-state a-world))
+                                           x))))
 
 
 ;; world-misc-state-y: world -> number
 (define (world-misc-state-y a-world)
-  (misc-state-y 
-   (world-misc-state a-world)))
+  (posn-y
+   (misc-state-posn 
+    (world-misc-state a-world))))
 
 
 ;; update-world-misc-state-y: world number -> world
 (define (update-world-misc-state-y a-world y)
   (update-world-misc-state a-world
-                           (update-misc-state-y (world-misc-state a-world) y)))
+                           (update-misc-state-posn
+                            (world-misc-state a-world)
+                            (update-posn-y (misc-state-posn 
+                                            (world-misc-state a-world))
+                                           y))))
+
 
 ;; world-misc-state-r: world -> number
 (define (world-misc-state-r a-world)
-  (misc-state-r
-   (world-misc-state a-world)))
+  (color-red
+   (misc-state-color
+    (world-misc-state a-world))))
 
 
 ;; update-world-misc-state-r: world number -> world
 (define (update-world-misc-state-r a-world r)
   (update-world-misc-state a-world
-                           (update-misc-state-r (world-misc-state a-world) r)))
+                           (update-misc-state-color 
+                            (world-misc-state a-world) 
+                            (update-color-red (misc-state-color (world-misc-state a-world))
+                                              r))))
 
 
 ;; world-misc-state-g: world -> number
 (define (world-misc-state-g a-world)
-  (misc-state-g 
-   (world-misc-state a-world)))
+  (color-green
+   (misc-state-color
+    (world-misc-state a-world))))
 
 
 ;; update-world-misc-state-g: world number -> world
 (define (update-world-misc-state-g a-world g)
   (update-world-misc-state a-world
-                           (update-misc-state-g (world-misc-state a-world) g)))
+                           (update-misc-state-color 
+                            (world-misc-state a-world) 
+                            (update-color-green (misc-state-color (world-misc-state a-world))
+                                                g))))
+
 
 
 ;; world-misc-state-b: world -> number
 (define (world-misc-state-b a-world)
-  (misc-state-b 
-   (world-misc-state a-world)))
+  (color-blue
+   (misc-state-color
+    (world-misc-state a-world))))
+
+
 
 ;; update-world-misc-state-b: world number -> world
 (define (update-world-misc-state-b a-world b)
   (update-world-misc-state a-world
-                           (update-misc-state-b (world-misc-state a-world) b)))
+                           (update-misc-state-color 
+                            (world-misc-state a-world) 
+                            (update-color-blue (misc-state-color (world-misc-state a-world))
+                                               b))))
+
 
 
 
