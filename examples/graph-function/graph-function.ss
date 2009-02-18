@@ -47,37 +47,65 @@
                            (rest posns)
                            (draw-canvas-posn a-world (first posns) a-scene))]))
 
+;; draw-canvas-posn: world posn scene -> scene
 (define (draw-canvas-posn a-world a-posn a-scene)
   (place-image (text (posn->string a-posn) 10 "purple")
                (coordinate-x->canvas-x a-world (posn-x a-posn))
                (coordinate-y->canvas-y a-world (posn-y a-posn))
-               (place-image (circle 2 "solid" "black")
+               (place-image (circle 2 "solid" (cond
+                                                [(posn-makes-bad-function? a-world a-posn)
+                                                 "red"]
+                                                [else
+                                                 "black"]))
                             (coordinate-x->canvas-x a-world (posn-x a-posn))
                             (coordinate-y->canvas-y a-world (posn-y a-posn))
                             a-scene)))
   
+
+;; posn-makes-bad-function?: world posn -> boolean
+;; Returns true if the posn shares an x coordinate with any other posn.
+(define (posn-makes-bad-function? a-world a-posn)
+  (any-shared-x? a-posn (world-posns a-world)))
+
+
+;; any-shared-x?: posn (listof posn) -> boolean
+(define (any-shared-x? p posns)
+  (cond
+    [(empty? posns)
+     #f]
+    [(and (not (equal? p (first posns)))
+          (= (posn-x p)
+             (posn-x (first posns))))
+     #t]
+    [else
+     (any-shared-x? p (rest posns))]))
+
+
 
 
 ;; place-posn: world number number -> world
 (define (place-posn a-world x y)
   (update-world-selected-posn
    (update-world-posns a-world
-                       (add-to-end/no-duplicates (make-posn (canvas-x->coordinate-x a-world x)
+                       (insert/no-duplicates (make-posn (canvas-x->coordinate-x a-world x)
                                                             (canvas-y->coordinate-y a-world y))
                                                  (world-posns a-world)))
    false))
 
 
-;; add-to-end/no-duplicates: X (listof X) -> (listof X)
-(define (add-to-end/no-duplicates elt lst)
+;; insert/no-duplicates: posn (listof posn) -> (listof posn)
+(define (insert/no-duplicates a-posn other-posns)
   (cond
-    [(empty? lst)
-     (list elt)]
-    [(equal? (first lst) elt)
-     lst]
+    [(empty? other-posns)
+     (list a-posn)]
+    [(equal? (first other-posns) a-posn)
+     other-posns]
+    [(< (posn-x a-posn)
+        (posn-x (first other-posns)))
+     (cons a-posn other-posns)]
     [else
-     (cons (first lst)
-           (add-to-end/no-duplicates elt (rest lst)))]))
+     (cons (first other-posns)
+           (insert/no-duplicates a-posn (rest other-posns)))]))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
