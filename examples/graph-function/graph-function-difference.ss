@@ -42,7 +42,7 @@
   (abs (- x y)))
 
 ;; input-=?: input input -> boolean
-(define (input-=? x y)
+(define (input=? x y)
   (equal? x y))
 
 ;; input->string: input -> string
@@ -67,13 +67,28 @@
 
 ;; io-color: io number -> color
 (define (io-color an-io input)
-  (cond [(input-=? (io-input an-io) input)
+  (cond [(input=? (io-input an-io) input)
          (make-color 0 0 0)]
         [else
          (make-color (min (* (input-distance (io-input an-io) input) 50) 200)
                      (min (* (input-distance (io-input an-io) input) 50) 200)
                      (min (+ 50 (* (input-distance (io-input an-io) input) 50)) 255))]))
               
+
+;; draw-arrow: posn posn scene -> scene
+(define (draw-arrow from-pos to-pos a-scene)
+  ;; fixme: do arrowhead later.
+  (place-image (circle 5 "outline" "red")
+               (posn-x to-pos)
+               (posn-y to-pos)
+               (place-image (line (- (posn-x to-pos)
+                                     (posn-x from-pos))
+                                  (- (posn-y to-pos)
+                                     (posn-y from-pos))
+                                  "black")
+                            (posn-x from-pos)
+                            (posn-y from-pos)
+                            a-scene)))
 
 
 ;; render-canvas: world -> scene
@@ -82,6 +97,23 @@
   (render-canvas-ios a-world 
                         (world-ios a-world)
                         (empty-scene CANVAS-WIDTH CANVAS-HEIGHT)))
+
+
+;; world-defined-on-input?: world -> boolean
+(define (world-defined-on-input? a-world)
+  (input-in-ios? (world-current-input a-world)
+                 (world-ios a-world)))
+
+
+;; input-in-ios? input (listof io) -> boolean
+(define (input-in-ios? an-input ios)
+  (cond
+    [(empty? ios)
+     false]
+    [(input=? an-input (io-input (first ios)))
+     true]
+    [else
+     (input-in-ios? an-input (rest ios))]))
 
 
 
