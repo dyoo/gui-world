@@ -17,9 +17,8 @@
                       y-min         ;; number
                       y-max         ;; number
                       ios           ;; (listof io)
+                      input-name    ;; string
                       current-input ;; number
-                      #;posns    ;; (listof posn)
-                      #;selected-posn  ;; (or/c posn false)
                       ))
 (define-updaters world)
 
@@ -38,7 +37,25 @@
                                   -10
                                   10
                                   empty
+                                  "t"
                                   MIN-INPUT))
+
+
+;; Computes distance.
+(define (distance x y)
+  (abs (- x y)))
+
+
+;; io-color: io number -> color
+(define (io-color an-io input)
+  (cond [(= (io-input an-io) input)
+         (make-color 0 0 0)]
+        [else
+         (make-color (min (* (distance (io-input an-io) input) 50) 255)
+                     (min (* (distance (io-input an-io) input) 50) 255)
+                     (min (+ 50 (* (distance (io-input an-io) input) 50)) 255))]))
+              
+
 
 
 
@@ -59,16 +76,16 @@
     [else
      (render-canvas-ios a-world 
                            (rest ios)
-                           (draw-canvas-posn a-world (io-output (first ios)) a-scene))]))
+                           (draw-canvas-posn a-world (first ios) a-scene))]))
 
-;; draw-canvas-posn: world posn scene -> scene
-(define (draw-canvas-posn a-world a-posn a-scene)
-  (place-image (text (posn->string a-posn) 10 "purple")
-               (coordinate-x->canvas-x a-world (posn-x a-posn))
-               (coordinate-y->canvas-y a-world (posn-y a-posn))
-               (place-image (circle 2 "solid" "black")
-                            (coordinate-x->canvas-x a-world (posn-x a-posn))
-                            (coordinate-y->canvas-y a-world (posn-y a-posn))
+;; draw-canvas-io: world posn scene -> scene
+(define (draw-canvas-posn a-world an-io a-scene)
+  (place-image (text (io->string an-io (world-input-name a-world)) 10 "purple")
+               (coordinate-x->canvas-x a-world (posn-x (io-output an-io)))
+               (coordinate-y->canvas-y a-world (posn-y (io-output an-io)))
+               (place-image (circle 2 "solid" (io-color an-io (world-current-input a-world)))
+                            (coordinate-x->canvas-x a-world (posn-x (io-output an-io)))
+                            (coordinate-y->canvas-y a-world (posn-y (io-output an-io)))
                             a-scene)))
   
 
@@ -155,6 +172,11 @@
         (- (world-y-max a-world) (world-y-min a-world)))))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;; io->string: io string -> string
+(define (io->string an-io input-name)
+  (string-append "f(" (number->string (io-input an-io))
+                 ") = "
+                 (posn->string (io-output an-io))))
 
 ;; posn->string: posn -> string
 ;; Converts a posn to a printable representation.
@@ -177,7 +199,8 @@
 ;; The view includes the canvas.  Clicks on the canvas add new posns.
 (define view
   (col (canvas/callback render-canvas place-io)
-       (slider world-current-input MIN-INPUT MAX-INPUT update-world-current-input)
+       (row (message world-input-name)
+            (slider world-current-input MIN-INPUT MAX-INPUT update-world-current-input))
        (button "Clear Canvas" on-clear-pressed)))
 
 
