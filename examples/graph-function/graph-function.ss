@@ -5,67 +5,71 @@
 
 (require "../../gui-world.ss")
 
+;; An io consists of an input and an output.
+(define-struct io (input    ;; number 
+                   output   ;; posn
+                   ))
+(define-updaters io)
 
 ;;  A world consists of the bounds on the graph.
-(define-struct world (x-min    ;; number
-                      x-max    ;; number
-                      y-min    ;; number
-                      y-max    ;; number
-                      posns    ;; (listof posn)
-                      selected-posn  ;; (or/c posn false)
+(define-struct world (x-min         ;; number
+                      x-max         ;; number
+                      y-min         ;; number
+                      y-max         ;; number
+                      ios           ;; (listof io)
+                      current-input ;; number
+                      #;posns    ;; (listof posn)
+                      #;selected-posn  ;; (or/c posn false)
                       ))
 (define-updaters world)
+
+
+
 
 (define initial-world (make-world -10 
                                   10 
                                   -10
                                   10
                                   empty
-                                  false))
+                                  0))
 
 (define CANVAS-WIDTH 300)
 (define CANVAS-HEIGHT 300)
+
+(define MIN-INPUT 0)
+(define MAX-INPUT 10)
 
 
 
 ;; render-canvas: world -> scene
 ;; Renders the canvas containing all the posns.
 (define (render-canvas a-world)
-  (render-canvas-posns a-world 
-                        (world-posns a-world)
+  (render-canvas-ios a-world 
+                        (world-ios a-world)
                         (empty-scene CANVAS-WIDTH CANVAS-HEIGHT)))
 
 
 
-;; render-canvas-posns: world (listof posn) scene -> scene
-(define (render-canvas-posns a-world posns a-scene)
+;; render-canvas-ios: world (listof ios) scene -> scene
+(define (render-canvas-ios a-world ios a-scene)
   (cond
-    [(empty? posns)
+    [(empty? ios)
      a-scene]
     [else
-     (render-canvas-posns a-world 
-                           (rest posns)
-                           (draw-canvas-posn a-world (first posns) a-scene))]))
+     (render-canvas-ios a-world 
+                           (rest ios)
+                           (draw-canvas-posn a-world (io-output (first ios)) a-scene))]))
 
 ;; draw-canvas-posn: world posn scene -> scene
 (define (draw-canvas-posn a-world a-posn a-scene)
   (place-image (text (posn->string a-posn) 10 "purple")
                (coordinate-x->canvas-x a-world (posn-x a-posn))
                (coordinate-y->canvas-y a-world (posn-y a-posn))
-               (place-image (circle 2 "solid" (cond
-                                                [(posn-makes-bad-function? a-world a-posn)
-                                                 "red"]
-                                                [else
-                                                 "black"]))
+               (place-image (circle 2 "solid" "black")
                             (coordinate-x->canvas-x a-world (posn-x a-posn))
                             (coordinate-y->canvas-y a-world (posn-y a-posn))
                             a-scene)))
   
-
-;; posn-makes-bad-function?: world posn -> boolean
-;; Returns true if the posn shares an x coordinate with any other posn.
-(define (posn-makes-bad-function? a-world a-posn)
-  (any-shared-x? a-posn (world-posns a-world)))
 
 
 ;; any-shared-x?: posn (listof posn) -> boolean
@@ -83,18 +87,16 @@
 
 
 
-;; place-posn: world number number -> world
-(define (place-posn a-world x y)
-  (update-world-selected-posn
-   (update-world-posns a-world
-                       (insert/no-duplicates (make-posn (canvas-x->coordinate-x a-world x)
-                                                            (canvas-y->coordinate-y a-world y))
-                                                 (world-posns a-world)))
-   false))
+;; place-io: world number number -> world
+(define (place-io a-world x y)
+  (update-world-ios a-world (cons (make-io (world-current-input a-world)
+                                           (make-posn (canvas-x->coordinate-x a-world x)
+                                                      (canvas-y->coordinate-y a-world y)))
+                                  (world-ios a-world))))
 
 
-;; insert/no-duplicates: posn (listof posn) -> (listof posn)
-(define (insert/no-duplicates a-posn other-posns)
+;; ios-insert/no-duplicates: io (listof io) -> (listof io)
+#;(define (ios-insert/no-duplicates an-io other-posns)
   (cond
     [(empty? other-posns)
      (list a-posn)]
@@ -105,11 +107,11 @@
      (cons a-posn other-posns)]
     [else
      (cons (first other-posns)
-           (insert/no-duplicates a-posn (rest other-posns)))]))
+           (ios-insert/no-duplicates a-posn (rest other-posns)))]))
 
 
 ;; delete: posn (listof posn) -> (listof posn)
-(define (delete a-posn posns)
+#;(define (delete a-posn posns)
   (cond
     [(empty? posns)
      empty]
@@ -161,87 +163,21 @@
                  "," (number->string (posn-y a-posn))
                  ")"))
 
-;; posns->string-list: (listof posn) -> (listof string)
-(define (posns->string-list posns)
-  (cond
-    [(empty? posns)
-     empty]
-    [else
-     (cons (posn->string (first posns))
-           (posns->string-list (rest posns)))]))
-
-
-;; world-posn-string-list: world -> (listof string)
-(define (world-posn-string-list a-world)
-  (cons "None selected"
-        (posns->string-list (world-posns a-world))))
-
-
-;; world-selected-posn-string: world -> string
-(define (world-selected-posn-string a-world)
-  (cond
-    [(posn? (world-selected-posn a-world))
-     (posn->string (world-selected-posn a-world))]
-    [else
-     "None selected"]))
-
-
-;; on-posn-string-selected: world string -> world
-(define (on-posn-string-selected a-world posn-string)
-  (update-world-selected-posn 
-   a-world
-   (find-posn-with-posn-string (world-posns a-world) posn-string)))
-
-
-
-
-;; find-posn-with-posn-string: (listof posn) string -> (or/c posn false)
-(define (find-posn-with-posn-string posns a-posn-string)
-  (cond
-    [(empty? posns)
-     #f]
-    [(string=? (posn->string (first posns)) a-posn-string)
-     (first posns)]
-    [else
-     (find-posn-with-posn-string (rest posns) a-posn-string)]))
-     
-               
-;; posn-selected?: world -> boolean
-;; Returns true if a point is selected.
-(define (posn-selected? a-world)
-  (posn? (world-selected-posn a-world)))
-
-
-;; on-delete-pressed: world -> world
-;; Deletes the selected point.
-(define (on-delete-pressed a-world)
-  (update-world-selected-posn
-   (update-world-posns a-world (delete (world-selected-posn a-world) 
-                                       (world-posns a-world)))
-   false))
 
 ;; on-clear-pressed
 (define (on-clear-pressed a-world)
-  (update-world-selected-posn
-   (update-world-posns a-world empty)
-   false))
-
-;; ignore-text-field-change: world string -> world
-(define (ignore-text-field-change a-world a-new-text)
-  a-world)
+  (update-world-current-input
+   (update-world-ios a-world empty)
+   0))
 
 
-;; world->structured-posn-list-string: world -> string
-(define (world->structured-posn-list-string a-world)
-  (format "~v" (world-posns a-world)))
+
 
 
 ;; The view includes the canvas.  Clicks on the canvas add new posns.
 (define view
-  (col (canvas/callback render-canvas place-posn)
-       (drop-down world-selected-posn-string world-posn-string-list on-posn-string-selected)
-       (button/enabled "Delete" on-delete-pressed posn-selected?)
-       (text-field world->structured-posn-list-string ignore-text-field-change)
+  (col (canvas/callback render-canvas place-io)
+       (slider world-current-input MIN-INPUT MAX-INPUT update-world-current-input)
        (button "Clear Canvas" on-clear-pressed)))
 
 
