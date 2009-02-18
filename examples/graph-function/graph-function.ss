@@ -108,6 +108,18 @@
            (insert/no-duplicates a-posn (rest other-posns)))]))
 
 
+;; delete: posn (listof posn) -> (listof posn)
+(define (delete a-posn posns)
+  (cond
+    [(empty? posns)
+     empty]
+    [(equal? a-posn (first posns))
+     (rest posns)]
+    [else
+     (cons (first posns)
+           (delete a-posn (rest posns)))]))
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Translation between coordinate systems:
 
@@ -194,12 +206,28 @@
      (find-posn-with-posn-string (rest posns) a-posn-string)]))
      
                
+;; posn-selected?: world -> boolean
+;; Returns true if a point is selected.
+(define (posn-selected? a-world)
+  (posn? (world-selected-posn a-world)))
+
+
+;; on-delete-pressed: world -> world
+;; Deletes the selected point.
+(define (on-delete-pressed? a-world)
+  (update-world-selected-posn
+   (update-world-posns a-world (delete (world-selected-posn a-world) 
+                                       (world-posns a-world)))
+   false))
+
 
 
 ;; The view includes the canvas.  Clicks on the canvas add new posns.
 (define view
   (col (canvas/callback render-canvas place-posn)
-       (drop-down world-selected-posn-string world-posn-string-list on-posn-string-selected)))
+       (drop-down world-selected-posn-string world-posn-string-list on-posn-string-selected)
+       (row
+        (button/enabled "Delete" on-delete-pressed? posn-selected?))))
 
 
 (big-bang initial-world view)
