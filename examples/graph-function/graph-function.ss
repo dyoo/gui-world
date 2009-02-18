@@ -24,6 +24,13 @@
 (define-updaters world)
 
 
+(define CANVAS-WIDTH 300)
+(define CANVAS-HEIGHT 300)
+
+(define MIN-INPUT 0)
+(define MAX-INPUT 10)
+
+
 
 
 (define initial-world (make-world -10 
@@ -31,13 +38,7 @@
                                   -10
                                   10
                                   empty
-                                  0))
-
-(define CANVAS-WIDTH 300)
-(define CANVAS-HEIGHT 300)
-
-(define MIN-INPUT 0)
-(define MAX-INPUT 10)
+                                  MIN-INPUT))
 
 
 
@@ -89,25 +90,24 @@
 
 ;; place-io: world number number -> world
 (define (place-io a-world x y)
-  (update-world-ios a-world (cons (make-io (world-current-input a-world)
-                                           (make-posn (canvas-x->coordinate-x a-world x)
-                                                      (canvas-y->coordinate-y a-world y)))
-                                  (world-ios a-world))))
+  (update-world-ios a-world (ios-insert/no-duplicates
+                             (make-io (world-current-input a-world)
+                                      (make-posn (canvas-x->coordinate-x a-world x)
+                                                 (canvas-y->coordinate-y a-world y)))
+                             (world-ios a-world))))
 
 
 ;; ios-insert/no-duplicates: io (listof io) -> (listof io)
-#;(define (ios-insert/no-duplicates an-io other-posns)
+(define (ios-insert/no-duplicates an-io other-ios)
   (cond
-    [(empty? other-posns)
-     (list a-posn)]
-    [(equal? (first other-posns) a-posn)
-     other-posns]
-    [(< (posn-x a-posn)
-        (posn-x (first other-posns)))
-     (cons a-posn other-posns)]
+    [(empty? other-ios)
+     (list an-io)]
+    [(= (io-input an-io)
+        (io-input (first other-ios)))
+     (cons an-io (rest other-ios))]
     [else
-     (cons (first other-posns)
-           (ios-insert/no-duplicates a-posn (rest other-posns)))]))
+     (cons (first other-ios)
+           (ios-insert/no-duplicates an-io (rest other-ios)))]))
 
 
 ;; delete: posn (listof posn) -> (listof posn)
@@ -168,7 +168,7 @@
 (define (on-clear-pressed a-world)
   (update-world-current-input
    (update-world-ios a-world empty)
-   0))
+   MIN-INPUT))
 
 
 
