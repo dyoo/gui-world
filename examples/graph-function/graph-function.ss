@@ -214,20 +214,35 @@
 
 ;; on-delete-pressed: world -> world
 ;; Deletes the selected point.
-(define (on-delete-pressed? a-world)
+(define (on-delete-pressed a-world)
   (update-world-selected-posn
    (update-world-posns a-world (delete (world-selected-posn a-world) 
                                        (world-posns a-world)))
    false))
 
+;; on-clear-pressed
+(define (on-clear-pressed a-world)
+  (update-world-selected-posn
+   (update-world-posns a-world empty)
+   false))
+
+;; ignore-text-field-change: world string -> world
+(define (ignore-text-field-change a-world a-new-text)
+  a-world)
+
+
+;; world->structured-posn-list-string: world -> string
+(define (world->structured-posn-list-string a-world)
+  (format "~v" (world-posns a-world)))
 
 
 ;; The view includes the canvas.  Clicks on the canvas add new posns.
 (define view
   (col (canvas/callback render-canvas place-posn)
        (drop-down world-selected-posn-string world-posn-string-list on-posn-string-selected)
-       (row
-        (button/enabled "Delete" on-delete-pressed? posn-selected?))))
+       (button/enabled "Delete" on-delete-pressed posn-selected?)
+       (text-field world->structured-posn-list-string ignore-text-field-change)
+       (button "Clear Canvas" on-clear-pressed)))
 
 
 (big-bang initial-world view)
