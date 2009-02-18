@@ -51,8 +51,8 @@
   (cond [(= (io-input an-io) input)
          (make-color 0 0 0)]
         [else
-         (make-color (min (* (distance (io-input an-io) input) 50) 255)
-                     (min (* (distance (io-input an-io) input) 50) 255)
+         (make-color (min (* (distance (io-input an-io) input) 50) 200)
+                     (min (* (distance (io-input an-io) input) 50) 200)
                      (min (+ 50 (* (distance (io-input an-io) input) 50)) 255))]))
               
 
@@ -80,13 +80,26 @@
 
 ;; draw-canvas-io: world posn scene -> scene
 (define (draw-canvas-posn a-world an-io a-scene)
-  (place-image (text (io->string an-io (world-input-name a-world)) 10 "purple")
-               (coordinate-x->canvas-x a-world (posn-x (io-output an-io)))
-               (coordinate-y->canvas-y a-world (posn-y (io-output an-io)))
-               (place-image (circle 2 "solid" (io-color an-io (world-current-input a-world)))
-                            (coordinate-x->canvas-x a-world (posn-x (io-output an-io)))
-                            (coordinate-y->canvas-y a-world (posn-y (io-output an-io)))
-                            a-scene)))
+  (cond [(= (world-current-input a-world) (io-input an-io))
+  
+         (place-image (text (io->string an-io (world-input-name a-world)) 10 "purple")
+                      (coordinate-x->canvas-x a-world (posn-x (io-output an-io)))
+                      (coordinate-y->canvas-y a-world (posn-y (io-output an-io)))
+                      (place-image (circle 2 "solid" (io-color an-io (world-current-input a-world)))
+                                   (coordinate-x->canvas-x a-world (posn-x (io-output an-io)))
+                                   (coordinate-y->canvas-y a-world (posn-y (io-output an-io)))
+                                   a-scene))]
+        [else
+         (place-image (text (string-append "f(" (number->string (io-input an-io)) ")")
+                            10 "lightgray")
+                      (coordinate-x->canvas-x a-world (posn-x (io-output an-io)))
+                      (coordinate-y->canvas-y a-world (posn-y (io-output an-io)))
+                      
+                      (place-image (circle 2 "solid" (io-color an-io (world-current-input a-world)))
+                                   (coordinate-x->canvas-x a-world (posn-x (io-output an-io)))
+                                   (coordinate-y->canvas-y a-world (posn-y (io-output an-io)))
+                                   a-scene))]))
+         
   
 
 
@@ -199,8 +212,7 @@
 ;; The view includes the canvas.  Clicks on the canvas add new posns.
 (define view
   (col (canvas/callback render-canvas place-io)
-       (row (message world-input-name)
-            (slider world-current-input MIN-INPUT MAX-INPUT update-world-current-input))
+       (slider world-current-input MIN-INPUT MAX-INPUT update-world-current-input)
        (button "Clear Canvas" on-clear-pressed)))
 
 
