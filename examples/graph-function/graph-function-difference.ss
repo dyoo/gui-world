@@ -1,12 +1,12 @@
 ;; The first three lines of this file were inserted by DrScheme. They record metadata
 ;; about the language level of this file in a form that our tools can easily process.
-#reader(lib "htdp-beginner-reader.ss" "lang")((modname graph-function) (read-case-sensitive #t) (teachpacks ()) (htdp-settings #(#t constructor repeating-decimal #f #t none #f ())))
+#reader(lib "htdp-beginner-reader.ss" "lang")((modname graph-function-difference) (read-case-sensitive #t) (teachpacks ()) (htdp-settings #(#t constructor repeating-decimal #f #t none #f ())))
 ;; Graph function: representing partial math functions as graphs.
 
 (require "../../gui-world.ss")
 
 ;; An io consists of an input and an output.
-(define-struct io (input    ;; number 
+(define-struct io (input    ;; input
                    output   ;; posn
                    ))
 (define-updaters io)
@@ -17,8 +17,7 @@
                       y-min         ;; number
                       y-max         ;; number
                       ios           ;; (listof io)
-                      input-name    ;; string
-                      current-input ;; number
+                      current-input ;; input
                       ))
 (define-updaters world)
 
@@ -30,33 +29,51 @@
 (define MAX-INPUT 10)
 
 
-
-
 (define initial-world (make-world -10 
                                   10 
                                   -10
                                   10
                                   empty
-                                  "t"
                                   MIN-INPUT))
 
-
 ;; Computes distance.
-(define (distance x y)
+;; distance: input input -> number
+(define (input-distance x y)
   (abs (- x y)))
+
+;; input-=?: input input -> boolean
+(define (input-=? x y)
+  (equal? x y))
+
+;; input->string: input -> string
+(define (input->string x)
+  (format "~v" x))
+
+;; io->string: io string -> string
+(define (io->string an-io)
+  (string-append "f(" (input->string (io-input an-io))
+                 ") = "
+                 (posn->string (io-output an-io))))
+
+
+;; posn->string: posn -> string
+;; Converts a posn to a printable representation.
+(define (posn->string a-posn)
+  (string-append "(" (number->string (posn-x a-posn))
+                 "," (number->string (posn-y a-posn))
+                 ")"))
+
 
 
 ;; io-color: io number -> color
 (define (io-color an-io input)
-  (cond [(= (io-input an-io) input)
+  (cond [(input-=? (io-input an-io) input)
          (make-color 0 0 0)]
         [else
-         (make-color (min (* (distance (io-input an-io) input) 50) 200)
-                     (min (* (distance (io-input an-io) input) 50) 200)
-                     (min (+ 50 (* (distance (io-input an-io) input) 50)) 255))]))
+         (make-color (min (* (input-distance (io-input an-io) input) 50) 200)
+                     (min (* (input-distance (io-input an-io) input) 50) 200)
+                     (min (+ 50 (* (input-distance (io-input an-io) input) 50)) 255))]))
               
-
-
 
 
 ;; render-canvas: world -> scene
@@ -82,7 +99,7 @@
 (define (draw-canvas-posn a-world an-io a-scene)
   (cond [(= (world-current-input a-world) (io-input an-io))
   
-         (place-image (text (io->string an-io (world-input-name a-world)) 10 "purple")
+         (place-image (text (io->string an-io) 10 "purple")
                       (coordinate-x->canvas-x a-world (posn-x (io-output an-io)))
                       (coordinate-y->canvas-y a-world (posn-y (io-output an-io)))
                       (place-image (circle 2 "solid" (io-color an-io (world-current-input a-world)))
@@ -90,7 +107,7 @@
                                    (coordinate-y->canvas-y a-world (posn-y (io-output an-io)))
                                    a-scene))]
         [else
-         (place-image (text (string-append "f(" (number->string (io-input an-io)) ")")
+         (place-image (text (string-append "f(" (input->string (io-input an-io)) ")")
                             10 "lightgray")
                       (coordinate-x->canvas-x a-world (posn-x (io-output an-io)))
                       (coordinate-y->canvas-y a-world (posn-y (io-output an-io)))
@@ -101,21 +118,6 @@
                                    a-scene))]))
          
   
-
-
-;; any-shared-x?: posn (listof posn) -> boolean
-(define (any-shared-x? p posns)
-  (cond
-    [(empty? posns)
-     #f]
-    [(and (not (equal? p (first posns)))
-          (= (posn-x p)
-             (posn-x (first posns))))
-     #t]
-    [else
-     (any-shared-x? p (rest posns))]))
-
-
 
 
 ;; place-io: world number number -> world
@@ -139,17 +141,6 @@
      (cons (first other-ios)
            (ios-insert/no-duplicates an-io (rest other-ios)))]))
 
-
-;; delete: posn (listof posn) -> (listof posn)
-#;(define (delete a-posn posns)
-  (cond
-    [(empty? posns)
-     empty]
-    [(equal? a-posn (first posns))
-     (rest posns)]
-    [else
-     (cons (first posns)
-           (delete a-posn (rest posns)))]))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -185,28 +176,11 @@
         (- (world-y-max a-world) (world-y-min a-world)))))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; io->string: io string -> string
-(define (io->string an-io input-name)
-  (string-append "f(" (number->string (io-input an-io))
-                 ") = "
-                 (posn->string (io-output an-io))))
-
-;; posn->string: posn -> string
-;; Converts a posn to a printable representation.
-(define (posn->string a-posn)
-  (string-append "(" (number->string (posn-x a-posn))
-                 "," (number->string (posn-y a-posn))
-                 ")"))
-
-
 ;; on-clear-pressed
 (define (on-clear-pressed a-world)
   (update-world-current-input
    (update-world-ios a-world empty)
    MIN-INPUT))
-
-
-
 
 
 ;; The view includes the canvas.  Clicks on the canvas add new posns.
