@@ -57,9 +57,9 @@
 
 ;; canvas-x->coordinate-x: world number -> number
 (define (canvas-x->coordinate-x a-world a-canvas-x)
-  (+ (world-x-min a-world) 
-     (* (/ a-canvas-x CANVAS-WIDTH)
-        (- (world-x-max a-world) (world-x-min a-world)))))
+  (exact->inexact (+ (world-x-min a-world) 
+                     (* (/ a-canvas-x CANVAS-WIDTH)
+                        (- (world-x-max a-world) (world-x-min a-world))))))
 
 
 ;; coordinate-x->canvas-x: world number -> number
@@ -70,10 +70,11 @@
 
 ;; canvas-y->coordinate-y: world number -> number
 (define (canvas-y->coordinate-y a-world a-canvas-y)
-  (+ (world-y-min a-world) 
-     (* (/ (- CANVAS-HEIGHT a-canvas-y)
-           CANVAS-HEIGHT)
-        (- (world-y-max a-world) (world-y-min a-world)))))
+  (exact->inexact
+   (+ (world-y-min a-world) 
+      (* (/ (- CANVAS-HEIGHT a-canvas-y)
+            CANVAS-HEIGHT)
+         (- (world-y-max a-world) (world-y-min a-world))))))
 
 
 ;; coordinate-y->canvas-y: world number -> number
