@@ -11,7 +11,7 @@
                       x-max    ;; number
                       y-min    ;; number
                       y-max    ;; number
-                      points   ;; (listof posn)
+                      posns   ;; (listof posn)
                       ))
 (define-updaters world)
 
@@ -23,35 +23,37 @@
 
 
 ;; render-canvas: world -> scene
-;; Renders the canvas containing all the points.
+;; Renders the canvas containing all the posns.
 (define (render-canvas a-world)
-  (render-canvas-points a-world 
-                        (world-points a-world)
+  (render-canvas-posns a-world 
+                        (world-posns a-world)
                         (empty-scene CANVAS-WIDTH CANVAS-HEIGHT)))
 
 
 
-;; render-canvas-points: world (listof posn) scene -> scene
-(define (render-canvas-points a-world points a-scene)
+;; render-canvas-posns: world (listof posn) scene -> scene
+(define (render-canvas-posns a-world posns a-scene)
   (cond
-    [(empty? points)
+    [(empty? posns)
      a-scene]
     [else
-     (render-canvas-points a-world 
-                           (rest points)
+     (render-canvas-posns a-world 
+                           (rest posns)
                            (place-image (circle 5 "solid" "black")
-                                        (coordinate-x->canvas-x a-world (posn-x (first points)))
-                                        (coordinate-y->canvas-y a-world (posn-y (first points)))
+                                        (coordinate-x->canvas-x a-world (posn-x (first posns)))
+                                        (coordinate-y->canvas-y a-world (posn-y (first posns)))
                                         a-scene))]))
 
 
-;; place-point: world number number -> world
-(define (place-point a-world x y)
-  (update-world-points a-world
+;; place-posn: world number number -> world
+(define (place-posn a-world x y)
+  (update-world-posns a-world
                        (cons (make-posn (canvas-x->coordinate-x a-world x)
                                         (canvas-y->coordinate-y a-world y))
-                             (world-points a-world))))
+                             (world-posns a-world))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Translation between coordinate systems:
 
 ;; canvas-x->coordinate-x: world number -> number
 (define (canvas-x->coordinate-x a-world a-canvas-x)
@@ -66,6 +68,7 @@
      (/ CANVAS-WIDTH (- (world-x-max a-world) (world-x-min a-world)))))
 
 
+;; canvas-y->coordinate-y: world number -> number
 (define (canvas-y->coordinate-y a-world a-canvas-y)
   (+ (world-y-min a-world) 
      (* (/ (- CANVAS-HEIGHT a-canvas-y)
@@ -73,19 +76,50 @@
         (- (world-y-max a-world) (world-y-min a-world)))))
 
 
+;; coordinate-y->canvas-y: world number -> number
 (define (coordinate-y->canvas-y a-world a-coordinate-y)
   (+ CANVAS-HEIGHT
      (/ (* (- (world-y-min a-world) a-coordinate-y)
            CANVAS-HEIGHT)
         (- (world-y-max a-world) (world-y-min a-world)))))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
+;; posn->string: posn -> string
+;; Converts a posn to a printable representation.
+(define (posn->string a-posn)
+  (string-append "(" (number->string (posn-x a-posn))
+                 "," (number->string (posn-y a-posn))
+                 ")"))
 
-  
+;; posns->string-list: (listof posn) -> (listof string)
+(define (posns->string-list posns)
+  (cond
+    [(empty? posns)
+     empty]
+    [else
+     (cons (posn->string (first posns))
+           (posns->string-list (rest posns)))]))
 
-;; The view includes the canvas.  Clicks on the canvas add new points.
+
+;; world-posn-string-list: world -> (listof string)
+(define (world-posn-string-list a-world)
+  (cons "None selected"
+        (posns->string-list (world-posns a-world))))
+
+;; world-selected-posn-string: world -> string
+(define (world-selected-posn-string a-world)
+  "None selected")
+
+;; on-posn-string-selected: world string -> world
+(define (on-posn-string-selected a-world posn-string)
+  a-world)
+
+
+;; The view includes the canvas.  Clicks on the canvas add new posns.
 (define view
-  (col (canvas/callback render-canvas place-point)))
+  (col (canvas/callback render-canvas place-posn)
+       (drop-down world-selected-posn-string world-posn-string-list on-posn-string-selected)))
 
 
 (big-bang initial-world view)
