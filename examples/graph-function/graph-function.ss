@@ -40,8 +40,8 @@
      (render-canvas-points a-world 
                            (rest points)
                            (place-image (circle 5 "solid" "black")
-                                        (coordinate-x->canvas-x (posn-x (first points)))
-                                        (coordinate-y->canvas-y (posn-y (first points)))
+                                        (coordinate-x->canvas-x a-world (posn-x (first points)))
+                                        (coordinate-y->canvas-y a-world (posn-y (first points)))
                                         a-scene))]))
 
 
@@ -53,21 +53,39 @@
                              (world-points a-world))))
 
 
+;; canvas-x->coordinate-x: world number -> number
 (define (canvas-x->coordinate-x a-world a-canvas-x)
-  ...)
+  (+ (world-x-min a-world) 
+     (* (/ a-canvas-x CANVAS-WIDTH)
+        (- (world-x-max a-world) (world-x-min a-world)))))
 
+
+;; coordinate-x->canvas-x: world number -> number
 (define (coordinate-x->canvas-x a-world a-coordinate-x)
-  ...)
+  (* (- a-coordinate-x (world-x-min a-world))
+     (/ CANVAS-WIDTH (- (world-x-max a-world) (world-x-min a-world)))))
+
 
 (define (canvas-y->coordinate-y a-world a-canvas-y)
-  ...)
+  (+ (world-y-min a-world) 
+     (* (/ (- CANVAS-HEIGHT a-canvas-y)
+           CANVAS-HEIGHT)
+        (- (world-y-max a-world) (world-y-min a-world)))))
+
 
 (define (coordinate-y->canvas-y a-world a-coordinate-y)
-  ...)
+  (+ CANVAS-HEIGHT
+     (/ (* (- (world-y-min a-world) a-coordinate-y)
+           CANVAS-HEIGHT)
+        (- (world-y-max a-world) (world-y-min a-world)))))
+
 
 
   
 
 ;; The view includes the canvas.  Clicks on the canvas add new points.
 (define view
-  (col (canvas/callback world->scene place-point)))
+  (col (canvas/callback render-canvas place-point)))
+
+
+(big-bang initial-world view)
