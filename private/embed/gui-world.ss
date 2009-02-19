@@ -69,12 +69,16 @@
 (define embed:displayable%
   (class* snip-wrapper% (embed<%>)
     
+    (init-field val-f)
+    
     (define inner-string-snip%
       (class string-snip%
-        (super-new)))
+        (init label)
+        (super-make-object label)))
     
     (super-new
-     [snip (new inner-string-snip%)])))
+     [snip (new inner-string-snip% 
+                [label "hello world"])])))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -82,9 +86,14 @@
 ;; debugging help: let's see a snip.
 (define (show a-snip)
   (let* ([f (new frame% [label ""])]
-         [e (new embed:top% )]
+         [e (new aligned-pasteboard%)]
          [c (new editor-canvas%
                  [parent f]
                  [editor e])])
-    (send f show #t)))
+    (send f show #t)
+    (send e add-child (new embedded-text-button%
+                           [parent e]
+                           [label "testing"]
+                           [callback (lambda args (void))]))
+    #;(send e insert a-snip)))
     
