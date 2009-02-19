@@ -5,10 +5,12 @@
 (require "../../gui-world.ss"
          lang/posn)
 
+
 ;; An io consists of an input and an output.
 (define-struct io (input    ;; input
                    output   ;; posn
-                   ))
+                   )
+  #:prefab)
 (define-updaters io)
 
 ;; A mode is one of the following: 
@@ -29,7 +31,8 @@
                       y-max         ;; number
                       ios           ;; (listof io)
                       mode
-                      ))
+                      )
+  #:prefab)
 (define-updaters world)
 
 
@@ -332,4 +335,24 @@
 #;(big-bang initial-world view)
 
 
-(provide initial-world view)
+;; world->syntax: world -> syntax
+;; Produces syntax from the world, if the world is to be treated as code.
+(define (world->syntax a-world)
+  (let ([ios (world-ios a-world)])
+    (datum->syntax #f
+                   (lambda (x y)
+                     (let loop ([ios ios])
+                       (printf "ios: ~s~n" ios)
+                       (cond 
+                         [(empty? ios)
+                          (error 'graph-function "I don't know how to handle ~s ~s" x y)]
+                         [(input=? (io-input (first ios)) (make-posn x y))
+                          (io-output (first ios))]
+                         [else
+                          (printf "no match ~s ~s~n" 
+                                  (posn->string (io-input (first ios)))
+                                  (posn->string (make-posn x y)))
+                          (loop (rest ios))]))))))
+
+
+(provide initial-world view world->syntax)

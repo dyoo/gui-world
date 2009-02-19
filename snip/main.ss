@@ -7,6 +7,7 @@
          scheme/match
          framework/framework
          embedded-gui
+         "../examples/graph-function/graph-function-difference.ss"
          "../gui-world.ss")
 
 
@@ -85,7 +86,9 @@
     
     ;; read-special: file number number number -> syntax
     (define/public (read-special file line col pos)
-      (void)
+      
+      (world->syntax world)
+      
       #;(with-handlers ([exn:fail? (lambda (exn)
                                    (printf "exn: ~s~n" exn)
                                    (make-special-comment (exn-message exn)))])
