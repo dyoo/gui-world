@@ -85,23 +85,6 @@
                              (world-ios a-world))))
 
 
-;; world-contains-input?: world input -> boolean
-(define (world-contains-input? a-world an-input)
-  (ios-contains-input? (world-ios a-world)
-                       an-input))
-
-
-;; ios-consains-input: (listof io) input -> boolean
-(define (ios-contains-input? ios an-input)
-  (cond
-    [(empty? ios)
-     false]
-    [(input=? (io-input (first ios))
-              an-input)
-     true]
-    [else
-     (ios-contains-input? (rest ios) an-input)]))
-
 
 ;; world-delete-input: world input -> world
 (define (world-delete-input a-world an-input)
@@ -145,6 +128,10 @@
 (define (world-choose-next-io a-world)
   (update-world-ios a-world (append (rest (world-ios a-world))
                                     (list (first (world-ios a-world))))))
+
+;; world-delete-current-io: world -> world
+(define (world-delete-current-io a-world)
+  (update-world-ios a-world (rest (world-ios a-world))))
 
 
 ;; ios-insert/no-duplicates: io (listof io) -> (listof io)
@@ -299,6 +286,10 @@
 (define (on-change-output-pushed a-world)
   (update-world-mode a-world mode:update-output))
 
+;; on-delete-pushed: world -> world
+(define (on-delete-pushed a-world)
+  (update-world-mode (world-delete-current-io a-world) mode:create-io))
+
 ;; create-button-selectable?: world -> boolean
 (define (create-button-selectable? a-world)
   (not (string=? (world-mode a-world) mode:create-io)))
@@ -320,7 +311,8 @@
        (row (button/enabled "Create" on-create-pushed create-button-selectable?)
             (button/enabled "Change input" on-change-input-pushed input-button-selectable?)
             (button/enabled "Change output" on-change-output-pushed output-button-selectable?))
-       (button/enabled "Choose next case" on-next-pushed world-has-ios?)))
+       (button/enabled "Choose next case" on-next-pushed world-has-ios?)
+       (button/enabled "Delete selected case" on-delete-pushed world-has-ios?)))
 
 
 
