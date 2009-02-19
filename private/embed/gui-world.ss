@@ -29,16 +29,16 @@
   (match a-gui
     [(struct row-elt (elts))
      (let ([row (new embed:row%
-                     [parent parent]
-                     [top (get-field top parent)])])
+                     [top (get-field top parent)]
+                     [parent parent])])
        (for ([elt elts])
          (gui->snip elt row))
        row)]
     
     [(struct column-elt (elts))
      (let ([col (new embed:col%
-                     [parent parent]
-                     [top (get-field top parent)])])
+                     [top (get-field top parent)]
+                     [parent parent])])
        (for ([elt elts])
          (gui->snip elt col))
        col)]
@@ -48,17 +48,22 @@
 
     [(struct displayable-elt (val-f))
      (new embed:displayable%
-          [val-f val-f]
+          [top (get-field top parent)]
           [parent parent]
-          [top (get-field top parent)])]
+          [val-f val-f])]
 
     
     [(struct canvas-elt (scene-f callback))
      TODO]
     
     [(struct button-elt (val-f callback enabled?-f))
-     TODO]
-    
+     (new embed:button%
+          [top (get-field top parent)]
+          [parent parent]
+          [val-f val-f]
+          [callback callback]
+          [enabled?-f enabled?-f])]
+          
     [(struct drop-down-elt (val-f choices-f callback enabled?-f))
      TODO]
     
@@ -121,6 +126,24 @@
                 [label (displayable->string 
                         (val-f (send top get-world)))])])))
 
+
+(define embed:button%
+  (class* snip-wrapper% (embed<%>)
+    (init-field top)
+    (init-field val-f)
+    (init-field callback)
+    (init-field enabled?-f)
+    
+    (define inner-button-snip%
+      (class text-button-snip%
+        
+        (super-new [label (displayable->string
+                           (val-f (send top get-world)))]
+                   [callback (lambda (snip event)
+                               (void))])))
+  
+    (super-new [snip (new inner-button-snip%)])))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
@@ -141,5 +164,6 @@
 
 (define (test-show)
   (show 0 (col (row (message "hello world") 
+                    (button "A button" (lambda (world) world))
                     (message "next row"))
                (message "goodbye world"))))
