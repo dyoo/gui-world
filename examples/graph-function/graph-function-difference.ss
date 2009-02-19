@@ -262,7 +262,7 @@
 (define (world-status-string a-world)
   (cond
     [(string=? (world-mode a-world) "create-io")
-     "Creating a new input"]
+     "Creating a new case"]
     [(string=? (world-mode a-world) "update-input")
      "Updating the input"]
     [(string=? (world-mode a-world) "update-output")
