@@ -653,6 +653,8 @@
 
 (provide-higher-order-primitive on-tick (_ on-tick-handler))
 
+(provide-primitive elt?)
+
 
 
 
