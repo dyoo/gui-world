@@ -83,17 +83,22 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
+
+
+
 ;; debugging help: let's see a snip.
-(define (show a-snip)
+(define (show a-snip-f)
   (let* ([f (new frame% [label ""])]
-         [e (new aligned-pasteboard%)]
+         [e (new embed:top%)]
          [c (new editor-canvas%
                  [parent f]
                  [editor e])])
     (send f show #t)
-    (send e add-child (new embedded-text-button%
-                           [parent e]
-                           [label "testing"]
-                           [callback (lambda args (void))]))
+    (a-snip-f e)
     #;(send e insert a-snip)))
-    
+
+(define (test-show)
+  (show (lambda (p)
+          (new embed:displayable% 
+               [val-f (lambda (a-world) "hello world")]
+               [parent p]))))
