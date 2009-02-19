@@ -17,20 +17,39 @@
 ;  ...)
 
 
-;;; Translates a gui into a snip.
-(define (gui->snip a-gui [parent (new embed:top%)])
+;; All of the embedded elements will implement alignment<%>.
+(define embed<%> (interface ()
+                   get-top))
+
+
+
+;;; gui->snip: gui embed<%> -> embed<%>
+;;; Translates a gui into a snip that's attached to the given
+;;; parent.
+(define (gui->snip a-gui parent)
   (match a-gui
     [(struct row-elt (elts))
-     TODO]
+     (let ([row (new embed:row%
+                     [parent parent])])
+       (for ([elt elts])
+         (gui->snip elt row))
+       row)]
     
     [(struct column-elt (elts))
-     TODO]
-    
+     (let ([col (new embed:col%
+                     [parent parent])])
+       (for ([elt elts])
+         (gui->snip elt col))
+       col)]
+
     [(struct box-group-elt (val-f a-subelt enabled?-f))
      TODO]
 
     [(struct displayable-elt (val-f))
-     TODO]
+     (new embed:displayable%
+          [val-f val-f]
+          [parent parent])]
+
     
     [(struct canvas-elt (scene-f callback))
      TODO]
@@ -52,23 +71,56 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define embed<%> (interface ()))
+(define (embed-mixin super%)
+  (class super%
+    (inherit get-parent)
+    (super-new)
+    
+    (define/public (get-top)
+      (let ([p (get-parent)])
+        (cond
+          [(eq? p this)
+           p]
+          [else
+           (send (get-parent) get-top)])))))
+
+
+
 
 (define embed:top%
   (class* aligned-pasteboard% (embed<%>)
+    (init init-world)
+    
+    (define *world* init-world)
+    
+    (define/public (get-top)
+      this)
+    
+    (define/public (get-world)
+      *world*)
+    
+    (define/public (set-world a-world)
+      (set! *world* a-world))
+    
     (super-new)))
+
+
 
 (define embed:row%
-  (class* vertical-alignment% (embed<%>)
+  (class* (embed-mixin horizontal-alignment%) (embed<%>)
     (super-new)))
+
+
 
 (define embed:col%
-  (class* horizontal-alignment% (embed<%>)
+  (class* (embed-mixin vertical-alignment%) (embed<%>)
     (super-new)))
 
+
+
 (define embed:displayable%
-  (class* snip-wrapper% (embed<%>)
-    
+  (class* (embed-mixin snip-wrapper%) (embed<%>)
+    (inherit get-top)
     (init-field val-f)
     
     (define inner-string-snip%
@@ -78,7 +130,8 @@
     
     (super-new
      [snip (new inner-string-snip% 
-                [label "hello world"])])))
+                [label (displayable->string 
+                        (val-f (send (get-top) get-world)))])])))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -86,19 +139,18 @@
 
 
 
-;; debugging help: let's see a snip.
-(define (show a-snip-f)
+;; debugging help: let's see a gui as a snip.
+(define (show initial-world a-gui)
   (let* ([f (new frame% [label ""])]
-         [e (new embed:top%)]
+         [e (new embed:top% [init-world initial-world])]
          [c (new editor-canvas%
                  [parent f]
                  [editor e])])
     (send f show #t)
-    (a-snip-f e)
-    #;(send e insert a-snip)))
+    (gui->snip a-gui e)))
+
+
 
 (define (test-show)
-  (show (lambda (p)
-          (new embed:displayable% 
-               [val-f (lambda (a-world) "hello world")]
-               [parent p]))))
+  (show 0 (col (message "hello world")
+               (message "goodbye world"))))
