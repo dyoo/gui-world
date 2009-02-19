@@ -35,8 +35,10 @@
   (class* editor-snip:decorated% (readable-snip<%>)
     (inherit get-editor set-snipclass)
     
-    (init-field initial-world)
+    (init initial-world)
     (init-field gui)
+    
+    (define world initial-world)
     
     
     (define (initialize)
@@ -45,7 +47,11 @@
       (new embedded-text-button% 
            [label "Edit"]
            [callback (lambda (snip event)
-                       (void))]
+                       (thread
+                        (lambda ()
+                          (let ([new-world
+                                 (channel-get (big-bang world gui))])
+                            (set! world new-world)))))]
            [parent (get-editor)]))
 
     
@@ -56,13 +62,13 @@
     
     (define/override (make-snip)
       (new gui-world-snip% 
-           [initial-world initial-world]
+           [initial-world world]
            [gui gui]))
     
     
     (define/override (copy)
       (new gui-world-snip%
-           [initial-world initial-world]
+           [initial-world world]
            [gui gui]))
     
     

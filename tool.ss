@@ -13,7 +13,7 @@
     (import drscheme:tool^)
     (export drscheme:tool-exports^)
     
-    (dynamic-require 'gui-world/snip)
+    (dynamic-require 'gui-world/snip/main #f)
     
     (define (phase1)
       (drscheme:get/extend:extend-unit-frame frame-mixin))

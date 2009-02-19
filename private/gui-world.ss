@@ -6,6 +6,7 @@
          scheme/list
          scheme/bool
          scheme/contract
+         scheme/async-channel
          htdp/image
          "prim.ss"
          (only-in lang/htdp-beginner image?)
@@ -120,7 +121,7 @@
     (thread-send *on-tick-thread* 'shutdown)))
 
 
-;; big-bang: world gui -> void
+;; big-bang: world gui -> channel
 ;; Shows the frame, creates the initial world.
 (define (big-bang initial-world a-gui)
   (set! *world* initial-world)
@@ -131,7 +132,8 @@
   (render-elt! *gui* *frame*)
   (send *frame* show #t)
   (change-world/f! (lambda (a-world)
-                     initial-world)))
+                     initial-world))
+  (send *frame* get-close-channel))
 
 
 ;; refresh-widgets!: -> void
@@ -260,9 +262,15 @@
 
 (define world-gui:frame%
   (class frame%
+    (define close-channel (make-channel))
     (define/augment (on-close)
       (inner (void) on-close)
-      (shutdown-on-tick-thread))
+      (shutdown-on-tick-thread)
+      (channel-put close-channel *world*))
+    
+    (define/public (get-close-channel)
+      close-channel)
+    
     (super-new)))
 
 
