@@ -1,10 +1,9 @@
-;; The first three lines of this file were inserted by DrScheme. They record metadata
-;; about the language level of this file in a form that our tools can easily process.
-#reader(lib "htdp-beginner-reader.ss" "lang")((modname graph-function-difference) (read-case-sensitive #t) (teachpacks ()) (htdp-settings #(#t constructor repeating-decimal #f #t none #f ())))
+#lang scheme
 ;; Graph function: representing partial math functions as graphs.
 ;; Difference equations.
 
-(require "../../gui-world.ss")
+(require "../../gui-world.ss"
+         lang/posn)
 
 ;; An io consists of an input and an output.
 (define-struct io (input    ;; input
@@ -330,4 +329,7 @@
 
 
 
-(big-bang initial-world view)
+#;(big-bang initial-world view)
+
+
+(provide initial-world view)

@@ -6,6 +6,7 @@
          scheme/list
          scheme/match
          framework/framework
+         embedded-gui
          "../gui-world.ss")
 
 
@@ -40,11 +41,17 @@
     
     (define (initialize)
       (super-new)
-      (set-snipclass (get-snip-class)))  
+      (set-snipclass (get-snip-class))
+      (new embedded-text-button% 
+           [label "Edit"]
+           [callback (lambda (snip event)
+                       (void))]
+           [parent (get-editor)]))
+
     
     
     (define/override (make-editor)
-      (new scheme:text%))
+      (new aligned-pasteboard%))
     
     
     (define/override (make-snip)

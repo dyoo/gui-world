@@ -2,7 +2,9 @@
   (require drscheme/tool
            scheme/class
            scheme/unit
-           scheme/gui/base)
+           scheme/gui/base
+           "snip/main.ss"
+           "examples/graph-function/graph-function-difference.ss")
   
   (provide tool@)
   
@@ -30,7 +32,7 @@
                [callback (lambda (menu-item control-event)
                            (when (get-edit-target-object)
                              (send (get-edit-target-object) insert
-                                   (schanzer-box:make-schanzer-box))))]))
+                                   (make-snip initial-world view))))]))
         
         
         (initialize)))))
