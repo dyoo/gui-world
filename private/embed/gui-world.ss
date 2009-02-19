@@ -30,6 +30,7 @@
     [(struct row-elt (elts))
      (let ([row (new embed:row%
                      [top (get-field top parent)]
+                     [gui a-gui]
                      [parent parent])])
        (for ([elt elts])
          (gui->snip elt row))
@@ -38,6 +39,7 @@
     [(struct column-elt (elts))
      (let ([col (new embed:col%
                      [top (get-field top parent)]
+                     [gui a-gui]
                      [parent parent])])
        (for ([elt elts])
          (gui->snip elt col))
@@ -49,8 +51,8 @@
     [(struct displayable-elt (val-f))
      (new embed:displayable%
           [top (get-field top parent)]
-          [parent parent]
-          [val-f val-f])]
+          [gui a-gui]
+          [parent parent])]
 
     
     [(struct canvas-elt (scene-f callback))
@@ -59,10 +61,8 @@
     [(struct button-elt (val-f callback enabled?-f))
      (new embed:button%
           [top (get-field top parent)]
-          [parent parent]
-          [val-f val-f]
-          [callback callback]
-          [enabled?-f enabled?-f])]
+          [gui a-gui]
+          [parent parent])]
           
     [(struct drop-down-elt (val-f choices-f callback enabled?-f))
      TODO]
@@ -100,6 +100,7 @@
 (define embed:row%
   (class* horizontal-alignment% (embed<%>)
     (init-field top)
+    (init-field gui)
     (super-new)))
 
 
@@ -107,6 +108,7 @@
 (define embed:col%
   (class* vertical-alignment% (embed<%>)
     (init-field top)
+    (init-field gui)
     (super-new)))
 
 
@@ -114,7 +116,7 @@
 (define embed:displayable%
   (class* snip-wrapper% (embed<%>)
     (init-field top)
-    (init-field val-f)
+    (init-field gui)
     
     (define inner-string-snip%
       (class string-snip%
@@ -124,26 +126,25 @@
     (super-new
      [snip (new inner-string-snip% 
                 [label (displayable->string 
-                        (val-f (send top get-world)))])])))
+                        ((displayable-elt-val-f gui)
+                         (send top get-world)))])])))
 
 
 (define embed:button%
   (class* snip-wrapper% (embed<%>)
     (init-field top)
-    (init-field val-f)
-    (init-field callback)
-    (init-field enabled?-f)
+    (init-field gui)
     
     (define inner-button-snip%
       (class text-button-snip%
         
         (super-new [label 
                     (displayable->string
-                     (val-f (send top get-world)))]
+                     ((button-elt-val-f gui) (send top get-world)))]
                    [callback 
                     (lambda (snip event)
                       (send top set-world
-                            (callback (send top get-world))))])))
+                            ((button-elt-callback gui) (send top get-world))))])))
     
     (super-new [snip (new inner-button-snip%)])))
 
