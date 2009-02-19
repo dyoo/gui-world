@@ -4,6 +4,7 @@
          "../todo.ss"
          scheme/class
          scheme/match
+         scheme/gui/base
          embedded-gui
          (for-syntax scheme/base))
 
@@ -49,6 +50,7 @@
     [(struct checkbox-elt (label-f val-f callback enabled?-f))
      TODO]))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define embed<%> (interface ()))
 
@@ -57,5 +59,32 @@
     (super-new)))
 
 (define embed:row%
+  (class* vertical-alignment% (embed<%>)
+    (super-new)))
+
+(define embed:col%
   (class* horizontal-alignment% (embed<%>)
     (super-new)))
+
+(define embed:displayable%
+  (class* snip-wrapper% (embed<%>)
+    
+    (define inner-string-snip%
+      (class string-snip%
+        (super-new)))
+    
+    (super-new
+     [snip (new inner-string-snip%)])))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+;; debugging help: let's see a snip.
+(define (show a-snip)
+  (let* ([f (new frame% [label ""])]
+         [e (new embed:top% )]
+         [c (new editor-canvas%
+                 [parent f]
+                 [editor e])])
+    (send f show #t)))
+    
