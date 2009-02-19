@@ -226,15 +226,29 @@
                       false
                       (draw-canvas-io a-world (first ios) first-io? a-scene))]))
 
+
+;; place-image/posn: image posn scene -> scene
+(define (place-image/posn an-image a-posn a-scene)
+  (place-image an-image 
+               (posn-x a-posn)
+               (posn-y a-posn)
+               a-scene))
+
   
 ;; draw-canvas-io: world posn scene -> scene
 (define (draw-canvas-io a-world an-io first-io? a-scene)
   (cond [first-io?
-         (draw-arrow (coordinate-posn->canvas-posn a-world (io-input an-io))
-                     (coordinate-posn->canvas-posn a-world (io-output an-io))
-                     "black"
-                     "red"
-                     a-scene)]
+         (place-image/posn 
+          (text (posn->string (io-output an-io)) 10 "purple")
+          (coordinate-posn->canvas-posn a-world (io-output an-io))
+          (place-image/posn 
+           (text (posn->string (io-input an-io)) 10 "purple")
+           (coordinate-posn->canvas-posn a-world (io-input an-io))
+           (draw-arrow (coordinate-posn->canvas-posn a-world (io-input an-io))
+                       (coordinate-posn->canvas-posn a-world (io-output an-io))
+                       "black"
+                       "red"
+                       a-scene)))]
         [else
          (draw-arrow (coordinate-posn->canvas-posn a-world (io-input an-io))
                      (coordinate-posn->canvas-posn a-world (io-output an-io))
