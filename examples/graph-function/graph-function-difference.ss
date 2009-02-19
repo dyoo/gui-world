@@ -94,9 +94,13 @@
 ;; render-canvas: world -> scene
 ;; Renders the canvas containing all the posns.
 (define (render-canvas a-world)
-  (render-canvas-ios a-world 
+  (cond
+    [(world-defined-on-input? a-world)
+     (render-canvas-ios a-world 
                         (world-ios a-world)
-                        (empty-scene CANVAS-WIDTH CANVAS-HEIGHT)))
+                        (empty-scene CANVAS-WIDTH CANVAS-HEIGHT))]
+    [else
+     ...]))
 
 
 ;; world-defined-on-input?: world -> boolean
@@ -208,18 +212,20 @@
         (- (world-y-max a-world) (world-y-min a-world)))))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; on-clear-pressed
-(define (on-clear-pressed a-world)
-  (update-world-current-input
-   (update-world-ios a-world empty)
-   MIN-INPUT))
+
+
+(define (on-clear-mark a-world)
+  ;; fixme
+  a-world)
 
 
 ;; The view includes the canvas.  Clicks on the canvas add new posns.
 (define view
   (col (canvas/callback render-canvas place-io)
        (slider world-current-input MIN-INPUT MAX-INPUT update-world-current-input)
-       (button "Clear Canvas" on-clear-pressed)))
+
+       (button "Clear mark" on-clear-mark)
+       #;(button "Clear Canvas" on-clear-pressed)))
 
 
 (big-bang initial-world view)
