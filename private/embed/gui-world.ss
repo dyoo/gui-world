@@ -18,7 +18,9 @@
 
 
 ;; All of the embedded elements will implement alignment<%>.
-(define embed<%> (interface ()))
+(define embed<%> (interface () 
+                   refresh! ;; when the world changes, redraw.
+                   ))
 
 
 
@@ -87,11 +89,20 @@
     (init-field (top this))
     (define *world* init-world)
         
+
+    (inherit get-pasteboard)
+    
     (define/public (get-world)
       *world*)
     
     (define/public (set-world a-world)
       (set! *world* a-world))
+    
+    (define/public (refresh!)
+      (let* ([pb (get-pasteboard)]
+             [snip (send pb find-first-snip)])
+        (printf "I see ~s~n" snip)))
+
     
     (super-new)))
 
@@ -101,6 +112,10 @@
   (class* horizontal-alignment% (embed<%>)
     (init-field top)
     (init-field gui)
+
+    (define/public (refresh!)
+      TODO)
+    
     (super-new)))
 
 
@@ -109,6 +124,10 @@
   (class* vertical-alignment% (embed<%>)
     (init-field top)
     (init-field gui)
+
+    (define/public (refresh!)
+      TODO)
+    
     (super-new)))
 
 
@@ -123,6 +142,9 @@
         (init label)
         (super-make-object label)))
     
+    (define/public (refresh!)
+      TODO)
+    
     (super-new
      [snip (new inner-string-snip% 
                 [label (displayable->string 
@@ -135,6 +157,7 @@
     (init-field top)
     (init-field gui)
     
+    
     (define inner-button-snip%
       (class text-button-snip%
         
@@ -145,6 +168,9 @@
                     (lambda (snip event)
                       (send top set-world
                             ((button-elt-callback gui) (send top get-world))))])))
+    
+    (define/public (refresh!)
+      TODO)
     
     (super-new [snip (new inner-button-snip%)])))
 
@@ -162,7 +188,8 @@
                  [parent f]
                  [editor e])])
     (send f show #t)
-    (gui->snip a-gui e)))
+    (gui->snip a-gui e)
+    (send e refresh!)))
 
 
 
