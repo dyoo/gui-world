@@ -137,11 +137,14 @@
     (define inner-button-snip%
       (class text-button-snip%
         
-        (super-new [label (displayable->string
-                           (val-f (send top get-world)))]
-                   [callback (lambda (snip event)
-                               (void))])))
-  
+        (super-new [label 
+                    (displayable->string
+                     (val-f (send top get-world)))]
+                   [callback 
+                    (lambda (snip event)
+                      (send top set-world
+                            (callback (send top get-world))))])))
+    
     (super-new [snip (new inner-button-snip%)])))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -163,7 +166,11 @@
 
 
 (define (test-show)
-  (show 0 (col (row (message "hello world") 
-                    (button "A button" (lambda (world) world))
-                    (message "next row"))
-               (message "goodbye world"))))
+  (show 0 (col 
+           (message "hello world")
+           (row
+            (button "A button" (lambda (world) (add1 world)))
+            (message (lambda (world)
+                       (string-append 
+                        "The world contains: "
+                        (number->string world))))))))
