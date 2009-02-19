@@ -30,14 +30,16 @@
   (match a-gui
     [(struct row-elt (elts))
      (let ([row (new embed:row%
-                     [parent parent])])
+                     [parent parent]
+                     [top (send parent get-top)])])
        (for ([elt elts])
          (gui->snip elt row))
        row)]
     
     [(struct column-elt (elts))
      (let ([col (new embed:col%
-                     [parent parent])])
+                     [parent parent]
+                     [top (send parent get-top)])])
        (for ([elt elts])
          (gui->snip elt col))
        col)]
@@ -48,7 +50,8 @@
     [(struct displayable-elt (val-f))
      (new embed:displayable%
           [val-f val-f]
-          [parent parent])]
+          [parent parent]
+          [top (send parent get-top)])]
 
     
     [(struct canvas-elt (scene-f callback))
@@ -73,16 +76,13 @@
 
 (define (embed-mixin super%)
   (class super%
+    (init-field top)
     (inherit get-parent)
-    (super-new)
-    
+
     (define/public (get-top)
-      (let ([p (get-parent)])
-        (cond
-          [(eq? p this)
-           p]
-          [else
-           (send (get-parent) get-top)])))))
+      top)
+    
+    (super-new)))
 
 
 
@@ -120,7 +120,7 @@
 
 (define embed:displayable%
   (class* (embed-mixin snip-wrapper%) (embed<%>)
-    (inherit get-top)
+    (inherit-field top)
     (init-field val-f)
     
     (define inner-string-snip%
@@ -128,10 +128,11 @@
         (init label)
         (super-make-object label)))
     
+    (printf "test: ~s~n" top)
     (super-new
      [snip (new inner-string-snip% 
                 [label (displayable->string 
-                        (val-f (send (get-top) get-world)))])])))
+                        (val-f ""))])])))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
