@@ -20,9 +20,11 @@
       (drscheme:get/extend:extend-unit-frame frame-mixin))
     
     (define (phase2)
-      (register-gui-world-sniptype! "gf-difference"
-                                    gf-difference:initial-world
-                                    gf-difference:view))
+      (register-gui-world-sniptype! 
+       "gf-difference"
+       #:initial-world gf-difference:initial-world
+       #:gui gf-difference:view
+       #:world->syntax gf-difference:world->syntax))
     
     (define (frame-mixin super%)
       (class super%
