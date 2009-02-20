@@ -183,13 +183,21 @@
                set-classname
                set-version)
       
+      (define namespace (current-namespace))
+      
+      (define/public (set-namespace! a-namespace)
+        (set! namespace a-namespace))
+      
       (define/override (read in)
         (let* ([sniptype-name (bytes->string/utf-8 (send in get-bytes))]
                [world-bytes (send in get-bytes)])
-          (let ([reg-entry (registry-lookup sniptype-name)])
+          (let ([reg-entry 
+                 (parameterize ([current-namespace namespace])
+                   (registry-lookup sniptype-name))])
             (match reg-entry
               [(struct registry-entry 
-                       (name initial-world a-gui world->syntax world->bytes bytes->world))
+                       (name initial-world a-gui 
+                             world->syntax world->bytes bytes->world))
                (new gui-world-snip% 
                     [initial-world (bytes->world world-bytes)]
                     [registry-entry reg-entry])]

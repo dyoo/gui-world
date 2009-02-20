@@ -344,6 +344,11 @@
 #;(big-bang initial-world view)
 
 
+;; posn->list: posn -> list
+(define (posn->list a-posn)
+  (list (posn-x a-posn)
+        (posn-y a-posn)))
+
 
 ;; world->syntax: world -> syntax
 ;; Produces syntax from the world, if the world is to be treated as code.
@@ -355,7 +360,7 @@
                         (error 'graph-function
                                "I don't know how to handle ~s ~s" x y)]
                        [(input=? (io-input (first ios)) (make-posn x y))
-                        (io-output (first ios))]
+                        (posn->list (io-output (first ios)))]
                        [else
                         (printf "no match ~s ~s~n" 
                                 (posn->string (io-input (first ios)))
