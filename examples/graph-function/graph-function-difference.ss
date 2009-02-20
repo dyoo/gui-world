@@ -353,6 +353,9 @@
 ;; 
 ;; Miscellaneous Snip support
 
+(define (world->thumbnail a-world)
+  (render-canvas a-world))
+
 
 ;; world->syntax: world -> syntax
 ;; Produces syntax from the world, if the world is to be treated as code.

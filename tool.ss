@@ -89,7 +89,7 @@
   
   (define gui-world-snip%
     (class* editor-snip:decorated% (readable-snip<%>)
-      (inherit get-editor set-snipclass)
+      (inherit get-editor get-admin set-snipclass)
       
       (init initial-world)
       (init-field registry-entry)
@@ -121,17 +121,19 @@
       
       
       (define (update-thumbnail-bitmap!)
-        (let* ([bm (make-object bitmap% 100 100)]
-               [dc (new bitmap-dc% [bitmap bm])])
-          
-          (send dc clear)
-          (send dc set-bitmap #f)
-          (send thumbnail-snip set-bitmap bm))
+        #;(let* ([bm (make-object bitmap% 100 100)]
+                 [dc (new bitmap-dc% [bitmap bm])])
+            
+            (send dc clear)
+            (send dc set-bitmap #f)
+            (send thumbnail-snip set-bitmap bm))
         
-        (void)
-        #;(let ([new-image-snip 
-               ((registry-entry-world->thumbnail registry-entry) world)])
-          (send new-image-snip get-bitmap)))
+        
+        (let* ([new-image-snip 
+                ((registry-entry-world->thumbnail registry-entry) world)]
+               [bm (send new-image-snip get-bitmap)])
+          (send thumbnail-snip set-bitmap bm)))
+
       
       
       ;; Starts up the big bang.
@@ -141,7 +143,9 @@
            (let* ([gui (registry-entry-gui registry-entry)]
                   [new-world
                    (channel-get (big-bang world gui))])
-             (set! world new-world)))))
+             (set! world new-world)
+             (when (get-admin)
+               (send (get-admin) modified this #t))))))
     
       
       (define/override (make-editor)
