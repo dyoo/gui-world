@@ -21,17 +21,6 @@
        [gui a-gui]))
 
 
-#;(define (editor-snip->syntax a-snip)
-    (let* ([editor (send a-snip get-editor)]
-           [ip (open-input-text-editor editor
-                                       0
-                                       'end
-                                       (lambda (a-snip)
-                                         ;; fixme
-                                         (send a-snip read-special #f 1 1 1)))])
-      (read-syntax #f ip)))
-
-
 (define gui-world-snip%
   (class* editor-snip:decorated% (readable-snip<%>)
     (inherit get-editor set-snipclass)
