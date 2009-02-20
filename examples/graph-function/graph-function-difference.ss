@@ -2,8 +2,11 @@
 ;; Graph function: representing partial math functions as graphs.
 ;; Difference equations.
 
-(require "../../gui-world.ss"
-         lang/posn)
+(require "../../gui-world.ss")
+
+;; We don't use lang/posn only because we want to make sure
+;; we can prefabricate these.
+(define-struct posn (x y) #:prefab)
 
 
 ;; An io consists of an input and an output.
@@ -373,4 +376,17 @@
                      `(lambda (,#'x ,#'y)
                         ,#'(body-f x y))))))
 
-(provide initial-world view world->syntax)
+
+;; world->bytes: world -> bytes
+(define (world->bytes a-world)
+  (let ([op (open-output-bytes a-world)])
+    (write a-world op)
+    (get-output-bytes op)))
+
+
+;; bytes->world: bytes -> world
+(define (bytes->world some-bytes)
+  (read (open-input-bytes some-bytes)))
+
+
+(provide initial-world view world->syntax world->bytes bytes->world)

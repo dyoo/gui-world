@@ -8,19 +8,19 @@
          (only-in lang/htdp-beginner image?))
 
 
-(define-struct elt () #:transparent)
+(define-struct elt () #:prefab)
 ;; An gui element is one of the following:
 
-(define-struct (row-elt elt) (elts) #:transparent)
-(define-struct (column-elt elt) (elts) #:transparent)
-(define-struct (box-group-elt elt) (val-f elt enabled?-f) #:transparent)
-(define-struct (displayable-elt elt) (val-f) #:transparent)
-(define-struct (canvas-elt elt) (scene-f callback) #:transparent)
-(define-struct (button-elt elt) (val-f callback enabled?-f) #:transparent)
-(define-struct (drop-down-elt elt) (val-f choices-f callback enabled?-f) #:transparent)
-(define-struct (text-field-elt elt) (val-f callback enabled?-f) #:transparent)
-(define-struct (slider-elt elt) (val-f min-f max-f callback enabled?-f) #:transparent)
-(define-struct (checkbox-elt elt) (label-f val-f callback enabled?-f) #:transparent)
+(define-struct (row-elt elt) (elts) #:prefab)
+(define-struct (column-elt elt) (elts) #:prefab)
+(define-struct (box-group-elt elt) (val-f elt enabled?-f) #:prefab)
+(define-struct (displayable-elt elt) (val-f) #:prefab)
+(define-struct (canvas-elt elt) (scene-f callback) #:prefab)
+(define-struct (button-elt elt) (val-f callback enabled?-f) #:prefab)
+(define-struct (drop-down-elt elt) (val-f choices-f callback enabled?-f) #:prefab)
+(define-struct (text-field-elt elt) (val-f callback enabled?-f) #:prefab)
+(define-struct (slider-elt elt) (val-f min-f max-f callback enabled?-f) #:prefab)
+(define-struct (checkbox-elt elt) (label-f val-f callback enabled?-f) #:prefab)
 
 
 
