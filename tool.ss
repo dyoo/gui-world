@@ -5,11 +5,7 @@
          scheme/gui/base
          scheme/match
          framework/framework
-         embedded-gui
-         
-         "gui-world.ss"
-         (prefix-in gf-difference: 
-                    "examples/graph-function/graph-function-difference.ss"))
+         embedded-gui)
 
 
 (provide tool@)
@@ -23,7 +19,21 @@
     (drscheme:get/extend:extend-unit-frame frame-mixin))
   
   (define (phase2)
-    (void))
+    (let ([initial-world (dynamic-require 
+                          "examples/graph-function/graph-function-difference.ss"
+                          'initial-world)]
+          [view (dynamic-require 
+                "examples/graph-function/graph-function-difference.ss"
+                'view)]
+          [world->syntax (dynamic-require 
+                          "examples/graph-function/graph-function-difference.ss"
+                          'world->syntax)])
+      (register-gui-world-sniptype! "gf-difference"
+                                    #:initial-world initial-world
+                                    #:gui view
+                                    #:world->syntax world->syntax)))
+
+  
   
   (define (frame-mixin super%)
     (class super%
@@ -89,6 +99,8 @@
              [parent (get-editor)]))
       
       
+      (define big-bang (dynamic-require "gui-world.ss" 'big-bang))
+      
       ;; Starts up the big bang.
       (define (initiate-big-bang!)
         (thread
@@ -97,7 +109,7 @@
                   [new-world
                    (channel-get (big-bang world gui))])
              (set! world new-world)))))
-      
+    
       
       (define/override (make-editor)
         (new aligned-pasteboard%))
@@ -239,10 +251,3 @@
   (let ([ip (open-input-bytes a-bytes)])
     (read ip)))
 
-
-
-(register-gui-world-sniptype! 
- "gf-difference"
- #:initial-world gf-difference:initial-world
- #:gui gf-difference:view
- #:world->syntax gf-difference:world->syntax)
