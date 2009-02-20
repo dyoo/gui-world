@@ -179,7 +179,7 @@
 
 (let ([snipclass (make-object gui-world-snip-class%)])
   (send snipclass set-classname classname)
-  (send snipclass get-version 1)
+  (send snipclass set-version 1)
   (send (get-the-snip-class-list) add snipclass))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
