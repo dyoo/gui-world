@@ -10,7 +10,7 @@
 
 (provide tool@)
 
-(define-runtime-path directory ".")
+(define-runtime-path this-directory ".")
 
 (define-unit tool@  
   (import drscheme:tool^)
@@ -18,35 +18,26 @@
     
   (define namespace (current-namespace))
 
-  
   (define (phase1)
     (drscheme:get/extend:extend-unit-frame frame-mixin))
   
   (define (phase2)
-    (parameterize ([current-namespace namespace]
-                   [current-load-relative-directory directory])
-      (let ([initial-world 
-             (dynamic-require 
-              "examples/graph-function/graph-function-difference.ss"
-              'initial-world)]
-            [view 
-             (dynamic-require 
-              "examples/graph-function/graph-function-difference.ss"
-              'view)]
-            [world->syntax 
-             (dynamic-require 
-              "examples/graph-function/graph-function-difference.ss"
-              'world->syntax)])
-        (register-gui-world-sniptype! "gf-difference"
-                                      #:initial-world initial-world
-                                      #:gui view
-                                      #:world->syntax world->syntax))))
-
+    (parameterize ([current-namespace namespace])
+      (register-gui-world-sniptype! 
+       "gf-difference"
+       (build-path 
+        this-directory 
+        "examples/graph-function/graph-function-difference.ss"))))
+      
   
   
   (define (frame-mixin super%)
     (class super%
-      (inherit get-insert-menu get-edit-target-object)
+      (inherit get-insert-menu get-edit-target-object get-interactions-text)
+
+      (define (get-user-namespace)
+        (send (get-interactions-text) get-user-namespace))
+      
       (define (initialize)
         (super-new)
         (new menu-item%
@@ -55,7 +46,8 @@
              [callback (lambda (menu-item control-event)
                          (when (get-edit-target-object)
                            (send (get-edit-target-object) insert
-                                 (make-gui-world-snip "gf-difference"))))]))
+                                 (make-gui-world-snip
+                                  "gf-difference"))))]))
       
       
       (initialize)))
@@ -74,13 +66,18 @@
     (let ([a-reg-entry (registry-lookup snipname)])
       (match a-reg-entry
         [(struct registry-entry 
-                 (name initial-world a-gui world->syntax world->bytes bytes->world))
+                 (name initial-world 
+                       a-gui 
+                       world->syntax 
+                       world->bytes
+                       bytes->world))
          (new gui-world-snip% 
               [initial-world initial-world]
               [registry-entry a-reg-entry])]
         [else
          (error 'make-gui-world-snip 
-                "Unknown gui world sniptype ~s.  Found ~s" snipname a-reg-entry)])))
+                "Unknown gui world sniptype ~s.  Found ~s"
+                snipname a-reg-entry)])))
   
   
   ;; File format for gui-world snips:
@@ -109,7 +106,7 @@
       
       (define big-bang
         (parameterize ([current-namespace namespace]
-                       [current-load-relative-directory directory])
+                       [current-load-relative-directory this-directory])
           (dynamic-require "gui-world.ss" 'big-bang)))
       
       ;; Starts up the big bang.
@@ -226,27 +223,49 @@
 ;; register-gui-world-sniptype!: string any elt -> void
 ;; Registers a new gui-world sniptype.
 (define (register-gui-world-sniptype! name 
-                                      #:initial-world initial-world
-                                      #:gui gui 
-                                      #:world->syntax world->syntax
-                                      #:world->bytes 
-                                      (world->bytes
-                                       default-world->bytes)
-                                      #:bytes->world
-                                      (bytes->world
-                                       default-bytes->world))
+                                      module-path
+                                      ;;#:initial-world initial-world
+                                      ;;#;#:gui gui 
+                                      ;;#;#:world->syntax world->syntax
+                                      ;;#;#:world->bytes 
+                                      ;;(world->bytes
+                                      ;; default-world->bytes)
+                                      ;;#:bytes->world
+                                      ;;(bytes->world
+                                      ;; default-bytes->world)
+                                      )
   (when (not (hash-ref *registry* name #f))
-    (hash-set! *registry* name 
-               (make-registry-entry name
-                                    initial-world
-                                    gui 
-                                    world->syntax
-                                    world->bytes
-                                    bytes->world))))
+    (hash-set! *registry* name module-path)))
+               
 
 ;; registry-lookup: string -> (or/c false registry-entry)
+;; Looks up the registry entries in the current namespace.
 (define (registry-lookup name)
-  (hash-ref *registry* name #f))
+  (let ([path (hash-ref *registry* name #f)])
+    (cond
+      [(not path)
+       #f]
+      [else
+       (let ([initial-world 
+              (dynamic-require path 'initial-world)]
+             [view
+              (dynamic-require path 'view)]
+             [world->syntax
+              (dynamic-require path 'world->syntax)]
+             [world->bytes
+              (dynamic-require path 'world->bytes
+                               (lambda () default-world->bytes))]
+             [bytes->world 
+              (dynamic-require path 'bytes->world
+                               (lambda () default-bytes->world))])
+         (make-registry-entry name
+                              initial-world
+                              view
+                              world->syntax
+                              world->bytes
+                              bytes->world))])))
+
+
 
 
 
