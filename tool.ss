@@ -19,15 +19,18 @@
     (drscheme:get/extend:extend-unit-frame frame-mixin))
   
   (define (phase2)
-    (let ([initial-world (dynamic-require 
-                          "examples/graph-function/graph-function-difference.ss"
-                          'initial-world)]
-          [view (dynamic-require 
-                "examples/graph-function/graph-function-difference.ss"
-                'view)]
-          [world->syntax (dynamic-require 
-                          "examples/graph-function/graph-function-difference.ss"
-                          'world->syntax)])
+    (let ([initial-world 
+           (dynamic-require 
+            "examples/graph-function/graph-function-difference.ss"
+            'initial-world)]
+          [view 
+           (dynamic-require 
+            "examples/graph-function/graph-function-difference.ss"
+            'view)]
+          [world->syntax 
+           (dynamic-require 
+            "examples/graph-function/graph-function-difference.ss"
+            'world->syntax)])
       (register-gui-world-sniptype! "gf-difference"
                                     #:initial-world initial-world
                                     #:gui view
