@@ -4,7 +4,8 @@
            scheme/unit
            scheme/gui/base
            "snip/main.ss"
-           "examples/graph-function/graph-function-difference.ss")
+           (prefix-in gf-difference: 
+                      "examples/graph-function/graph-function-difference.ss"))
   
   (provide tool@)
   
@@ -19,7 +20,9 @@
       (drscheme:get/extend:extend-unit-frame frame-mixin))
     
     (define (phase2)
-      (void))
+      (register-gui-world-sniptype! "gf-difference"
+                                    gf-difference:initial-world
+                                    gf-difference:view))
     
     (define (frame-mixin super%)
       (class super%
@@ -32,7 +35,7 @@
                [callback (lambda (menu-item control-event)
                            (when (get-edit-target-object)
                              (send (get-edit-target-object) insert
-                                   (make-snip initial-world view))))]))
+                                   (make-gui-world-snip "gf-difference"))))]))
         
         
         (initialize)))))

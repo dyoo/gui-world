@@ -11,14 +11,38 @@
          "../gui-world.ss")
 
 
-(provide/contract [make-snip (any/c elt? . -> . (is-a?/c editor-snip:decorated%))])
+(provide/contract [make-gui-world-snip 
+                   (string? . -> . (is-a?/c editor-snip:decorated%))]
+                  [register-gui-world-sniptype! 
+                   (string? any/c elt? . -> . any)])
 
 
-;; make-snip: -> decorated-editor-snip%.
-(define (make-snip initial-world a-gui)
-  (new gui-world-snip% 
-       [initial-world initial-world]
-       [gui a-gui]))
+;; A global registry entry table.
+(define-struct registry-entry (name initial-world gui))
+(define *registry* (make-hash))
+
+
+;; register-gui-world-sniptype!: string any elt -> void
+;; Registers a new gui-world sniptype.
+(define (register-gui-world-sniptype! name initial-world gui)
+  (hash-set! *registry* name (make-registry-entry name initial-world gui)))
+
+;; registry-lookup: string -> (or/c false registry-entry)
+(define (registry-lookup name)
+  (hash-ref *registry* name #f))
+
+
+
+
+;; make-gui-world-snip: -> decorated-editor-snip%.
+(define (make-gui-world-snip snipname)
+  (match (registry-lookup snipname)
+    [(struct registry-entry (name initial-world a-gui))
+     (new gui-world-snip% 
+          [initial-world initial-world]
+          [gui a-gui])]
+    [else
+     (error 'make-gui-world-snip "Unknown gui world sniptype ~s" snipname)]))
 
 
 (define gui-world-snip%
