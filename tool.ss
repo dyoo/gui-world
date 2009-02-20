@@ -226,18 +226,7 @@
   
   ;; register-gui-world-sniptype!: string any elt -> void
   ;; Registers a new gui-world sniptype.
-  (define (register-gui-world-sniptype! name 
-                                        module-path
-                                        ;;#:initial-world initial-world
-                                        ;;#;#:gui gui 
-                                        ;;#;#:world->syntax world->syntax
-                                        ;;#;#:world->bytes 
-                                        ;;(world->bytes
-                                        ;; default-world->bytes)
-                                        ;;#:bytes->world
-                                        ;;(bytes->world
-                                        ;; default-bytes->world)
-                                        )
+  (define (register-gui-world-sniptype! name module-path)
     (when (not (hash-ref *registry* name #f))
       (hash-set! *registry* name module-path)))
   
@@ -245,6 +234,12 @@
   ;; registry-lookup: string -> (or/c false registry-entry)
   ;; Looks up the registry entries in the current namespace.
   (define (registry-lookup name)
+    (namespace-attach-module drscheme-namespace 
+                             'lang/posn
+                             (current-namespace))
+    (namespace-attach-module drscheme-namespace 
+                             '(lib "gui-world.ss" "gui-world")
+                             (current-namespace))
     (let ([path (hash-ref *registry* name #f)])
       (cond
         [(not path)
