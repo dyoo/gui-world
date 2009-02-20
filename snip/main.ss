@@ -13,7 +13,10 @@
 
 
 ;; A global registry entry table.
-(define-struct registry-entry (name initial-world gui world->syntax))
+(define-struct registry-entry (name initial-world gui 
+                                    world->syntax
+                                    world->bytes
+                                    bytes->world))
 (define *registry* (make-hash))
 
 
@@ -33,7 +36,9 @@
              (make-registry-entry name
                                   initial-world
                                   gui 
-                                  world->syntax)))
+                                  world->syntax
+                                  world->bytes
+                                  bytes->world)))
 
 ;; registry-lookup: string -> (or/c false registry-entry)
 (define (registry-lookup name)
@@ -44,16 +49,22 @@
 
 ;; make-gui-world-snip: -> decorated-editor-snip%.
 (define (make-gui-world-snip snipname)
-  (match (registry-lookup snipname)
-    [(struct registry-entry 
-             (name initial-world a-gui world->syntax))
-     (new gui-world-snip% 
-          [initial-world initial-world]
-          [registry-entry registry-entry])]
-    [else
-     (error 'make-gui-world-snip 
-            "Unknown gui world sniptype ~s" snipname)]))
+  (let ([a-reg-entry (registry-lookup snipname)])
+    (match a-reg-entry
+      [(struct registry-entry 
+               (name initial-world a-gui world->syntax world->bytes bytes->world))
+       (new gui-world-snip% 
+            [initial-world initial-world]
+            [registry-entry a-reg-entry])]
+      [else
+       (error 'make-gui-world-snip 
+              "Unknown gui world sniptype ~s" snipname)])))
 
+
+;; File format for gui-world snips:
+;;
+;;     * gui-world-sniptype as utf-8-encoded bytes, followed by the
+;;     * bytes of the world representation.
 
 
 (define gui-world-snip%
@@ -64,7 +75,6 @@
     (init-field registry-entry)
     
     (define world initial-world)
-    
     
     (define (initialize)
       (super-new)
@@ -103,15 +113,15 @@
     ;; write: editor-stream-out% -> void
     ;; Writes out the state of the editor to stream-out.
     (define/override (write stream-out)
-      ;; Format:
-      ;; gui-world-sniptype as utf-8-encoded bytes, followed by the
-      ;; bytes of the world representation.
-      (send stream-out put (string->bytes/utf-8 ...)))
+      (send stream-out put (string->bytes/utf-8 (registry-entry-name 
+                                                 registry-entry)))
+      (send stream-out put ((registry-entry-world->bytes registry-entry)
+                            world)))
         
     
     ;; read-special: file number number number -> syntax
     (define/public (read-special file line col pos)
-      (world->syntax world))
+      ((registry-entry-world->syntax registry-entry) world))
     
     
     (initialize)))
@@ -150,11 +160,22 @@
              set-classname
              set-version)
     
-    (define (initialize)
-      (super-new))
-    
     (define/override (read in)
-      ...)))
+      (let* ([sniptype-name (send in get-bytes)]
+             [world-bytes (send in get-bytes)])
+        (let ([reg-entry (registry-lookup sniptype-name)])
+        (match reg-entry
+          [(struct registry-entry 
+                   (name initial-world a-gui world->syntax world->bytes bytes->world))
+           (new gui-world-snip% 
+                [initial-world (bytes->world world-bytes)]
+                [registry-entry reg-entry])]
+          [else
+           (error 'make-gui-world-snip 
+                  "Unknown gui world sniptype ~s" sniptype-name)]))))
+    
+    (super-new)))
+
 
 (let ([snipclass (make-object gui-world-snip-class%)])
   (send snipclass set-classname classname)
@@ -174,7 +195,9 @@
                           ([name string?]
                            [initial-world any/c]
                            [gui elt?]
-                           [world->syntax (any/c . -> . syntax?)])]
+                           [world->syntax (any/c . -> . syntax?)]
+                           [world->bytes (any/c . -> . bytes?)]
+                           [bytes->world (bytes? . -> . any)])]
                   
                   [register-gui-world-sniptype! 
                    (string? #:initial-world any/c
