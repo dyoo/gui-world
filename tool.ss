@@ -7,7 +7,8 @@
          scheme/runtime-path
          framework/framework
          embedded-gui
-         "gui-world.ss")
+         "gui-world.ss"
+         (prefix-in world: htdp/world))
 
 (provide tool@)
 
@@ -69,7 +70,8 @@
                        a-gui 
                        world->syntax 
                        world->bytes
-                       bytes->world))
+                       bytes->world
+                       world->thumbnail))
          (new gui-world-snip% 
               [initial-world initial-world]
               [registry-entry a-reg-entry])]
@@ -93,15 +95,44 @@
       (init-field registry-entry)
       
       (define world initial-world)
+      (define thumbnail-snip #f)
+      (define edit-button #f)
       
       (define (initialize)
         (super-new)
         (set-snipclass (get-snip-class))
-        (new embedded-text-button% 
-             [label "Edit"]
-             [callback (lambda (snip event)
-                         (initiate-big-bang!))]
-             [parent (get-editor)]))
+
+        (let ([horiz-container (new horizontal-alignment% [parent (get-editor)])])
+          (let ([thumbnail-container 
+                 (new horizontal-alignment% [parent horiz-container])])
+            (set! thumbnail-snip (new image-snip%))
+            (send thumbnail-snip set-bitmap (make-object bitmap% 100 100))
+                
+            (new snip-wrapper%
+               [parent thumbnail-container]
+               [snip thumbnail-snip]))
+          (update-thumbnail-bitmap!)
+
+          (set! edit-button (new embedded-text-button% 
+                                 [label "Edit"]
+                                 [callback (lambda (snip event)
+                                             (initiate-big-bang!))]
+                                 [parent horiz-container]))))
+      
+      
+      (define (update-thumbnail-bitmap!)
+        (let* ([bm (make-object bitmap% 100 100)]
+               [dc (new bitmap-dc% [bitmap bm])])
+          
+          (send dc clear)
+          (send dc set-bitmap #f)
+          (send thumbnail-snip set-bitmap bm))
+        
+        (void)
+        #;(let ([new-image-snip 
+               ((registry-entry-world->thumbnail registry-entry) world)])
+          (send new-image-snip get-bitmap)))
+      
       
       ;; Starts up the big bang.
       (define (initiate-big-bang!)
@@ -144,19 +175,6 @@
       (initialize)))
   
   
-  ;; world->bytes: world -> bytes
-  (define (default-world->bytes a-world)
-    (let ([op (open-output-bytes)])
-      (write a-world op)
-      (get-output-bytes op)))
-  
-  ;; bytes->world: bytes -> world
-  (define (default-bytes->world a-bytes)
-    (let ([ip (open-input-bytes a-bytes)])
-      (read ip)))
-  
-  
-  
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;; Snipclass stuff
   
@@ -191,7 +209,8 @@
             (match reg-entry
               [(struct registry-entry 
                        (name initial-world a-gui 
-                             world->syntax world->bytes bytes->world))
+                             world->syntax world->bytes bytes->world
+                             world->thumbnail))
                (new gui-world-snip% 
                     [initial-world (bytes->world world-bytes)]
                     [registry-entry reg-entry])]
@@ -220,7 +239,8 @@
   (define-struct registry-entry (name initial-world gui 
                                       world->syntax
                                       world->bytes
-                                      bytes->world))
+                                      bytes->world
+                                      world->thumbnail))
   (define *registry* (make-hash))
   
   
@@ -256,12 +276,31 @@
                                  (lambda () default-world->bytes))]
                [bytes->world 
                 (dynamic-require path 'bytes->world
-                                 (lambda () default-bytes->world))])
+                                 (lambda () default-bytes->world))]
+               [world->thumbnail
+                (dynamic-require path 'world->thumbnail
+                                 (lambda () default-thumbnail))])
            (make-registry-entry name
                                 initial-world
                                 view
                                 world->syntax
                                 world->bytes
-                                bytes->world))]))))
-
-
+                                bytes->world
+                                world->thumbnail))])))
+  
+  
+  
+  ;; world->bytes: world -> bytes
+  (define (default-world->bytes a-world)
+    (let ([op (open-output-bytes)])
+      (write a-world op)
+      (get-output-bytes op)))
+  
+  ;; bytes->world: bytes -> world
+  (define (default-bytes->world a-bytes)
+    (let ([ip (open-input-bytes a-bytes)])
+      (read ip)))
+  
+  
+  (define (default-thumbnail a-world)
+    (world:empty-scene 100 100)))
