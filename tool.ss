@@ -4,37 +4,43 @@
          scheme/unit
          scheme/gui/base
          scheme/match
+         scheme/runtime-path
          framework/framework
          embedded-gui)
 
-
 (provide tool@)
 
+(define-runtime-path directory ".")
 
 (define-unit tool@  
   (import drscheme:tool^)
   (export drscheme:tool-exports^)
     
+  (define namespace (current-namespace))
+
+  
   (define (phase1)
     (drscheme:get/extend:extend-unit-frame frame-mixin))
   
   (define (phase2)
-    (let ([initial-world 
-           (dynamic-require 
-            "examples/graph-function/graph-function-difference.ss"
-            'initial-world)]
-          [view 
-           (dynamic-require 
-            "examples/graph-function/graph-function-difference.ss"
-            'view)]
-          [world->syntax 
-           (dynamic-require 
-            "examples/graph-function/graph-function-difference.ss"
-            'world->syntax)])
-      (register-gui-world-sniptype! "gf-difference"
-                                    #:initial-world initial-world
-                                    #:gui view
-                                    #:world->syntax world->syntax)))
+    (parameterize ([current-namespace namespace]
+                   [current-load-relative-directory directory])
+      (let ([initial-world 
+             (dynamic-require 
+              "examples/graph-function/graph-function-difference.ss"
+              'initial-world)]
+            [view 
+             (dynamic-require 
+              "examples/graph-function/graph-function-difference.ss"
+              'view)]
+            [world->syntax 
+             (dynamic-require 
+              "examples/graph-function/graph-function-difference.ss"
+              'world->syntax)])
+        (register-gui-world-sniptype! "gf-difference"
+                                      #:initial-world initial-world
+                                      #:gui view
+                                      #:world->syntax world->syntax))))
 
   
   
@@ -101,8 +107,10 @@
                          (initiate-big-bang!))]
              [parent (get-editor)]))
       
-      
-      (define big-bang (dynamic-require "gui-world.ss" 'big-bang))
+      (define big-bang
+        (parameterize ([current-namespace namespace]
+                       [current-load-relative-directory directory])
+          (dynamic-require "gui-world.ss" 'big-bang)))
       
       ;; Starts up the big bang.
       (define (initiate-big-bang!)
@@ -238,7 +246,6 @@
 
 ;; registry-lookup: string -> (or/c false registry-entry)
 (define (registry-lookup name)
-  (printf "~s~n" *registry*)
   (hash-ref *registry* name #f))
 
 
