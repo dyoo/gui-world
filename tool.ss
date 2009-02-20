@@ -6,9 +6,11 @@
          scheme/match
          scheme/runtime-path
          framework/framework
-         embedded-gui)
+         embedded-gui
+         "gui-world.ss")
 
 (provide tool@)
+
 
 (define-runtime-path this-directory ".")
 
@@ -16,18 +18,15 @@
   (import drscheme:tool^)
   (export drscheme:tool-exports^)
     
-  (define namespace (current-namespace))
+  (define drscheme-namespace (current-namespace))
 
   (define (phase1)
     (drscheme:get/extend:extend-unit-frame frame-mixin))
   
   (define (phase2)
-    (parameterize ([current-namespace namespace])
-      (register-gui-world-sniptype! 
-       "gf-difference"
-       (build-path 
-        this-directory 
-        "examples/graph-function/graph-function-difference.ss"))))
+    (register-gui-world-sniptype! 
+     "gf-difference"
+     '(lib "graph-function-difference.ss" "gui-world" "examples" "graph-function")))
       
   
   
@@ -103,11 +102,6 @@
              [callback (lambda (snip event)
                          (initiate-big-bang!))]
              [parent (get-editor)]))
-      
-      (define big-bang
-        (parameterize ([current-namespace namespace]
-                       [current-load-relative-directory this-directory])
-          (dynamic-require "gui-world.ss" 'big-bang)))
       
       ;; Starts up the big bang.
       (define (initiate-big-bang!)
@@ -212,79 +206,67 @@
   (let ([snipclass (make-object gui-world-snip-class%)])
     (send snipclass set-classname classname)
     (send snipclass set-version 1)
-    (send (get-the-snip-class-list) add snipclass)))
+    (send (get-the-snip-class-list) add snipclass))
+  
+  
+  
+  
+  
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  
+  
+  
+  ;; A global registry entry table.
+  (define-struct registry-entry (name initial-world gui 
+                                      world->syntax
+                                      world->bytes
+                                      bytes->world))
+  (define *registry* (make-hash))
+  
+  
+  ;; register-gui-world-sniptype!: string any elt -> void
+  ;; Registers a new gui-world sniptype.
+  (define (register-gui-world-sniptype! name 
+                                        module-path
+                                        ;;#:initial-world initial-world
+                                        ;;#;#:gui gui 
+                                        ;;#;#:world->syntax world->syntax
+                                        ;;#;#:world->bytes 
+                                        ;;(world->bytes
+                                        ;; default-world->bytes)
+                                        ;;#:bytes->world
+                                        ;;(bytes->world
+                                        ;; default-bytes->world)
+                                        )
+    (when (not (hash-ref *registry* name #f))
+      (hash-set! *registry* name module-path)))
+  
+  
+  ;; registry-lookup: string -> (or/c false registry-entry)
+  ;; Looks up the registry entries in the current namespace.
+  (define (registry-lookup name)
+    (let ([path (hash-ref *registry* name #f)])
+      (cond
+        [(not path)
+         #f]
+        [else
+         (let ([initial-world 
+                (dynamic-require path 'initial-world)]
+               [view
+                (dynamic-require path 'view)]
+               [world->syntax
+                (dynamic-require path 'world->syntax)]
+               [world->bytes
+                (dynamic-require path 'world->bytes
+                                 (lambda () default-world->bytes))]
+               [bytes->world 
+                (dynamic-require path 'bytes->world
+                                 (lambda () default-bytes->world))])
+           (make-registry-entry name
+                                initial-world
+                                view
+                                world->syntax
+                                world->bytes
+                                bytes->world))]))))
 
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-   
-
-;; A global registry entry table.
-(define-struct registry-entry (name initial-world gui 
-                                    world->syntax
-                                    world->bytes
-                                    bytes->world))
-(define *registry* (make-hash))
-
-
-;; register-gui-world-sniptype!: string any elt -> void
-;; Registers a new gui-world sniptype.
-(define (register-gui-world-sniptype! name 
-                                      module-path
-                                      ;;#:initial-world initial-world
-                                      ;;#;#:gui gui 
-                                      ;;#;#:world->syntax world->syntax
-                                      ;;#;#:world->bytes 
-                                      ;;(world->bytes
-                                      ;; default-world->bytes)
-                                      ;;#:bytes->world
-                                      ;;(bytes->world
-                                      ;; default-bytes->world)
-                                      )
-  (when (not (hash-ref *registry* name #f))
-    (hash-set! *registry* name module-path)))
-               
-
-;; registry-lookup: string -> (or/c false registry-entry)
-;; Looks up the registry entries in the current namespace.
-(define (registry-lookup name)
-  (let ([path (hash-ref *registry* name #f)])
-    (cond
-      [(not path)
-       #f]
-      [else
-       (let ([initial-world 
-              (dynamic-require path 'initial-world)]
-             [view
-              (dynamic-require path 'view)]
-             [world->syntax
-              (dynamic-require path 'world->syntax)]
-             [world->bytes
-              (dynamic-require path 'world->bytes
-                               (lambda () default-world->bytes))]
-             [bytes->world 
-              (dynamic-require path 'bytes->world
-                               (lambda () default-bytes->world))])
-         (make-registry-entry name
-                              initial-world
-                              view
-                              world->syntax
-                              world->bytes
-                              bytes->world))])))
-
-
-
-
-
-;; world->bytes: world -> bytes
-(define (default-world->bytes a-world)
-  (let ([op (open-output-bytes)])
-    (write a-world op)
-    (get-output-bytes op)))
-
-;; bytes->world: bytes -> world
-(define (default-bytes->world a-bytes)
-  (let ([ip (open-input-bytes a-bytes)])
-    (read ip)))
 
