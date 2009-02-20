@@ -164,7 +164,7 @@
                set-version)
       
       (define/override (read in)
-        (let* ([sniptype-name (send in get-bytes)]
+        (let* ([sniptype-name (bytes->string/utf-8 (send in get-bytes))]
                [world-bytes (send in get-bytes)])
           (let ([reg-entry (registry-lookup sniptype-name)])
             (match reg-entry
