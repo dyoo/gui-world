@@ -107,11 +107,12 @@
                  (new horizontal-alignment% [parent horiz-container])])
             (set! thumbnail-snip (new image-snip%))
             (send thumbnail-snip set-bitmap (make-object bitmap% 100 100))
-                
+            (update-thumbnail-bitmap!)
+            
             (new snip-wrapper%
-               [parent thumbnail-container]
-               [snip thumbnail-snip]))
-          (update-thumbnail-bitmap!)
+                 [parent thumbnail-container]
+                 [snip thumbnail-snip]))
+
 
           (set! edit-button (new embedded-text-button% 
                                  [label "Edit"]
@@ -119,20 +120,20 @@
                                              (initiate-big-bang!))]
                                  [parent horiz-container]))))
       
-      
       (define (update-thumbnail-bitmap!)
-        #;(let* ([bm (make-object bitmap% 100 100)]
-                 [dc (new bitmap-dc% [bitmap bm])])
-            
-            (send dc clear)
-            (send dc set-bitmap #f)
-            (send thumbnail-snip set-bitmap bm))
-        
-        
         (let* ([new-image-snip 
                 ((registry-entry-world->thumbnail registry-entry) world)]
                [bm (send new-image-snip get-bitmap)])
-          (send thumbnail-snip set-bitmap bm)))
+          (printf "I've got a bitmap ~s~n" bm)
+          (send thumbnail-snip set-bitmap bm)
+          (queue-callback
+           (lambda ()
+             (let ([admin (send thumbnail-snip get-admin)])
+               (when admin
+                 (printf "Updating bitmap.~n")
+                 (send admin needs-update thumbnail-snip 0 0 100 100)))))))
+
+
 
       
       
@@ -143,9 +144,11 @@
            (let* ([gui (registry-entry-gui registry-entry)]
                   [new-world
                    (channel-get (big-bang world gui))])
-             (set! world new-world)
-             (when (get-admin)
-               (send (get-admin) modified this #t))))))
+             (when (not (equal? world new-world))
+               (set! world new-world)
+               (update-thumbnail-bitmap!)
+               (when (get-admin)
+                 (send (get-admin) modified this #t)))))))
     
       
       (define/override (make-editor)
