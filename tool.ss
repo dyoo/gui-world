@@ -129,15 +129,16 @@
       ;; Starts up the big bang.
       (define (initiate-big-bang!)
         (define ch (make-channel))
-        (define calm-ch (make-calm-evt ch))
+        (define calm-evt (make-calm-evt ch))
         (let* ([gui (registry-entry-gui registry-entry)])
-          (big-bang world gui #:on-world-change 
+          (big-bang world gui 
+                    #:on-world-change 
                     (lambda (new-world)
                       (channel-put ch new-world))))
         (thread
          (lambda ()
            (let loop ()
-             (let ([new-world (sync calm-ch)])
+             (let ([new-world (sync calm-evt)])
                (when (not (equal? world new-world))
                  (set! world new-world)
                  (update-thumbnail-bitmap!)
