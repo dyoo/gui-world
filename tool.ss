@@ -8,6 +8,7 @@
          framework/framework
          embedded-gui
          "private/gui-world.ss"
+         "private/calm-evt.ss"
          (prefix-in world: htdp/world))
 
 (provide tool@)
@@ -127,16 +128,22 @@
       
       ;; Starts up the big bang.
       (define (initiate-big-bang!)
+        (define ch (make-channel))
+        (define calm-ch (make-calm-evt ch))
+        (let* ([gui (registry-entry-gui registry-entry)])
+          (big-bang world gui #:on-world-change 
+                    (lambda (new-world)
+                      (channel-put ch new-world))))
         (thread
          (lambda ()
-           (define (on-world-change new-world)
-             (when (not (equal? world new-world))
-               (set! world new-world)
-               (update-thumbnail-bitmap!)
-               (when (get-admin)
-                 (send (get-admin) modified this #t))))
-           (let* ([gui (registry-entry-gui registry-entry)])
-             (big-bang world gui #:on-world-change on-world-change)))))
+           (let loop ()
+             (let ([new-world (sync calm-ch)])
+               (when (not (equal? world new-world))
+                 (set! world new-world)
+                 (update-thumbnail-bitmap!)
+                 (when (get-admin)
+                   (send (get-admin) modified this #t)))
+               (loop))))))
              
       
       (define/override (make-editor)
