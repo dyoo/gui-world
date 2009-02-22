@@ -1,20 +1,17 @@
 function-graph
 ---
 
-Installation:  you'll need to sym-link the Dropbox/work/gui-world  as the "gui-world" collection, and run setup-plt afterwards so DrScheme knows about it.  Afterwards, restart DrScheme.
+Installation: you'll need to sym-link the Dropbox/work/gui-world as
+the "gui-world" collection, and run setup-plt afterwards so DrScheme
+knows about it.  Afterwards, restart DrScheme.
 
 
-Usage: The Insert menu should have an "Insert Graph Function" item.  Running it should insert an Edit button; pressing Edit will drive the gui-world program.
+Usage: The Insert menu should have an "Insert Graph Function" item.
+Running it should insert an Edit button; pressing Edit will drive the
+gui-world program.
 
 You should be able to define functions as
 
    (define f <<Edit>>)
 
 where <<Edit>> is the graphical snip.
-
-
-Here are the known bugs:
-
-    * Editing a graph-function does not properly notify DrScheme that the buffer has changed.
-
-    * Low-level DrScheme namespacing issues exist; the structure types aren't being properly shared between gui-world and DrScheme.  So files saved with the snips can load, but you'll hit errors when trying to re-edit the function graph.
