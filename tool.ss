@@ -122,29 +122,34 @@
                [bm (send new-image-snip get-bitmap)])
           (send thumbnail-snip set-bitmap bm)))
           
-
-
-      
-      
+      ;; update-the-world!: world -> void
+      (define (update-the-world! new-world)
+        (when (not (equal? world new-world))
+          (set! world new-world)
+          (update-thumbnail-bitmap!)
+          (when (get-admin)
+            (send (get-admin) modified this #t))))
+        
       ;; Starts up the big bang.
       (define (initiate-big-bang!)
-        (define ch (make-channel))
-        (define calm-evt (make-calm-evt ch))
-        (let* ([gui (registry-entry-gui registry-entry)])
-          (big-bang world gui 
-                    #:on-world-change 
-                    (lambda (new-world)
-                      (channel-put ch new-world))))
-        (thread
-         (lambda ()
-           (let loop ()
-             (let ([new-world (sync calm-evt)])
-               (when (not (equal? world new-world))
-                 (set! world new-world)
-                 (update-thumbnail-bitmap!)
-                 (when (get-admin)
-                   (send (get-admin) modified this #t)))
+        (let* ([gui (registry-entry-gui registry-entry)]
+               [ch (make-channel)]
+               [calm-evt (make-calm-evt ch)])
+          (thread 
+           (lambda ()
+             (big-bang world gui 
+                       #:dialog? #t
+                       #:on-world-change (lambda (new-world)
+                                           (channel-put ch new-world))
+                       #:on-close (lambda (new-world)
+                                    (update-the-world! new-world)
+                                    (channel-put ch new-world)))))
+          (thread
+           (lambda ()
+             (let loop ()
+               (update-the-world! (sync calm-evt))
                (loop))))))
+
              
       
       (define/override (make-editor)

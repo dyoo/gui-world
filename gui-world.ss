@@ -4,7 +4,7 @@
          "private/prim.ss"
          htdp/image)
 
-(printf "gui world instantiated~n")
+#;(printf "gui world instantiated~n")
 
 
 

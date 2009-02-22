@@ -7,10 +7,9 @@
          scheme/bool
          scheme/contract
          htdp/image
-         "prim.ss"
          (only-in lang/htdp-beginner image?)
          (only-in srfi/1 list-index)
-
+         
          "gui-struct.ss"
          "world-support.ss")
 
@@ -38,14 +37,14 @@
 
 (define *world* #f)
 (define *gui* #f)
-(define *frame* #f)
+(define *window* #f)
 (define *eventspace* #f)
 
 (define *on-tick-callback* #f)
 (define *on-tick-frequency* #f)
 (define *on-tick-thread* #f)
 (define *on-world-change* #f)
-
+(define *on-close* #f)
 
 ;                       
 ;                       
@@ -124,30 +123,34 @@
 
 ;; big-bang: world gui -> void
 ;; Shows the frame, creates the initial world.
-(define (big-bang initial-world a-gui #:on-world-change (on-world-change (lambda (a-world) (void))))
+(define (big-bang initial-world a-gui
+                  #:dialog? (dialog? #f)
+                  #:on-world-change (on-world-change (lambda (a-world) (void)))
+                  #:on-close (on-close (lambda (a-world) (void))))
   (set! *world* initial-world)
   (set! *gui* a-gui)
   (set! *eventspace* (current-eventspace))
-  (set! *frame* (new world-gui:frame% 
-                     [label ""]))
+  (set! *window* (new (if dialog? world-gui:dialog% world-gui:frame%)
+                      [label ""]))
   (set! *on-world-change* on-world-change)
-  (render-elt! *gui* *frame*)
-  (send *frame* show #t)
-
+  (set! *on-close* on-close)
+  (render-elt! *gui* *window*)
   (change-world/f! (lambda (a-world)
-                     initial-world)))
+                     initial-world))
+  ;; WARNING: this must be last, to avoid conflict with the dialog's modal behavior.
+  (send *window* show #t))
 
 
 ;; refresh-widgets!: -> void
 ;; Update the widgets in the frame with the new contents in the world.
 (define (refresh-widgets!)
-  (let ([top-widget (first (send *frame* get-children))])
+  (let ([top-widget (first (send *window* get-children))])
     (dynamic-wind (lambda ()
-                    (send *frame* begin-container-sequence))
+                    (send *window* begin-container-sequence))
                   (lambda ()
                     (send top-widget update-with! *gui*))
                   (lambda ()
-                    (send *frame* end-container-sequence)))))
+                    (send *window* end-container-sequence)))))
 
 
 
@@ -266,9 +269,17 @@
   (class frame%
     (define/augment (on-close)
       (inner (void) on-close)
-      (shutdown-on-tick-thread))
+      (shutdown-on-tick-thread)
+      (*on-close* *world*))
     (super-new)))
 
+(define world-gui:dialog%
+  (class dialog%
+    (define/augment (on-close)
+      (inner (void) on-close)
+      (shutdown-on-tick-thread)
+      (*on-close* *world*))
+    (super-new)))
 
 
 (define (on-subwindow-char-mixin super%)
@@ -304,13 +315,13 @@
 (define world-gui:column%
   (class* (on-subwindow-char-mixin vertical-panel%) (world-gui<%>)
     (inherit get-children)
-        
+    
     (define/public (update-with! an-elt)
       (for-each (lambda (sub-elt sub-gui-elt)
                   (send sub-gui-elt update-with! sub-elt))
                 (column-elt-elts an-elt)
                 (get-children)))
-        
+    
     (super-new)))
 
 
@@ -329,21 +340,21 @@
              (enable new-enabled?))
            
            (send (first (get-children)) update-with! sub-elt))]))
-
+    
     (super-new)))
 
 
 (define world-gui:string% 
   (class* (on-subwindow-char-mixin message%) (world-gui<%>)
     (inherit get-label set-label)
-        
+    
     (define/public (update-with! an-elt)
       (match an-elt 
         [(struct displayable-elt (val-f))
          (let ([a-str (displayable->string (val-f *world*))])
            (unless (string=? a-str (get-label))
              (set-label a-str)))]))
-        
+    
     (super-new [auto-resize #t])))
 
 
@@ -364,7 +375,7 @@
              (set-label new-val))
            (unless (boolean=? (is-enabled?) new-enabled?)
              (enable new-enabled?)))]))
-
+    
     ;; set-label: string -> void
     ;; Sets the label, but also auto-resizes based on the label's size.
     (define/override (set-label new-label)
@@ -379,13 +390,13 @@
         (let-values ([(mw mh) (get-window-text-extent s normal-control-font #t)])
           (min-width (+ dx mw))
           (min-height (+ dy mh)))))
-        
+    
     
     (super-new [callback (lambda (b e)
                            (change-world/f!
                             (lambda (a-world)
                               (world-callback a-world))))])
-
+    
     ;; We record the old space-padding values around the button's label.  For some
     ;; reason, using horiz-margin and vert-margin isn't correct, but I don't
     ;; know why.  dx and dy are only used with regard to auto-resize above.
@@ -399,7 +410,7 @@
   (class* text-field% (world-gui<%>)
     (inherit get-value set-value is-enabled? enable)
     (init-field world-callback)
-        
+    
     (define/public (update-with! an-elt)
       (match an-elt
         [(struct text-field-elt (val-f callback enabled?-f))
@@ -409,7 +420,7 @@
              (set-value new-text))
            (unless (boolean=? (is-enabled?) new-enabled?)
              (enable new-enabled?)))]))
-
+    
     (define/override (on-subwindow-char receiver event)
       (super on-subwindow-char receiver event))
     
@@ -425,7 +436,7 @@
     (inherit get-string-selection get-number get-string clear append 
              set-selection
              is-enabled? enable)
-
+    
     ;; TRICKY:
     ;; We need to keep track of some internal state of the drop down.
     ;; On Windows, as the user is selecting a new string, the string selection
@@ -434,7 +445,7 @@
     ;; internal-selection-string maintains the last selection that was
     ;; chosen by a control event; see the callback for the set!.
     (define internal-selection-string "")
-       
+    
     (define/public (update-with! an-elt)
       (match an-elt
         [(struct drop-down-elt (val-f choices-f callback enabled?-f))
@@ -476,10 +487,10 @@
     
     (define (internal-callback)
       (set! internal-selection-string (get-string-selection))
-                 (change-world/f!
-                  (lambda (a-world)
-                    (world-callback 
-                     a-world (get-string-selection)))))
+      (change-world/f!
+       (lambda (a-world)
+         (world-callback 
+          a-world (get-string-selection)))))
     (super-new
      [callback (lambda (c e) (internal-callback))])))
 
@@ -508,7 +519,7 @@
         (inherit get-value set-value
                  is-enabled? enable)
         (init-field min-value max-value world-callback)
-
+        
         (define/public (get-min-value)
           min-value)
         (define/public (get-max-value)
@@ -581,7 +592,7 @@
            
            (unless (boolean=? (is-enabled?) new-enabled?)
              (enable new-enabled?)))]))
-
+    
     
     (define/override (set-label a-label)
       (super set-label a-label)
@@ -610,7 +621,7 @@
       (let-values ([(mw mh) (get-window-text-extent (get-label) normal-control-font #t)])
         (values (- (min-width) mw)
                 (- (min-height) mh))))))
-    
+
 
 
 
@@ -630,11 +641,11 @@
       (when (send evt get-left-down)
         (let ([x (send evt get-x)]
               [y (send evt get-y)])
-        (change-world/f!
-         (lambda (a-world)
-           (world-callback a-world x y))))))
-
-        
+          (change-world/f!
+           (lambda (a-world)
+             (world-callback a-world x y))))))
+    
+    
     (define/public (update-with! an-elt)
       (match an-elt
         [(struct canvas-elt (scene-f callback))
@@ -648,7 +659,7 @@
               (send editor insert new-scene 0 0))
             (lambda () 
               (send editor end-edit-sequence))))]))
-
+    
     (super-new)))
 
 
@@ -676,18 +687,18 @@
 
 
 (provide ;; Other helpers
-         define-updaters
-         update
-         with-getter/updater
-         
-         update-color-red update-color-green update-color-blue
-         update-posn-x update-posn-y
-         color-red-accessor color-green-accessor color-blue-accessor
-         posn-x-accessor posn-y-accessor
-         
-         
-         random-choice
-         place-image
-         empty-scene
-         nw:rectangle
-         (all-from-out htdp/image))
+ define-updaters
+ update
+ with-getter/updater
+ 
+ update-color-red update-color-green update-color-blue
+ update-posn-x update-posn-y
+ color-red-accessor color-green-accessor color-blue-accessor
+ posn-x-accessor posn-y-accessor
+ 
+ 
+ random-choice
+ place-image
+ empty-scene
+ nw:rectangle
+ (all-from-out htdp/image))
