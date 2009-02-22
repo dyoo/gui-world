@@ -6,7 +6,6 @@
          scheme/list
          scheme/bool
          scheme/contract
-         scheme/async-channel
          htdp/image
          "prim.ss"
          (only-in lang/htdp-beginner image?)
@@ -45,6 +44,7 @@
 (define *on-tick-callback* #f)
 (define *on-tick-frequency* #f)
 (define *on-tick-thread* #f)
+(define *on-world-change* #f)
 
 
 ;                       
@@ -77,7 +77,8 @@
                              (shutdown-on-tick-thread)
                              (raise exn))])
        (set! *world* (new-world-f *world*))
-       (refresh-widgets!)))))
+       (refresh-widgets!)
+       (*on-world-change* *world*)))))
 
 
 
@@ -121,19 +122,20 @@
     (thread-send *on-tick-thread* 'shutdown)))
 
 
-;; big-bang: world gui -> channel
+;; big-bang: world gui -> void
 ;; Shows the frame, creates the initial world.
-(define (big-bang initial-world a-gui)
+(define (big-bang initial-world a-gui #:on-world-change (on-world-change (lambda (a-world) (void))))
   (set! *world* initial-world)
   (set! *gui* a-gui)
   (set! *eventspace* (current-eventspace))
   (set! *frame* (new world-gui:frame% 
                      [label ""]))
+  (set! *on-world-change* on-world-change)
   (render-elt! *gui* *frame*)
   (send *frame* show #t)
+
   (change-world/f! (lambda (a-world)
-                     initial-world))
-  (send *frame* get-close-channel))
+                     initial-world)))
 
 
 ;; refresh-widgets!: -> void
@@ -262,15 +264,9 @@
 
 (define world-gui:frame%
   (class frame%
-    (define close-channel (make-channel))
     (define/augment (on-close)
       (inner (void) on-close)
-      (shutdown-on-tick-thread)
-      (channel-put close-channel *world*))
-    
-    (define/public (get-close-channel)
-      close-channel)
-    
+      (shutdown-on-tick-thread))
     (super-new)))
 
 
@@ -656,44 +652,27 @@
     (super-new)))
 
 
-
-(provide-primitive big-bang)
-
-(provide-higher-order-primitive on-tick (_ on-tick-handler))
-
-(provide-primitive elt?)
-
-
-
-
-(provide-primitives col row)
-
-;; NOTE: We're doing this (having pairs of functions, one with and one 
-;; without the enabled argument) because provide-higher-order-primitive doesn't
-;; support optional arguments.
-;;
-;; One other deviation that I haven't figured out how to get around yet is
-;; that higher-order values are required to be functions in beginner level.  But the design
-;; of gui-world asks that we allow primitive values there too for convenience.  Argh.
-;;
-;; TODO: we need to figure out how to allow non-higher-order values in higher-order
-;; position to fit the original design of gui-world.
-(provide-maybe-higher-order-primitive message (val-f))
-(provide-maybe-higher-order-primitive button (val-f callback))
-(provide-maybe-higher-order-primitive button/enabled (val-f callback enabled?-f))
-(provide-maybe-higher-order-primitive slider (val-f min-f max-f callback))
-(provide-maybe-higher-order-primitive slider/enabled (val-f min-f max-f callback enabled?-f))
-(provide-maybe-higher-order-primitive drop-down (val-f choices-f callback))
-(provide-maybe-higher-order-primitive drop-down/enabled (val-f choices-f callback enabled?-f))
-(provide-maybe-higher-order-primitive text-field (val-f callback))
-(provide-maybe-higher-order-primitive text-field/enabled (val-f callback enabled?-f))
-(provide-maybe-higher-order-primitive checkbox (label-f val-f callback))
-(provide-maybe-higher-order-primitive checkbox/enabled (label-f val-f callback enabled?-f))
-(provide-maybe-higher-order-primitive canvas (scene-f))
-(provide-maybe-higher-order-primitive canvas/callback (scene-f callback))
-(provide-maybe-higher-order-primitive box-group (val-f _))
-(provide-maybe-higher-order-primitive box-group/enabled (val-f _ enabled?-f))
-(provide-higher-order-primitive project/inject/gui (_ projection-f injection-f))
+(provide big-bang 
+         on-tick 
+         elt? 
+         row 
+         col
+         message
+         button
+         button/enabled
+         slider
+         slider/enabled
+         drop-down
+         drop-down/enabled
+         text-field
+         text-field/enabled
+         checkbox
+         checkbox/enabled
+         canvas
+         canvas/callback
+         box-group
+         box-group/enabled
+         project/inject/gui)
 
 
 (provide ;; Other helpers

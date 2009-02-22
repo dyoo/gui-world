@@ -7,7 +7,7 @@
          scheme/runtime-path
          framework/framework
          embedded-gui
-         "gui-world.ss"
+         "private/gui-world.ss"
          (prefix-in world: htdp/world))
 
 (provide tool@)
@@ -129,15 +129,15 @@
       (define (initiate-big-bang!)
         (thread
          (lambda ()
-           (let* ([gui (registry-entry-gui registry-entry)]
-                  [new-world
-                   (channel-get (big-bang world gui))])
+           (define (on-world-change new-world)
              (when (not (equal? world new-world))
                (set! world new-world)
                (update-thumbnail-bitmap!)
                (when (get-admin)
-                 (send (get-admin) modified this #t)))))))
-    
+                 (send (get-admin) modified this #t))))
+           (let* ([gui (registry-entry-gui registry-entry)])
+             (big-bang world gui #:on-world-change on-world-change)))))
+             
       
       (define/override (make-editor)
         (new aligned-pasteboard%))
@@ -175,7 +175,7 @@
   
   
   (define classname 
-    (format "~s" '(lib "main.ss" ("gui-world" "snip" 1 0))))
+    (format "~s" '(lib "tool.ss" ("gui-world" 1 0))))
   
   
   ;; get-snip-class: -> snipclass
@@ -253,7 +253,7 @@
                              'lang/posn
                              (current-namespace))
     (namespace-attach-module drscheme-namespace 
-                             '(lib "gui-world.ss" "gui-world")
+                             '(lib "gui-world.ss" "gui-world" "private")
                              (current-namespace))
     (let ([path (hash-ref *registry* name #f)])
       (cond
