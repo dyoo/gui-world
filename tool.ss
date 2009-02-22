@@ -101,38 +101,26 @@
       (define (initialize)
         (super-new)
         (set-snipclass (get-snip-class))
-
         (let ([horiz-container (new horizontal-alignment% [parent (get-editor)])])
-          (let ([thumbnail-container 
-                 (new horizontal-alignment% [parent horiz-container])])
-            (set! thumbnail-snip (new image-snip%))
-            (send thumbnail-snip set-bitmap (make-object bitmap% 100 100))
-            (update-thumbnail-bitmap!)
-            
-            (new snip-wrapper%
-                 [parent thumbnail-container]
-                 [snip thumbnail-snip]))
-
-
-          (set! edit-button (new embedded-text-button% 
-                                 [label "Edit"]
-                                 [callback (lambda (snip event)
-                                             (initiate-big-bang!))]
-                                 [parent horiz-container]))))
+          (set! thumbnail-snip (new image-snip%))
+          (update-thumbnail-bitmap!)
+          (new snip-wrapper%
+               [parent horiz-container]
+               [snip thumbnail-snip])
+          (set! edit-button 
+                (new embedded-text-button% 
+                     [label "Edit"]
+                     [callback (lambda (snip event)
+                                 (initiate-big-bang!))]
+                     [parent horiz-container]))))
       
+      ;; update-thumbnail-bitmap!: -> void
       (define (update-thumbnail-bitmap!)
-        (let* ([new-image-snip 
-                ((registry-entry-world->thumbnail registry-entry) world)]
+        (let* ([world->bitmap (registry-entry-world->thumbnail registry-entry)]
+               [new-image-snip (world->bitmap world)]
                [bm (send new-image-snip get-bitmap)])
-          (printf "I've got a bitmap ~s~n" bm)
-          (send thumbnail-snip set-bitmap bm)
-          (queue-callback
-           (lambda ()
-             (let ([admin (send thumbnail-snip get-admin)])
-               (when admin
-                 (printf "Updating bitmap.~n")
-                 (send admin needs-update thumbnail-snip 0 0 100 100)))))))
-
+          (send thumbnail-snip set-bitmap bm)))
+          
 
 
       
@@ -280,13 +268,19 @@
                 (dynamic-require path 'world->syntax)]
                [world->bytes
                 (dynamic-require path 'world->bytes
-                                 (lambda () default-world->bytes))]
+                                 (lambda () 
+                                   (printf "Using default world->bytes.~n")
+                                   default-world->bytes))]
                [bytes->world 
                 (dynamic-require path 'bytes->world
-                                 (lambda () default-bytes->world))]
+                                 (lambda () 
+                                   (printf "Using default bytes->world.~n")
+                                   default-bytes->world))]
                [world->thumbnail
                 (dynamic-require path 'world->thumbnail
-                                 (lambda () default-thumbnail))])
+                                 (lambda ()
+                                   (printf "Using default thumbnail.~n")
+                                   default-thumbnail))])
            (make-registry-entry name
                                 initial-world
                                 view

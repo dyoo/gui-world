@@ -426,4 +426,5 @@
      (make-world x-min x-max y-min y-max (map sexp->io ios-sexp) mode)]))
 
 
-(provide initial-world view world->syntax world->bytes bytes->world)
+(provide initial-world view world->syntax world->bytes bytes->world
+         world->thumbnail)
