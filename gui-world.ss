@@ -2,6 +2,8 @@
 (require "private/gui-world.ss"
          "private/accessor.ss"
          "private/prim.ss"
+         
+         "private/arrow.ss"
          htdp/image)
 
 #;(printf "gui world instantiated~n")
@@ -58,7 +60,8 @@
          place-image
          empty-scene
          nw:rectangle
-         (all-from-out htdp/image))
+         (all-from-out htdp/image)
+         (all-from-out "private/arrow.ss"))
 
 
 

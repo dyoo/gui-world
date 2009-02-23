@@ -204,7 +204,7 @@
 
 
 ;; draw-arrow: posn posn string string scene -> scene
-(define (draw-arrow from-pos to-pos line-color arrowhead-color a-scene)
+#;(define (draw-arrow from-pos to-pos line-color arrowhead-color a-scene)
   ;; fixme: do arrowhead later.
   (place-image (circle 5 "outline" arrowhead-color)
                (posn-x to-pos)
@@ -249,6 +249,14 @@
                a-scene))
 
   
+;; draw-arrow/posn: posn posn color scene -> scene
+(define (draw-arrow/posn posn-1 posn-2 color scene)
+  (draw-arrow (posn-x posn-1) (posn-y posn-1) 
+              (posn-x posn-2) (posn-y posn-2)
+              color scene))
+                      
+                        
+
 ;; draw-canvas-io: world posn scene -> scene
 (define (draw-canvas-io a-world an-io first-io? a-scene)
   (cond [first-io?
@@ -258,17 +266,15 @@
           (place-image/posn 
            (text (posn->string (io-input an-io)) 10 "purple")
            (coordinate-posn->canvas-posn a-world (io-input an-io))
-           (draw-arrow (coordinate-posn->canvas-posn a-world (io-input an-io))
-                       (coordinate-posn->canvas-posn a-world (io-output an-io))
-                       "black"
-                       "red"
-                       a-scene)))]
+           (draw-arrow/posn (coordinate-posn->canvas-posn a-world (io-input an-io))
+                            (coordinate-posn->canvas-posn a-world (io-output an-io))
+                            "black"
+                            a-scene)))]
         [else
-         (draw-arrow (coordinate-posn->canvas-posn a-world (io-input an-io))
-                     (coordinate-posn->canvas-posn a-world (io-output an-io))
-                     "gray"
-                     "lightgray"
-                     a-scene)]))
+         (draw-arrow/posn (coordinate-posn->canvas-posn a-world (io-input an-io))
+                          (coordinate-posn->canvas-posn a-world (io-output an-io))
+                          "lightgray"
+                          a-scene)]))
                        
 
 
