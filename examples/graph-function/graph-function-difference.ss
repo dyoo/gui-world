@@ -4,9 +4,7 @@
 
 (require "../../gui-world.ss")
 (require lang/posn)
-;; We don't use lang/posn only because we want to make sure
-;; we can prefabricate these.
-;;(define-struct posn (x y) #:prefab)
+
 
 
 ;; An io consists of an input and an output.

@@ -28,16 +28,13 @@
   (define (phase2)
     (register-gui-world-sniptype! 
      "gf-difference"
-     '(lib "graph-function-difference.ss" "gui-world" "examples" "graph-function")))
+     '(lib "graph-function-difference.ss" 
+           "gui-world" "examples" "graph-function")))
       
-  
-  
   (define (frame-mixin super%)
     (class super%
-      (inherit get-insert-menu get-edit-target-object get-interactions-text)
-
-      (define (get-user-namespace)
-        (send (get-interactions-text) get-user-namespace))
+      (inherit get-insert-menu
+               get-edit-target-object)
       
       (define (initialize)
         (super-new)
@@ -262,12 +259,6 @@
   ;; registry-lookup: string -> (or/c false registry-entry)
   ;; Looks up the registry entries in the current namespace.
   (define (registry-lookup name)
-    (namespace-attach-module drscheme-namespace 
-                             'lang/posn
-                             (current-namespace))
-    (namespace-attach-module drscheme-namespace 
-                             '(lib "gui-world.ss" "gui-world" "private")
-                             (current-namespace))
     (let ([path (hash-ref *registry* name #f)])
       (cond
         [(not path)
