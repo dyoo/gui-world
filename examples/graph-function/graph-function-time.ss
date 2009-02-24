@@ -1,9 +1,11 @@
-;; The first three lines of this file were inserted by DrScheme. They record metadata
-;; about the language level of this file in a form that our tools can easily process.
-#reader(lib "htdp-beginner-reader.ss" "lang")((modname graph-function) (read-case-sensitive #t) (teachpacks ()) (htdp-settings #(#t constructor repeating-decimal #f #t none #f ())))
+#lang scheme/base
 ;; Graph function: representing partial math functions as graphs.
 
-(require "../../gui-world.ss")
+(require  "../../gui-world.ss"
+          scheme/list
+          scheme/match
+          lang/posn)
+
 
 ;; An io consists of an input and an output.
 (define-struct io (input    ;; number 
@@ -54,7 +56,7 @@
          (make-color (min (* (distance (io-input an-io) input) 50) 200)
                      (min (* (distance (io-input an-io) input) 50) 200)
                      (min (+ 50 (* (distance (io-input an-io) input) 50)) 255))]))
-              
+
 
 
 
@@ -63,8 +65,8 @@
 ;; Renders the canvas containing all the posns.
 (define (render-canvas a-world)
   (render-canvas-ios a-world 
-                        (world-ios a-world)
-                        (empty-scene CANVAS-WIDTH CANVAS-HEIGHT)))
+                     (world-ios a-world)
+                     (empty-scene CANVAS-WIDTH CANVAS-HEIGHT)))
 
 
 
@@ -75,13 +77,13 @@
      a-scene]
     [else
      (render-canvas-ios a-world 
-                           (rest ios)
-                           (draw-canvas-posn a-world (first ios) a-scene))]))
+                        (rest ios)
+                        (draw-canvas-posn a-world (first ios) a-scene))]))
 
 ;; draw-canvas-io: world posn scene -> scene
 (define (draw-canvas-posn a-world an-io a-scene)
   (cond [(= (world-current-input a-world) (io-input an-io))
-  
+         
          (place-image (text (io->string an-io (world-input-name a-world)) 10 "purple")
                       (coordinate-x->canvas-x a-world (posn-x (io-output an-io)))
                       (coordinate-y->canvas-y a-world (posn-y (io-output an-io)))
@@ -99,8 +101,8 @@
                                    (coordinate-x->canvas-x a-world (posn-x (io-output an-io)))
                                    (coordinate-y->canvas-y a-world (posn-y (io-output an-io)))
                                    a-scene))]))
-         
-  
+
+
 
 
 ;; any-shared-x?: posn (listof posn) -> boolean
@@ -142,14 +144,14 @@
 
 ;; delete: posn (listof posn) -> (listof posn)
 #;(define (delete a-posn posns)
-  (cond
-    [(empty? posns)
-     empty]
-    [(equal? a-posn (first posns))
-     (rest posns)]
-    [else
-     (cons (first posns)
-           (delete a-posn (rest posns)))]))
+    (cond
+      [(empty? posns)
+       empty]
+      [(equal? a-posn (first posns))
+       (rest posns)]
+      [else
+       (cons (first posns)
+             (delete a-posn (rest posns)))]))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -158,8 +160,8 @@
 ;; canvas-x->coordinate-x: world number -> number
 (define (canvas-x->coordinate-x a-world a-canvas-x)
   (round (+ (world-x-min a-world) 
-                     (* (/ a-canvas-x CANVAS-WIDTH)
-                        (- (world-x-max a-world) (world-x-min a-world))))))
+            (* (/ a-canvas-x CANVAS-WIDTH)
+               (- (world-x-max a-world) (world-x-min a-world))))))
 
 
 ;; coordinate-x->canvas-x: world number -> number
@@ -216,4 +218,92 @@
        (button "Clear Canvas" on-clear-pressed)))
 
 
-(big-bang initial-world view)
+#;(big-bang initial-world view)
+
+
+
+
+;;;;;;;;;;;;;
+;; Other snip support
+
+(define (world->syntax a-world)
+  (let ([body-f (lambda (t)
+                  (let loop ([ios (world-ios a-world)])
+                    (cond 
+                      [(empty? ios)
+                       (error 'graph-function-time
+                              "I don't know how to handle ~s" t)]
+                      [(= (io-input (first ios)) t)
+                       ;; We have to emit a value that the external user namespace
+                       ;; knows about.
+                       (let ([-make-posn (dynamic-require 'lang/posn 'make-posn)])
+                         (-make-posn (posn-x (io-output (first ios)))
+                                     (posn-y (io-output (first ios)))))]
+                      [else
+                       (loop (rest ios))])))])
+    (with-syntax ([body-f body-f]
+                  [t (datum->syntax #f 't)])
+      (datum->syntax #f
+                     ;; This trickery is to make beginner-level happy with
+                     ;; the lambda that we're returning.
+                     ;; This is doing a 3d syntax thing.
+                     `(lambda (,#'t)
+                        ,#'(body-f t))))))
+
+
+;; world->thumbnail: world -> scene
+(define (world->thumbnail a-world)
+  (render-canvas a-world))
+
+
+
+
+;; world->bytes: world -> bytes
+(define (world->bytes a-world)
+  (match a-world
+    [(struct world (x-min x-max y-min y-max ios input-name current-input))
+     (let ([op (open-output-bytes a-world)])
+       (write (list x-min x-max y-min y-max
+                    (map io->sexp ios)
+                    input-name
+                    current-input)
+              op)
+       (get-output-bytes op))]))
+
+;; io->sexp: io -> sexp
+(define (io->sexp an-io)
+  (list (io-input an-io)
+        (posn->sexp (io-output an-io))))
+
+;; posn->sexp: posn -> sexp
+(define (posn->sexp a-posn)
+  (list (posn-x a-posn)
+        (posn-y a-posn)))
+
+;; sexp->io: sexp->io
+(define (sexp->io an-sexp)
+  (match an-sexp
+    [(list input-pos output-pos-sexp)
+     (make-io input-pos
+              (sexp->posn output-pos-sexp))]))
+
+;; sexp->posn: sexp -> posn
+(define (sexp->posn an-sexp)
+  (match an-sexp
+    [(list x y)
+     (make-posn x y)]))
+
+;; bytes->world: bytes -> world
+(define (bytes->world some-bytes)
+  (match (read (open-input-bytes some-bytes))
+    [(list x-min x-max y-min y-max ios-sexp input-name current-input)
+     (make-world x-min x-max y-min y-max (map sexp->io ios-sexp) input-name current-input)]))
+
+
+
+(provide initial-world 
+         view
+         world->syntax 
+         world->bytes 
+         bytes->world
+         world->thumbnail)

@@ -29,26 +29,50 @@
     (register-gui-world-sniptype! 
      "gf-difference"
      '(lib "graph-function-difference.ss" 
+           "gui-world" "examples" "graph-function"))
+
+    (register-gui-world-sniptype!
+     "gf-time"
+     '(lib "graph-function-time.ss"
            "gui-world" "examples" "graph-function")))
+
       
   (define (frame-mixin super%)
     (class super%
       (inherit get-insert-menu
                get-edit-target-object)
       
-      (define (initialize)
-        (super-new)
-        (new menu-item%
-             [parent (get-insert-menu)]
-             [label "Insert Graph Function"]
-             [callback (lambda (menu-item control-event)
+      (super-new)
+      
+      (define tool-frame 
+        (new frame% [label "Function tables"]))
+
+      (define radio-box
+        (new radio-box%
+             [label "What kind of function?"]
+             [choices (get-registry-names)]
+             [parent tool-frame]))
+      (new button%
+           [parent tool-frame]
+           [label "Insert"]
+           [callback (lambda (b e)
+                       (let ([choice
+                              (send radio-box get-item-plain-label
+                                    (send radio-box get-selection))])
                          (when (get-edit-target-object)
                            (send (get-edit-target-object) insert
                                  (make-gui-world-snip
-                                  "gf-difference"))))]))
-      
-      
-      (initialize)))
+                                  choice)))))])
+      (new menu-item%
+           [parent (get-insert-menu)]
+           [label "Insert Graph Function"]
+           [callback (lambda (menu-item control-event)
+                       (send tool-frame show #t)
+                       #;(when (get-edit-target-object)
+                           (send (get-edit-target-object) insert
+                                 (make-gui-world-snip
+                                  "gf-difference"))))])))
+  
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   
@@ -247,6 +271,13 @@
                                       bytes->world
                                       world->thumbnail))
   (define *registry* (make-hash))
+  
+  
+  ;; get-registry-names: -> (listof string)
+  ;; Returns the names of the registered gui-world snips.
+  (define (get-registry-names)
+    (for/list ([n (in-hash-keys *registry*)])
+      n))
   
   
   ;; register-gui-world-sniptype!: string any elt -> void

@@ -6,7 +6,6 @@
 (require lang/posn)
 
 
-
 ;; An io consists of an input and an output.
 (define-struct io (input    ;; input
                    output   ;; posn
@@ -85,7 +84,7 @@
                  ")"))
 
 
-               
+
 
 ;; world-create-io: world number number -> world
 (define (world-create-io a-world x y)
@@ -127,14 +126,14 @@
 (define (world-update-current-output a-world a-posn)
   (update-world-ios a-world 
                     (cons (update-io-output (first (world-ios a-world))
-                                           a-posn)
+                                            a-posn)
                           (rest (world-ios a-world)))))
 
 
 ;; world-has-ios?: world -> boolean
 (define (world-has-ios? a-world)
   (not (empty? (world-ios a-world))))
-  
+
 
 ;; world-choose-next-io: world -> world
 (define (world-choose-next-io a-world)
@@ -159,8 +158,8 @@
 ;; canvas-x->coordinate-x: world number -> number
 (define (canvas-x->coordinate-x a-world a-canvas-x)
   (round (+ (world-x-min a-world) 
-                     (* (/ a-canvas-x CANVAS-WIDTH)
-                        (- (world-x-max a-world) (world-x-min a-world))))))
+            (* (/ a-canvas-x CANVAS-WIDTH)
+               (- (world-x-max a-world) (world-x-min a-world))))))
 
 
 ;; coordinate-x->canvas-x: world number -> number
@@ -203,18 +202,18 @@
 
 ;; draw-arrow: posn posn string string scene -> scene
 #;(define (draw-arrow from-pos to-pos line-color arrowhead-color a-scene)
-  ;; fixme: do arrowhead later.
-  (place-image (circle 5 "outline" arrowhead-color)
-               (posn-x to-pos)
-               (posn-y to-pos)
-               (place-image (line (- (posn-x to-pos)
-                                     (posn-x from-pos))
-                                  (- (posn-y to-pos)
-                                     (posn-y from-pos))
-                                  line-color)
-                            (posn-x from-pos)
-                            (posn-y from-pos)
-                            a-scene)))
+    ;; fixme: do arrowhead later.
+    (place-image (circle 5 "outline" arrowhead-color)
+                 (posn-x to-pos)
+                 (posn-y to-pos)
+                 (place-image (line (- (posn-x to-pos)
+                                       (posn-x from-pos))
+                                    (- (posn-y to-pos)
+                                       (posn-y from-pos))
+                                    line-color)
+                              (posn-x from-pos)
+                              (posn-y from-pos)
+                              a-scene)))
 
 
 ;; render-canvas: world -> scene
@@ -246,14 +245,14 @@
                (posn-y a-posn)
                a-scene))
 
-  
+
 ;; draw-arrow/posn: posn posn color scene -> scene
 (define (draw-arrow/posn posn-1 posn-2 color scene)
   (draw-arrow (posn-x posn-1) (posn-y posn-1) 
               (posn-x posn-2) (posn-y posn-2)
               color scene))
-                      
-                        
+
+
 
 ;; draw-canvas-io: world posn scene -> scene
 (define (draw-canvas-io a-world an-io first-io? a-scene)
@@ -273,7 +272,7 @@
                           (coordinate-posn->canvas-posn a-world (io-output an-io))
                           "lightgray"
                           a-scene)]))
-                       
+
 
 
 ;; world-status-string: world -> string
@@ -298,7 +297,7 @@
                                  (canvas-posn->coordinate-posn a-world (make-posn x y)))]
     [(string=? (world-mode a-world) "update-output")
      (world-update-current-output a-world
-                                 (canvas-posn->coordinate-posn a-world (make-posn x y)))]))
+                                  (canvas-posn->coordinate-posn a-world (make-posn x y)))]))
 
 
 
@@ -364,20 +363,20 @@
 ;; world->syntax: world -> syntax
 ;; Produces syntax from the world, if the world is to be treated as code.
 (define (world->syntax a-world)
-  (let* ([body-f (lambda (x y)
-                   (let loop ([ios (world-ios a-world)])
-                     (cond 
-                       [(empty? ios)
-                        (error 'graph-function
-                               "I don't know how to handle ~s ~s" x y)]
-                       [(input=? (io-input (first ios)) (make-posn x y))
-                        ;; We have to emit a value that the external user namespace
-                        ;; knows about.
-                        (let ([-make-posn (dynamic-require 'lang/posn 'make-posn)])
-                          (-make-posn (posn-x (io-output (first ios)))
-                                      (posn-y (io-output (first ios)))))]
-                       [else
-                        (loop (rest ios))])))])
+  (let ([body-f (lambda (x y)
+                  (let loop ([ios (world-ios a-world)])
+                    (cond 
+                      [(empty? ios)
+                       (error 'graph-function-difference
+                              "I don't know how to handle ~s ~s" x y)]
+                      [(input=? (io-input (first ios)) (make-posn x y))
+                       ;; We have to emit a value that the external user namespace
+                       ;; knows about.
+                       (let ([-make-posn (dynamic-require 'lang/posn 'make-posn)])
+                         (-make-posn (posn-x (io-output (first ios)))
+                                     (posn-y (io-output (first ios)))))]
+                      [else
+                       (loop (rest ios))])))])
     (with-syntax ([body-f body-f]
                   [x (datum->syntax #f 'x)]
                   [y (datum->syntax #f 'y)])
