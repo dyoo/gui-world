@@ -27,12 +27,12 @@
   
   (define (phase2)
     (register-gui-world-sniptype! 
-     "gf-difference"
+     "posn -> posn"
      '(lib "graph-function-difference.ss" 
            "gui-world" "examples" "graph-function"))
 
     (register-gui-world-sniptype!
-     "gf-time"
+     "number -> posn"
      '(lib "graph-function-time.ss"
            "gui-world" "examples" "graph-function")))
 
