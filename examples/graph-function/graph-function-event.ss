@@ -387,7 +387,7 @@
 
 
 
-#;(big-bang initial-world view)
+(big-bang initial-world view)
 
 
 
