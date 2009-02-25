@@ -251,21 +251,30 @@
               (posn-x posn-2) (posn-y posn-2)
               color scene))
 
+;; midpoint: posn posn -> posn
+;; Computes the midpoint between two posns.
+(define (midpoint posn-1 posn-2)
+  (make-posn (/ (+ (posn-x posn-1) (posn-x posn-2)) 2)
+             (/ (+ (posn-y posn-1) (posn-y posn-2)) 2)))
 
 
 ;; draw-canvas-io: world io scene -> scene
 (define (draw-canvas-io a-world an-io first-io? a-scene)
   (cond [first-io?
-         (place-image/posn 
-          (text (posn->string (io-output an-io)) 10 "purple")
-          (coordinate-posn->canvas-posn a-world (io-output an-io))
+         (place-image/posn
+          (text (input-event (io-input an-io)) 10 "purple")
+          (midpoint (coordinate-posn->canvas-posn a-world (io-output an-io))
+                    (coordinate-posn->canvas-posn a-world (input-posn (io-input an-io))))
           (place-image/posn 
-           (text (posn->string (input-posn (io-input an-io))) 10 "purple")
-           (coordinate-posn->canvas-posn a-world (input-posn (io-input an-io)))
-           (draw-arrow/posn (coordinate-posn->canvas-posn a-world (input-posn (io-input an-io)))
-                            (coordinate-posn->canvas-posn a-world (io-output an-io))
-                            "black"
-                            a-scene)))]
+           (text (posn->string (io-output an-io)) 10 "purple")
+           (coordinate-posn->canvas-posn a-world (io-output an-io))
+           (place-image/posn 
+            (text (posn->string (input-posn (io-input an-io))) 10 "purple")
+            (coordinate-posn->canvas-posn a-world (input-posn (io-input an-io)))
+            (draw-arrow/posn (coordinate-posn->canvas-posn a-world (input-posn (io-input an-io)))
+                             (coordinate-posn->canvas-posn a-world (io-output an-io))
+                             "black"
+                             a-scene))))]
         [else
          (draw-arrow/posn (coordinate-posn->canvas-posn a-world (input-posn (io-input an-io)))
                           (coordinate-posn->canvas-posn a-world (io-output an-io))
