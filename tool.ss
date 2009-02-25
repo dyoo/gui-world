@@ -34,6 +34,11 @@
     (register-gui-world-sniptype!
      "number -> posn"
      '(lib "graph-function-time.ss"
+           "gui-world" "examples" "graph-function"))
+    
+    (register-gui-world-sniptype!
+     "posn event -> posn"
+     '(lib "graph-function-event.ss"
            "gui-world" "examples" "graph-function")))
 
       

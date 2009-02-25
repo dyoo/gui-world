@@ -387,87 +387,89 @@
 
 
 
-(big-bang initial-world view)
+#;(big-bang initial-world view)
 
 
-;
-;
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; 
 ;;; Miscellaneous Snip support
-;
-;(define (world->thumbnail a-world)
-;  (render-canvas a-world))
-;
-;
-;;; world->syntax: world -> syntax
-;;; Produces syntax from the world, if the world is to be treated as code.
-;(define (world->syntax a-world)
-;  (let ([body-f (lambda (x y)
-;                  (let loop ([ios (world-ios a-world)])
-;                    (cond 
-;                      [(empty? ios)
-;                       (error 'graph-function-difference
-;                              "I don't know how to handle ~s ~s" x y)]
-;                      [(input=? (io-input (first ios)) (make-posn x y))
-;                       ;; We have to emit a value that the external user namespace
-;                       ;; knows about.
-;                       (let ([-make-posn (dynamic-require 'lang/posn 'make-posn)])
-;                         (-make-posn (posn-x (io-output (first ios)))
-;                                     (posn-y (io-output (first ios)))))]
-;                      [else
-;                       (loop (rest ios))])))])
-;    (with-syntax ([body-f body-f]
-;                  [x (datum->syntax #f 'x)]
-;                  [y (datum->syntax #f 'y)])
-;      (datum->syntax #f
-;                     ;; This trickery is to make beginner-level happy with
-;                     ;; the lambda that we're returning.
-;                     ;; This is doing a 3d syntax thing.
-;                     `(lambda (,#'x ,#'y)
-;                        ,#'(body-f x y))))))
-;
-;
-;;; world->bytes: world -> bytes
-;(define (world->bytes a-world)
-;  (match a-world
-;    [(struct world (x-min x-max y-min y-max ios mode))
-;     (let ([op (open-output-bytes a-world)])
-;       (write (list x-min x-max y-min y-max
-;                    (map io->sexp ios)
-;                    mode)
-;              op)
-;       (get-output-bytes op))]))
-;
-;;; io->sexp: io -> sexp
-;(define (io->sexp an-io)
-;  (list (posn->sexp (io-input an-io))
-;        (posn->sexp (io-output an-io))))
-;
-;;; posn->sexp: posn -> sexp
-;(define (posn->sexp a-posn)
-;  (list (posn-x a-posn)
-;        (posn-y a-posn)))
-;
-;;; sexp->io: sexp->io
-;(define (sexp->io an-sexp)
-;  (match an-sexp
-;    [(list input-pos-sexp output-pos-sexp)
-;     (make-io (sexp->posn input-pos-sexp)
-;              (sexp->posn output-pos-sexp))]))
-;
-;;; sexp->posn: sexp -> posn
-;(define (sexp->posn an-sexp)
-;  (match an-sexp
-;    [(list x y)
-;     (make-posn x y)]))
-;
-;;; bytes->world: bytes -> world
-;(define (bytes->world some-bytes)
-;  (match (read (open-input-bytes some-bytes))
-;    [(list x-min x-max y-min y-max ios-sexp mode)
-;     (make-world x-min x-max y-min y-max (map sexp->io ios-sexp) mode)]))
-;
-;
-;(provide initial-world view world->syntax world->bytes bytes->world
-;         world->thumbnail)
+
+(define (world->thumbnail a-world)
+  (render-canvas a-world))
+
+
+;; world->syntax: world -> syntax
+;; Produces syntax from the world, if the world is to be treated as code.
+(define (world->syntax a-world)
+  (let ([body-f (lambda (x y e)
+                  (let loop ([ios (world-ios a-world)])
+                    (cond 
+                      [(empty? ios)
+                       (error 'graph-function-difference
+                              "I don't know how to handle ~s ~s ~s" x y e)]
+                      [(input=? (io-input (first ios))
+                                (make-input (make-posn x y) e))
+                       ;; We have to emit a value that the external user namespace
+                       ;; knows about.
+                       (let ([-make-posn (dynamic-require 'lang/posn 'make-posn)])
+                         (-make-posn (posn-x (io-output (first ios)))
+                                     (posn-y (io-output (first ios)))))]
+                      [else
+                       (loop (rest ios))])))])
+    (with-syntax ([body-f body-f]
+                  [x (datum->syntax #f 'x)]
+                  [y (datum->syntax #f 'y)]
+                  [e (datum->syntax #f 'e)])
+      (datum->syntax #f
+                     ;; This trickery is to make beginner-level happy with
+                     ;; the lambda that we're returning.
+                     ;; This is doing a 3d syntax thing.
+                     `(lambda (,#'x ,#'y ,#'e)
+                        ,#'(body-f x y e))))))
+
+
+;; world->bytes: world -> bytes
+(define (world->bytes a-world)
+  (match a-world
+    [(struct world (x-min x-max y-min y-max ios mode))
+     (let ([op (open-output-bytes a-world)])
+       (write (list x-min x-max y-min y-max
+                    (map io->sexp ios)
+                    mode)
+              op)
+       (get-output-bytes op))]))
+
+;; io->sexp: io -> sexp
+(define (io->sexp an-io)
+  (list (posn->sexp (input-posn (io-input an-io)))
+        (input-event (io-input an-io))
+        (posn->sexp (io-output an-io))))
+
+;; posn->sexp: posn -> sexp
+(define (posn->sexp a-posn)
+  (list (posn-x a-posn)
+        (posn-y a-posn)))
+
+;; sexp->io: sexp->io
+(define (sexp->io an-sexp)
+  (match an-sexp
+    [(list input-pos-sexp event output-pos-sexp)
+     (make-io (make-input (sexp->posn input-pos-sexp) event)
+              (sexp->posn output-pos-sexp))]))
+
+;; sexp->posn: sexp -> posn
+(define (sexp->posn an-sexp)
+  (match an-sexp
+    [(list x y)
+     (make-posn x y)]))
+
+;; bytes->world: bytes -> world
+(define (bytes->world some-bytes)
+  (match (read (open-input-bytes some-bytes))
+    [(list x-min x-max y-min y-max ios-sexp mode)
+     (make-world x-min x-max y-min y-max (map sexp->io ios-sexp) mode)]))
+
+
+(provide initial-world view world->syntax world->bytes bytes->world
+         world->thumbnail)
