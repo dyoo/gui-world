@@ -17,8 +17,10 @@
     
   (define drscheme-namespace (current-namespace))
 
+  
   (define (phase1)
-    (drscheme:get/extend:extend-unit-frame frame-mixin))
+    (drscheme:get/extend:extend-unit-frame frame-mixin)
+    (drscheme:get/extend:extend-interactions-text interactions-text-mixin))
   
   (define (phase2)
     (register-gui-world-sniptype! 
@@ -37,6 +39,22 @@
            "gui-world" "examples" "graph-function")))
 
       
+  (define (interactions-text-mixin super%)
+    (class super%
+      (inherit run-in-evaluation-thread)
+      (define/override (evaluate-from-port port complete-program cleanup)
+        (run-in-evaluation-thread 
+         (lambda ()
+           (void)
+           ;; NOT WORKING YET
+           #;(namespace-attach-module drscheme-namespace 
+                                      '(lib "gui-world.ss" "gui-world"))))
+        (super evaluate-from-port port complete-program cleanup))
+      
+      (super-new)))
+  
+  
+  
   (define (frame-mixin super%)
     (class super%
       (inherit get-insert-menu
