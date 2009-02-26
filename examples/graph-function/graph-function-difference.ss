@@ -363,29 +363,9 @@
 ;; world->syntax: world -> syntax
 ;; Produces syntax from the world, if the world is to be treated as code.
 (define (world->syntax a-world)
-  (let ([body-f (lambda (x y)
-                  (let loop ([ios (world-ios a-world)])
-                    (cond 
-                      [(empty? ios)
-                       (error 'graph-function-difference
-                              "I don't know how to handle ~s ~s" x y)]
-                      [(input=? (io-input (first ios)) (make-posn x y))
-                       ;; We have to emit a value that the external user namespace
-                       ;; knows about.
-                       (let ([-make-posn (dynamic-require 'lang/posn 'make-posn)])
-                         (-make-posn (posn-x (io-output (first ios)))
-                                     (posn-y (io-output (first ios)))))]
-                      [else
-                       (loop (rest ios))])))])
-    (with-syntax ([body-f body-f]
-                  [x (datum->syntax #f 'x)]
-                  [y (datum->syntax #f 'y)])
-      (datum->syntax #f
-                     ;; This trickery is to make beginner-level happy with
-                     ;; the lambda that we're returning.
-                     ;; This is doing a 3d syntax thing.
-                     `(lambda (,#'x ,#'y)
-                        ,#'(body-f x y))))))
+  (with-syntax ([ios-stx (map io->sexp (world-ios a-world))])
+    #'(quote ios-stx)))
+
 
 
 ;; world->bytes: world -> bytes

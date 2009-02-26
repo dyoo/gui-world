@@ -6,6 +6,16 @@
 (define-struct io (input output) 
   #:transparent)
 
+;; update-io-input: io any -> io
+(define (update-io-input an-io an-input)
+  (make-io an-input (io-output an-io)))
+
+
+;; update-io-output: io any -> io
+(define (update-io-output an-io an-output)
+  (make-io (io-input an-io) an-output))
+
+
 (define-struct partial-function (ios)
   #:transparent
   #:property prop:procedure (lambda (pf an-input)
@@ -22,4 +32,6 @@
 
 (provide/contract [struct io ([input any/c]
                               [output any/c])]
+                  [update-io-input (io? any/c . -> . io?)]
+                  [update-io-output (io? any/c . -> . io?)]
                   [struct partial-function ([ios (listof io?)])])

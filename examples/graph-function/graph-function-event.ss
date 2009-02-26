@@ -402,31 +402,9 @@
 ;; world->syntax: world -> syntax
 ;; Produces syntax from the world, if the world is to be treated as code.
 (define (world->syntax a-world)
-  (let ([body-f (lambda (x y e)
-                  (let loop ([ios (world-ios a-world)])
-                    (cond 
-                      [(empty? ios)
-                       (error 'graph-function-difference
-                              "I don't know how to handle ~s ~s ~s" x y e)]
-                      [(input=? (io-input (first ios))
-                                (make-input (make-posn x y) e))
-                       ;; We have to emit a value that the external user namespace
-                       ;; knows about.
-                       (let ([-make-posn (dynamic-require 'lang/posn 'make-posn)])
-                         (-make-posn (posn-x (io-output (first ios)))
-                                     (posn-y (io-output (first ios)))))]
-                      [else
-                       (loop (rest ios))])))])
-    (with-syntax ([body-f body-f]
-                  [x (datum->syntax #f 'x)]
-                  [y (datum->syntax #f 'y)]
-                  [e (datum->syntax #f 'e)])
-      (datum->syntax #f
-                     ;; This trickery is to make beginner-level happy with
-                     ;; the lambda that we're returning.
-                     ;; This is doing a 3d syntax thing.
-                     `(lambda (,#'x ,#'y ,#'e)
-                        ,#'(body-f x y e))))))
+  (with-syntax ([ios-stx (map io->sexp (world-ios a-world))])
+    #'(quote ios-stx)))
+
 
 
 ;; world->bytes: world -> bytes
@@ -442,8 +420,8 @@
 
 ;; io->sexp: io -> sexp
 (define (io->sexp an-io)
-  (list (posn->sexp (input-posn (io-input an-io)))
-        (input-event (io-input an-io))
+  (list (append (posn->sexp (input-posn (io-input an-io)))
+                (list (input-event (io-input an-io))))
         (posn->sexp (io-output an-io))))
 
 ;; posn->sexp: posn -> sexp
@@ -454,8 +432,8 @@
 ;; sexp->io: sexp->io
 (define (sexp->io an-sexp)
   (match an-sexp
-    [(list input-pos-sexp event output-pos-sexp)
-     (make-io (make-input (sexp->posn input-pos-sexp) event)
+    [(list (list x y event) output-pos-sexp)
+     (make-io (make-input (make-posn x y) event)
               (sexp->posn output-pos-sexp))]))
 
 ;; sexp->posn: sexp -> posn

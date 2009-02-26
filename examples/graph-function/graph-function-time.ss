@@ -2,16 +2,14 @@
 ;; Graph function: representing partial math functions as graphs.
 
 (require  "../../gui-world.ss"
+          "../../private/struct.ss"
           scheme/list
           scheme/match
           lang/posn)
 
 
 ;; An io consists of an input and an output.
-(define-struct io (input    ;; number 
-                   output   ;; posn
-                   ))
-(define-updaters io)
+;; (make-io number posn)
 
 ;;  A world consists of the bounds on the graph.
 (define-struct world (x-min         ;; number
@@ -227,28 +225,8 @@
 ;; Other snip support
 
 (define (world->syntax a-world)
-  (let ([body-f (lambda (t)
-                  (let loop ([ios (world-ios a-world)])
-                    (cond 
-                      [(empty? ios)
-                       (error 'graph-function-time
-                              "I don't know how to handle ~s" t)]
-                      [(= (io-input (first ios)) t)
-                       ;; We have to emit a value that the external user namespace
-                       ;; knows about.
-                       (let ([-make-posn (dynamic-require 'lang/posn 'make-posn)])
-                         (-make-posn (posn-x (io-output (first ios)))
-                                     (posn-y (io-output (first ios)))))]
-                      [else
-                       (loop (rest ios))])))])
-    (with-syntax ([body-f body-f]
-                  [t (datum->syntax #f 't)])
-      (datum->syntax #f
-                     ;; This trickery is to make beginner-level happy with
-                     ;; the lambda that we're returning.
-                     ;; This is doing a 3d syntax thing.
-                     `(lambda (,#'t)
-                        ,#'(body-f t))))))
+  (with-syntax ([ios-stx (map io->sexp (world-ios a-world))])
+    #'(quote ios-stx)))
 
 
 ;; world->thumbnail: world -> scene
