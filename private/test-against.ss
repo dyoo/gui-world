@@ -1,16 +1,14 @@
 #lang scheme/base
+
 (require scheme/contract
-         scheme/list)
+         scheme/list
+         test-engine/scheme-tests)
 
 
-(define function/c (any/c . -> . any/c))
 
-(provide/contract [test-against (function/c any/c . -> . boolean?)])
+(provide/contract [test-against (procedure? any/c . -> . boolean?)])
 
 
-;; input=?: any any -> boolean
-(define (input=? x y)
-  (equal? x y))
 
 
 (define (apply-table-function a-table an-input)
@@ -33,6 +31,11 @@
 ;; Returns true if the function passes
 (define (test-against actual-function a-table-function)
   (andmap (lambda (an-input)
-            (input=? (apply actual-function an-input)
-                     (apply-table-function a-table-function an-input)))
+            (let ([result
+                   (equal? (apply actual-function an-input)
+                           (apply-table-function a-table-function an-input))])
+              (when (not result)
+                ;; FIXME: integrate more closely with test engine.
+                (printf "~s doesn't match on input ~s" (object-name actual-function) an-input))
+              result))
           (table-function-inputs a-table-function)))
