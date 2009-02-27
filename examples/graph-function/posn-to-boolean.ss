@@ -1,9 +1,8 @@
-;; The first three lines of this file were inserted by DrScheme. They record metadata
-;; about the language level of this file in a form that our tools can easily process.
-#reader(lib "htdp-beginner-reader.ss" "lang")((modname posn-to-boolean) (read-case-sensitive #t) (teachpacks ()) (htdp-settings #(#t constructor repeating-decimal #f #t none #f ())))
+#lang scheme
 ;; posn -> boolean graph
 
-(require "../../gui-world.ss")
+(require "../../gui-world.ss"
+         lang/posn)
 
 
 ;; The world consists of all the points that return true.
@@ -105,4 +104,56 @@
 
 
 
-(big-bang initial-world view)
+#;(big-bang initial-world view)
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define (world->syntax a-world)
+  (with-syntax ([graph 
+                 (map (lambda (a-posn)
+                        (list (list (posn->sexp a-posn)
+                                    #t)))
+                      (world-posns a-world))])
+    #'(quote graph)))
+
+
+
+;; posn->sexp: posn -> sexp
+(define (posn->sexp a-posn)
+  (list (posn-x a-posn)
+        (posn-y a-posn)))
+
+
+;; sexp->posn: sexp -> posn
+(define (sexp->posn an-sexp)
+  (match an-sexp
+    [(list x y)
+     (make-posn x y)]))
+
+
+(define (world->bytes a-world)
+  (match a-world
+    [(struct world (mode posns))
+     (let ([op (open-output-bytes)])
+       (write (list mode (map posn->sexp posns))
+              op)
+       (get-output-bytes op))]))
+
+
+(define (bytes->world some-bytes)
+  (match (read (open-input-bytes some-bytes))
+    [(list mode posn-sexps)
+     (make-world mode (map sexp->posn posn-sexps))]))
+
+
+(define (world->thumbnail a-world)
+  (draw-world a-world))
+
+
+(provide initial-world 
+         view
+         world->syntax 
+         world->bytes 
+         bytes->world
+         world->thumbnail)
