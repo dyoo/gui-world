@@ -36,8 +36,10 @@
      (identifier? #'name)
      (syntax/loc stx
        (define-primitive name (make-graph-function 'name a-graph)))]
-    [else
-     (raise-syntax-error #f "Usage: (define-graph-function name-of-function a-graph)"
+    [(dfg args ...)
+     (raise-syntax-error #f 
+                         (format "Usage: (~s name-of-function a-graph)"
+                                 (syntax-e #'dfg))
                          stx)]))
 
 
