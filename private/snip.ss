@@ -4,10 +4,13 @@
          embedded-gui
          "calm-evt.ss"
          "gui-world.ss"
+         "scale-image-snip.ss"
          (prefix-in world: htdp/world))
 
 (provide (all-defined-out))
 
+
+(define MAX-THUMBNAIL-WIDTH 100)
 
 
 
@@ -67,9 +70,25 @@
     ;; update-thumbnail-bitmap!: -> void
     (define (update-thumbnail-bitmap!)
       (let* ([world->bitmap (registry-entry-world->thumbnail registry-entry)]
-             [new-image-snip (world->bitmap world)]
+             [new-image-snip [scale-thumbnail-to-size (world->bitmap world)]]
              [bm (send new-image-snip get-bitmap)])
         (send thumbnail-snip set-bitmap bm)))
+    
+    
+    ;; scale-thumbnail-to-size: image-snip -> image-snip
+    ;; If the thumbnail is too large, shrink it down.
+    (define (scale-thumbnail-to-size an-image-snip)
+      (let* ([bm (send an-image-snip get-bitmap)]
+             [w (send bm get-width)]
+             [h (send bm get-height)])
+        (cond
+          [(> (max w h) MAX-THUMBNAIL-WIDTH)
+           (let ([factor (/ MAX-THUMBNAIL-WIDTH
+                            (max w h))])
+             (scale-image-snip an-image-snip factor factor))]
+          [else
+           an-image-snip])))
+    
     
     ;; update-the-world!: world -> void
     (define (update-the-world! new-world)
@@ -267,4 +286,4 @@
 
 
 (define (default-thumbnail a-world)
-  (world:empty-scene 100 100))
+  (world:empty-scene 50 50))
