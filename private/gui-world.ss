@@ -144,7 +144,9 @@
 ;; refresh-widgets!: -> void
 ;; Update the widgets in the frame with the new contents in the world.
 (define (refresh-widgets!)
-  (let ([top-widget (first (send *window* get-children))])
+  (let ([top-widget (first 
+                     (filter (lambda (x) (is-a? x world-gui<%>))
+                             (send *window* get-children)))])
     (dynamic-wind (lambda ()
                     (send *window* begin-container-sequence))
                   (lambda ()
@@ -266,7 +268,7 @@
 
 
 (define world-gui:frame%
-  (class frame%
+  (class* frame% ()
     (define/augment (on-close)
       (inner (void) on-close)
       (shutdown-on-tick-thread)
@@ -279,7 +281,12 @@
       (inner (void) on-close)
       (shutdown-on-tick-thread)
       (*on-close* *world*))
-    (super-new)))
+    (super-new)
+    (new button% 
+         [parent this]
+         [label "Close"]
+         [callback (lambda (b e)
+                     (send this show #f))])))
 
 
 (define (on-subwindow-char-mixin super%)
