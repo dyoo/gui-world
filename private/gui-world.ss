@@ -40,9 +40,11 @@
 (define *window* #f)
 (define *eventspace* #f)
 
+
 (define *on-tick-callback* #f)
 (define *on-tick-frequency* #f)
 (define *on-tick-thread* #f)
+(define *on-key-event-callback* #f)
 (define *on-world-change* #f)
 (define *on-close* #f)
 
@@ -81,11 +83,17 @@
 
 
 
-(define (handle-key-event! an-event)
-  ...
-  #f)
+;; handle-key-event!: key-event -> void
+(define (handle-key-event! a-key-event)
+  (printf "Key event on ~s~n" (send a-key-event get-key-code))
+  (change-world/f! (lambda (a-world)
+                     (*on-key-event-callback* a-world 
+                                              (send a-key-event get-key-code)))))
 
 
+;; on-key-event: (world key -> world) -> void
+(define (on-key-event callback)
+  (set! *on-key-event-callback* callback))
 
 ;; on-tick: number (world -> world) -> void
 (define (on-tick freq callback)
@@ -266,9 +274,21 @@
 (define INSET 5)
 
 
+(define (on-subwindow-char-mixin super%)
+  (class super%
+    (define/override (on-subwindow-char receiver event)
+      (let ([result
+             (super on-subwindow-char receiver event)])
+        (cond
+          [result result]
+          [else
+           (handle-key-event! event)])))
+    (super-new)))
+
+
 
 (define world-gui:frame%
-  (class* frame% ()
+  (class* (on-subwindow-char-mixin frame%) ()
     (define/augment (on-close)
       (inner (void) on-close)
       (shutdown-on-tick-thread)
@@ -276,7 +296,7 @@
     (super-new)))
 
 (define world-gui:dialog%
-  (class dialog%
+  (class (on-subwindow-char-mixin dialog%)
     (define/augment (on-close)
       (inner (void) on-close)
       (shutdown-on-tick-thread)
@@ -289,16 +309,6 @@
                      (send this show #f))])))
 
 
-(define (on-subwindow-char-mixin super%)
-  (class super%
-    (define/override (on-subwindow-char receiver event)
-      (let ([result
-             (super on-subwindow-char receiver event)])
-        (cond
-          [result result]
-          [else
-           (handle-key-event! event)])))
-    (super-new)))
 
 
 
@@ -672,6 +682,8 @@
 
 (provide big-bang 
          on-tick 
+         on-key-event
+         
          elt? 
          row 
          col

@@ -4,7 +4,8 @@
          "private/prim.ss"
          "private/define-graph-function.ss"
          "private/arrow.ss"
-         htdp/image)
+         htdp/image
+         (only-in htdp/world key=? key-event?))
 
 #;(printf "gui world instantiated~n")
 
@@ -13,6 +14,8 @@
 (provide-primitive big-bang)
 
 (provide-higher-order-primitive on-tick (_ on-tick-handler))
+
+(provide-higher-order-primitive on-key-event (key-handler))
 
 (provide-primitive elt?)
 
@@ -70,3 +73,5 @@
          chain-accessors)
 
 (provide define-graph-function)
+
+(provide key=? key-event?)
