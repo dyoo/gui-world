@@ -16,13 +16,17 @@
 (define-struct input (posn event) #:prefab)
 (define-updaters input)
 ;; An event is one of the following:
-(define event:??? "???")
-(define event:left "left")
-(define event:right "right")
-(define event:up "up")
-(define event:down "down")
+(define event:??? '???)
+(define event:left 'left)
+(define event:right 'right)
+(define event:up 'up)
+(define event:down 'down)
 
+(define (event->string an-event)
+  (symbol->string an-event))
 
+(define (string->event an-str)
+  (string->symbol an-str))
 
 
 
@@ -263,7 +267,7 @@
 (define (draw-canvas-io a-world an-io first-io? a-scene)
   (cond [first-io?
          (place-image/posn
-          (text (input-event (io-input an-io)) 10 "purple")
+          (text (event->string (input-event (io-input an-io))) 10 "purple")
           (midpoint (coordinate-posn->canvas-posn a-world (io-output an-io))
                     (coordinate-posn->canvas-posn a-world (input-posn (io-input an-io))))
           (place-image/posn 
@@ -367,9 +371,9 @@
   (list event:??? event:left event:right event:up event:down))
 
 
-;; on-change-input-event: world event -> world
-(define (on-change-input-event a-world an-event)
-  (world-update-current-input-event a-world an-event))
+;; on-change-input-event: world string -> world
+(define (on-change-input-event a-world an-event-string)
+  (world-update-current-input-event a-world (string->event an-event-string)))
 
 
 ;; The view includes the canvas.  Clicks on the canvas add new posns.

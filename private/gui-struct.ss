@@ -47,6 +47,7 @@
 ;; displayable?: any -> boolean
 (define (displayable? datum)
   (or (string? datum)
+      (symbol? datum)
       (number? datum)
       (boolean? datum)))
 
@@ -56,6 +57,8 @@
   (match datum 
     [(? string?)
      datum]
+    [(? symbol?)
+     (symbol->string datum)]
     [(? number?) 
      (number->string datum)]
     [(? boolean?)
