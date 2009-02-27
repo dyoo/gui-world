@@ -254,7 +254,7 @@
 
 ;; io->sexp: io -> sexp
 (define (io->sexp an-io)
-  (list (io-input an-io)
+  (list (list (io-input an-io))
         (posn->sexp (io-output an-io))))
 
 ;; posn->sexp: posn -> sexp
@@ -265,6 +265,10 @@
 ;; sexp->io: sexp->io
 (define (sexp->io an-sexp)
   (match an-sexp
+    [(list (list input-pos) output-pos-sexp)
+     (make-io input-pos
+              (sexp->posn output-pos-sexp))]
+    ;; compatiblity hack with older format:
     [(list input-pos output-pos-sexp)
      (make-io input-pos
               (sexp->posn output-pos-sexp))]))

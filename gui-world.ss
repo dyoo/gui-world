@@ -2,7 +2,7 @@
 (require "private/gui-world.ss"
          "private/accessor.ss"
          "private/prim.ss"
-         
+         "private/define-graph-function.ss"
          "private/arrow.ss"
          htdp/image)
 
@@ -68,3 +68,5 @@
 (provide get/accessor
          update/accessor
          chain-accessors)
+
+(provide define-graph-function)
