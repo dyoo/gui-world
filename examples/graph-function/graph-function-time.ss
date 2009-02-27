@@ -23,8 +23,8 @@
 (define-updaters world)
 
 
-(define CANVAS-WIDTH 300)
-(define CANVAS-HEIGHT 300)
+(define CANVAS-WIDTH 500)
+(define CANVAS-HEIGHT 500)
 
 (define MIN-INPUT 0)
 (define MAX-INPUT 10)
@@ -157,20 +157,23 @@
 
 ;; canvas-x->coordinate-x: world number -> number
 (define (canvas-x->coordinate-x a-world a-canvas-x)
-  (round (+ (world-x-min a-world) 
+  a-canvas-x
+  #;(round (+ (world-x-min a-world) 
             (* (/ a-canvas-x CANVAS-WIDTH)
                (- (world-x-max a-world) (world-x-min a-world))))))
 
 
 ;; coordinate-x->canvas-x: world number -> number
 (define (coordinate-x->canvas-x a-world a-coordinate-x)
-  (* (- a-coordinate-x (world-x-min a-world))
+  a-coordinate-x
+  #;(* (- a-coordinate-x (world-x-min a-world))
      (/ CANVAS-WIDTH (- (world-x-max a-world) (world-x-min a-world)))))
 
 
 ;; canvas-y->coordinate-y: world number -> number
 (define (canvas-y->coordinate-y a-world a-canvas-y)
-  (round
+  a-canvas-y
+  #;(round
    (+ (world-y-min a-world) 
       (* (/ (- CANVAS-HEIGHT a-canvas-y)
             CANVAS-HEIGHT)
@@ -179,7 +182,8 @@
 
 ;; coordinate-y->canvas-y: world number -> number
 (define (coordinate-y->canvas-y a-world a-coordinate-y)
-  (+ CANVAS-HEIGHT
+  a-coordinate-y
+  #;(+ CANVAS-HEIGHT
      (/ (* (- (world-y-min a-world) a-coordinate-y)
            CANVAS-HEIGHT)
         (- (world-y-max a-world) (world-y-min a-world)))))
