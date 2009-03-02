@@ -95,6 +95,11 @@
 
 
 
+(define (snap-to-grid n)
+  (* 50 (round (/ n 50))))
+
+
+
 ;; world-delete-input: world input -> world
 (define (world-delete-input a-world an-input)
   (update-world-ios a-world (delete-input-from-ios (world-ios a-world) an-input)))
@@ -292,14 +297,14 @@
 (define (on-canvas-clicked a-world x y)
   (cond
     [(string=? (world-mode a-world) "create-io")
-     (update-world-mode (world-create-io a-world x y)
+     (update-world-mode (world-create-io a-world (snap-to-grid x) (snap-to-grid y))
                         mode:update-output)]
     [(string=? (world-mode a-world) "update-input")
      (world-update-current-input a-world
-                                 (canvas-posn->coordinate-posn a-world (make-posn x y)))]
+                                 (canvas-posn->coordinate-posn a-world (make-posn (snap-to-grid x) (snap-to-grid y))))]
     [(string=? (world-mode a-world) "update-output")
      (world-update-current-output a-world
-                                  (canvas-posn->coordinate-posn a-world (make-posn x y)))]))
+                                  (canvas-posn->coordinate-posn a-world (make-posn (snap-to-grid x) (snap-to-grid y))))]))
 
 
 

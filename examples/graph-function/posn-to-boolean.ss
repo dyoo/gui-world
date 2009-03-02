@@ -112,8 +112,8 @@
 (define (world->syntax a-world)
   (with-syntax ([graph 
                  (map (lambda (a-posn)
-                        (list (list (posn->sexp a-posn)
-                                    #t)))
+                        (list (list (posn->sexp a-posn))
+                              #t))
                       (world-posns a-world))])
     #'(quote graph)))
 

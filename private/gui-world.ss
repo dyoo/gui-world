@@ -85,10 +85,10 @@
 
 ;; handle-key-event!: key-event -> void
 (define (handle-key-event! a-key-event)
-  (printf "Key event on ~s~n" (send a-key-event get-key-code))
-  (change-world/f! (lambda (a-world)
-                     (*on-key-event-callback* a-world 
-                                              (send a-key-event get-key-code)))))
+  (when *on-key-event-callback*
+    (change-world/f! (lambda (a-world)
+                       (*on-key-event-callback* a-world 
+                                                (send a-key-event get-key-code))))))
 
 
 ;; on-key-event: (world key -> world) -> void

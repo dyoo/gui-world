@@ -36,6 +36,11 @@
     (register-gui-world-sniptype!
      "posn event -> posn"
      '(lib "graph-function-event.ss"
+           "gui-world" "examples" "graph-function"))
+    
+    (register-gui-world-sniptype!
+     "posn -> boolean"
+     '(lib "posn-to-boolean.ss"
            "gui-world" "examples" "graph-function")))
 
       

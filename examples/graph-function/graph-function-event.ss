@@ -167,6 +167,11 @@
 
 
 
+
+(define (snap-to-grid n)
+  (* 50 (round (/ n 50))))
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Translation between coordinate systems:
 
@@ -303,14 +308,14 @@
 (define (on-canvas-clicked a-world x y)
   (cond
     [(string=? (world-mode a-world) mode:create-io)
-     (update-world-mode (world-create-io a-world x y)
+     (update-world-mode (world-create-io a-world (snap-to-grid x) (snap-to-grid y))
                         mode:update-output-position)]
     [(string=? (world-mode a-world) mode:update-input-position)
      (world-update-current-input-position a-world
-                                 (canvas-posn->coordinate-posn a-world (make-posn x y)))]
+                                 (canvas-posn->coordinate-posn a-world (make-posn (snap-to-grid x) (snap-to-grid y))))]
     [(string=? (world-mode a-world) mode:update-output-position)
      (world-update-current-output-position a-world
-                                  (canvas-posn->coordinate-posn a-world (make-posn x y)))]))
+                                  (canvas-posn->coordinate-posn a-world (make-posn (snap-to-grid x) (snap-to-grid y))))]))
 
 
 

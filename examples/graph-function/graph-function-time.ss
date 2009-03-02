@@ -122,8 +122,8 @@
 (define (place-io a-world x y)
   (update-world-ios a-world (ios-insert/no-duplicates
                              (make-io (world-current-input a-world)
-                                      (make-posn (canvas-x->coordinate-x a-world x)
-                                                 (canvas-y->coordinate-y a-world y)))
+                                      (make-posn (canvas-x->coordinate-x a-world (snap-to-grid x))
+                                                 (canvas-y->coordinate-y a-world (snap-to-grid y))))
                              (world-ios a-world))))
 
 
@@ -209,6 +209,11 @@
    (update-world-ios a-world empty)
    MIN-INPUT))
 
+
+
+
+(define (snap-to-grid n)
+  (* 50 (round (/ n 50))))
 
 
 
