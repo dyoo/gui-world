@@ -675,11 +675,12 @@
               (send editor erase)
               (let ([snip (send new-scene copy)])
                 (send editor insert snip 0 0)
-                (send snip get-bitmap)
-                #;(when (or (not (= (min-width) (send (send snip get-bitmap) get-width)))
-                            (not (= (min-height)  (send (send snip get-bitmap) get-height))))
-                    (min-width (send (send snip get-bitmap) get-width))
-                    (min-height (send (send snip get-bitmap) get-height)))))
+                (let ([new-width (+ (image-width snip) INSET)]
+                      [new-height (+ (image-height snip) INSET)])
+                  (when (or (not (= (min-width) new-width))
+                            (not (= (min-height)  new-height)))
+                    (min-width new-width)
+                    (min-height new-height)))))
             (lambda () 
               (send editor end-edit-sequence))))]))
     
