@@ -288,7 +288,7 @@
 
 
 (define world-gui:frame%
-  (class* (on-subwindow-char-mixin frame%) ()
+  (class frame% #;(on-subwindow-char-mixin frame%)
     (define/augment (on-close)
       (inner (void) on-close)
       (shutdown-on-tick-thread)
@@ -296,7 +296,7 @@
     (super-new)))
 
 (define world-gui:dialog%
-  (class (on-subwindow-char-mixin dialog%)
+  (class dialog% #;(on-subwindow-char-mixin dialog%)
     (define/augment (on-close)
       (inner (void) on-close)
       (shutdown-on-tick-thread)
@@ -317,7 +317,7 @@
 
 
 (define world-gui:row%
-  (class* (on-subwindow-char-mixin horizontal-panel%) (world-gui<%>)
+  (class* horizontal-panel% #;(on-subwindow-char-mixin horizontal-panel%) (world-gui<%>)
     (inherit get-children)
     
     (define/public (update-with! an-elt)
@@ -330,7 +330,7 @@
 
 
 (define world-gui:column%
-  (class* (on-subwindow-char-mixin vertical-panel%) (world-gui<%>)
+  (class* vertical-panel% #;(on-subwindow-char-mixin vertical-panel%) (world-gui<%>)
     (inherit get-children)
     
     (define/public (update-with! an-elt)
@@ -343,7 +343,7 @@
 
 
 (define world-gui:group-box%
-  (class* (on-subwindow-char-mixin group-box-panel%) (world-gui<%>)
+  (class* group-box-panel% #;(on-subwindow-char-mixin group-box-panel%) (world-gui<%>)
     (inherit get-children get-label set-label is-enabled? enable)
     
     (define/public (update-with! an-elt)
@@ -448,7 +448,7 @@
 
 
 (define world-gui:drop-down% 
-  (class* (on-subwindow-char-mixin choice%) (world-gui<%>)
+  (class* choice% #;(on-subwindow-char-mixin choice%) (world-gui<%>)
     (init-field world-callback)
     (inherit get-string-selection get-number get-string clear append 
              set-selection
@@ -591,7 +591,7 @@
 
 
 (define world-gui:checkbox%
-  (class* (on-subwindow-char-mixin check-box%) (world-gui<%>)
+  (class* check-box% #;(on-subwindow-char-mixin check-box%) (world-gui<%>)
     (init-field world-callback)
     (inherit get-value set-value get-label is-enabled? enable min-width min-height)
     
@@ -673,7 +673,7 @@
               (send editor begin-edit-sequence))
             (lambda () 
               (send editor erase)
-              (send editor insert new-scene 0 0))
+              (send editor insert (send new-scene copy) 0 0))
             (lambda () 
               (send editor end-edit-sequence))))]))
     
