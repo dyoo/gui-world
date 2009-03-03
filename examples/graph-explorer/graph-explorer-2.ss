@@ -3,6 +3,8 @@
          scheme/sandbox
          "../../gui-world.ss")
 
+;; does parameteric
+
 (provide (all-defined-out))
 
 
@@ -11,12 +13,24 @@
 
 
 ;; The world consists of the name of a function and the body
-(define-struct world (name args body plot dirty?) #:transparent)
+(define-struct world (name
+                      args
+                      x-name 
+                      x-args
+                      x-body
+                      y-name
+                      y-args
+                      y-body
+                      plot dirty?) #:transparent)
 (define-updaters world)
 
 (define initial-world 
-  (make-world "y" (list "x") 
-              "x"
+  (make-world "f"
+              (list "t")
+              "x" (list "t")
+              "(cos t)"
+              "y" (list "t")
+              "t"
               (empty-scene WIDTH HEIGHT)
               #t))
 
@@ -37,8 +51,13 @@
                                                                        HEIGHT)))
                           #f)))])
     
-    (let* ([a-plot (plot:plot (plot:line 
-                               (world-function a-world))
+    (let* ([wf (world-function a-world)]
+           [f (lambda (t)
+                (list->vector (wf t)))]
+           [a-plot (plot:plot (plot:line f 
+                                         #:mode 'parametric
+                                         #:t-min 0
+                                         #:t-max 10)
                               #:width WIDTH
                               #:height HEIGHT)])
       (update-world-dirty? 
@@ -64,7 +83,8 @@
 ;; world-function-as-lambda: world -> s-expression
 (define (world-function-as-lambda a-world)
   `(lambda (,@(map string->symbol (world-args a-world)))
-     ,(read (open-input-string (world-body a-world)))))
+     (list ,(read (open-input-string (world-x-body a-world)))
+           ,(read (open-input-string (world-y-body a-world))))))
 
 
 
@@ -90,10 +110,16 @@
   (world-replot a-world))
 
 
-;; on-text-field-change: world string -> world
-(define (on-text-field-change a-world new-text)
+;; on-x-text-field-change: world string -> world
+(define (on-x-text-field-change a-world new-text)
   (update-world-dirty? 
-   (update-world-body a-world new-text)
+   (update-world-x-body a-world new-text)
+   #t))
+
+;; on-y-text-field-change: world string -> world
+(define (on-y-text-field-change a-world new-text)
+  (update-world-dirty? 
+   (update-world-y-body a-world new-text)
    #t))
 
 
@@ -118,8 +144,8 @@
 ;; define-function-message: world -> string
 (define (define-function-message a-world)
   (format "(define (~a ~a) "
-          (world-name a-world)
-          (string-join (world-args a-world)
+          (world-x-name a-world)
+          (string-join (world-x-args a-world)
                        " ")))
 
 
@@ -128,10 +154,19 @@
   (col
    (canvas on-canvas-redraw)
    
-   (row "(define (" 
-        (message world-name)
-        (message (lambda (a-world)
-                   (string-join (world-args a-world) " ")))
-        ")")
-   (row (text-field world-body on-text-field-change) ")")
+   (col (row "(define (" 
+             (message world-x-name)
+             (message (lambda (a-world)
+                        (string-join (world-x-args a-world) " ")))
+             ")")
+        (row (text-field world-x-body on-x-text-field-change) ")"))
+
+   (col (row "(define (" 
+             (message world-y-name)
+             (message (lambda (a-world)
+                        (string-join (world-y-args a-world) " ")))
+             ")")
+        (row (text-field world-y-body on-y-text-field-change) ")"))
+
+   
    (button "Replot" on-replot-button-pressed)))
