@@ -2,6 +2,7 @@
 
 (require (for-syntax scheme/base))
 (require scheme/list
+         lang/posn
          lang/prim)
 
 ;; a row is a (list (listof input/c) output/c))
@@ -19,7 +20,8 @@
                                           "Can't be applied on inputs: ~s" 
                                           inputs)]
                                   [(equal? inputs (first (first rows)))
-                                   (second (first rows))]
+                                   (translate-output
+                                    (second (first rows)))]
                                   [else
                                    (loop (rest rows))]))))
 
@@ -27,6 +29,23 @@
 (define (graph-function-inputs a-graph-function)
   (map (lambda (a-row) (first a-row))
        (graph-function-graph a-graph-function)))
+
+
+
+;; translate-output: X -> Y
+;; Translates the output values.  If we are returning a pair of numbers,
+;; we want to do so as a posn.
+(define (translate-output an-output)
+  (cond
+    [(and (list? an-output)
+          (= (length an-output) 2)
+          (number? (first an-output))
+          (number? (second an-output)))
+     (make-posn (first an-output)
+                (second an-output))]
+    [else
+     an-output]))
+                   
 
 
 ;; syntax for creating graph functions that acts nicely with beginner-level scheme.
