@@ -3,8 +3,8 @@
          scheme/sandbox
          "../../gui-world.ss")
 
-(provide initial-world view
-         (struct-out world))
+(provide (all-defined-out))
+
 
 (define WIDTH 400)
 (define HEIGHT 400)
