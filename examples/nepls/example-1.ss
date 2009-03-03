@@ -3,8 +3,8 @@
 #reader(lib "htdp-beginner-reader.ss" "lang")((modname example-1) (read-case-sensitive #t) (teachpacks ((lib "world.ss" "teachpack" "htdp"))) (htdp-settings #(#t constructor repeating-decimal #f #t none #f ((lib "world.ss" "teachpack" "htdp")))))
 ;; Balloon and airplane
 
-(define width 400)
-(define height 400)
+(define width 500)
+(define height 500)
 
 ;; The world is the current time.
 (define initial-world 0)
@@ -28,7 +28,7 @@
 ;; place-plane: world scene -> scene
 (define (place-plane a-world a-scene)
   (place-image airplane-img
-               (* a-world 10)
+               (* a-world 50)
                (image-height airplane-img) 
                a-scene))
 
@@ -36,11 +36,11 @@
 (define (place-balloon a-world a-scene)
   (place-image balloon-img
                (- width (image-width balloon-img))
-               (- height (* a-world 5))
+               (- height (* a-world 50))
                a-scene))
 
 
-;; We render at 10 frames a second
-(big-bang width height 1/10 initial-world)
+;; We render at 1 frames a second
+(big-bang width height 1 initial-world)
 (on-redraw render-world)
 (on-tick-event increment-time)
