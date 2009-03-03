@@ -1,8 +1,10 @@
 #lang scheme
 (require (prefix-in plot: plot)
          scheme/sandbox
-         "../gui-world.ss")
+         "../../gui-world.ss")
 
+(provide initial-world view
+         (struct-out world))
 
 (define WIDTH 400)
 (define HEIGHT 400)
@@ -99,4 +101,4 @@
    (message ")")))
 
 
-(big-bang initial-world view)
+#;(big-bang initial-world view)
