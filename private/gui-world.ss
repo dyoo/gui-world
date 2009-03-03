@@ -425,7 +425,7 @@
 
 (define world-gui:text-field% 
   (class* text-field% (world-gui<%>)
-    (inherit get-value set-value is-enabled? enable)
+    (inherit get-value set-value is-enabled? enable min-width min-height)
     (init-field world-callback)
     
     (define/public (update-with! an-elt)
@@ -436,15 +436,34 @@
            (unless (string=? new-text (get-value))
              (set-value new-text))
            (unless (boolean=? (is-enabled?) new-enabled?)
-             (enable new-enabled?)))]))
+             (enable new-enabled?)))
+         (auto-resize)]))
     
     (define/override (on-subwindow-char receiver event)
       (super on-subwindow-char receiver event))
     
+    
+    ;; auto-resize: -> void
+    ;; Automatically resize the button to fit the label.
+    (define (auto-resize)
+      (let ([s (get-value)])
+        (let-values ([(mw mh) (get-window-text-extent s normal-control-font #t)])
+          (min-width (+ dx mw))
+          (min-height (+ dy mh)))))
+    
     (super-new [callback (lambda (f e)
                            (change-world/f!
                             (lambda (a-world)
-                              (world-callback a-world (get-value)))))])))
+                              (world-callback a-world (get-value)))))])
+    
+    
+     ;; We record the old space-padding values around the button's label.  For some
+    ;; reason, using horiz-margin and vert-margin isn't correct, but I don't
+    ;; know why.  dx and dy are only used with regard to auto-resize above.
+    (define-values (dx dy)
+      (let-values ([(mw mh) (get-window-text-extent (get-value) normal-control-font #t)])
+        (values (- (min-width) mw)
+                (- (min-height) mh))))))
 
 
 (define world-gui:drop-down% 

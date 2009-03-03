@@ -41,7 +41,12 @@
     (register-gui-world-sniptype!
      "posn -> boolean"
      '(lib "posn-to-boolean.ss"
-           "gui-world" "examples" "graph-function")))
+           "gui-world" "examples" "graph-function"))
+    
+    (register-gui-world-sniptype!
+     "number -> number"
+     '(lib "graph-explorer-snip.ss"
+           "gui-world" "examples" "graph-explorer")))
 
       
   (define (interactions-text-mixin super%)

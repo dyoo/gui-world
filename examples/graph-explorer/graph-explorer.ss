@@ -21,21 +21,67 @@
               #t))
 
 
+;; world-replot: world -> world
+(define (world-replot a-world)
+  (with-handlers ([void
+                   (lambda (exn)
+                     (raise exn)
+                     #;(let ([error-msg-text 
+                              (text (exn-message exn) 10 "black")])
+                         (update-world-dirty?
+                          (update-world-plot a-world
+                                             (place-image error-msg-text
+                                                          0
+                                                          0
+                                                          (empty-scene WIDTH
+                                                                       HEIGHT)))
+                          #f)))])
+    
+    (let* ([a-plot (plot:plot (plot:line 
+                               (world-function a-world))
+                              #:width WIDTH
+                              #:height HEIGHT)])
+      (update-world-dirty? 
+       (update-world-plot a-world 
+                          (place-image (put-pinhole a-plot 0 0)
+                                       0
+                                       0
+                                       (empty-scene (image-width a-plot)
+                                                    (image-height a-plot))))
+       #f))))
+
+
+
+
+
+;; world-function-sexpression: world -> s-expression
+(define (world-function-as-sexpression a-world)
+  `(define (,(string->symbol (world-name a-world))
+            ,@(map string->symbol (world-args a-world)))
+     ,(read (open-input-string (world-body a-world)))))
+
+
+
+;; world-function: world -> (X Y ... -> number)
+(define (world-function a-world)
+  (let ([my-eval
+         (make-evaluator 
+          'lang/htdp-beginner
+          (world-function-as-sexpression a-world))])
+    
+    (lambda args
+      (my-eval `(,(string->symbol (world-name a-world))
+                 ,@args)))))
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Gui code.
+
 
 ;; on-replot-button-pressed: world -> world
 (define (on-replot-button-pressed a-world)
-  (let* ([a-plot (plot:plot (plot:line 
-                             (world-function a-world))
-                            #:width WIDTH
-                            #:height HEIGHT)])
-    (update-world-dirty? 
-     (update-world-plot a-world 
-                        (place-image (put-pinhole a-plot 0 0)
-                                     0
-                                     0
-                                     (empty-scene (image-width a-plot)
-                                                  (image-height a-plot))))
-     #f)))
+  (world-replot a-world))
 
 
 ;; on-text-field-change: world string -> world
@@ -63,6 +109,7 @@
      (world-plot a-world)]))
 
 
+;; define-function-message: world -> string
 (define (define-function-message a-world)
   (format "(define (~a ~a) "
           (world-name a-world)
@@ -71,34 +118,14 @@
 
 
 
-;; world-function-sexpression: world -> s-expression
-(define (world-function-as-sexpression a-world)
-  `(define (,(string->symbol (world-name a-world))
-            ,@(map string->symbol (world-args a-world)))
-     ,(read (open-input-string (world-body a-world)))))
-
-
-;; world-function: world -> (X Y ... -> number)
-(define (world-function a-world)
-  (let ([my-eval
-         (make-evaluator 
-          'lang/htdp-beginner
-          (world-function-as-sexpression a-world))])
-    
-    (lambda args
-      (my-eval `(,(string->symbol (world-name a-world))
-                 ,@args)))))
-
-
-
 (define view
   (col
    (canvas on-canvas-redraw)
    (button "Replot" on-replot-button-pressed)
    
-   (message define-function-message)
+   (row "(define (" 
+        (text-field world-name update-world-name) 
+        (message (lambda (a-world)
+                   (string-join (world-args a-world) " "))))
    (text-field world-body on-text-field-change)
    (message ")")))
-
-
-#;(big-bang initial-world view)
