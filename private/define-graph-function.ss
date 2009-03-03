@@ -19,7 +19,8 @@
                                    (error (graph-function-name a-graph-function) 
                                           "Can't be applied on inputs: ~s" 
                                           inputs)]
-                                  [(equal? inputs (first (first rows)))
+                                  [(equal? (map translate-input inputs)
+                                           (first (first rows)))
                                    (translate-output
                                     (second (first rows)))]
                                   [else
@@ -30,6 +31,16 @@
   (map (lambda (a-row) (first a-row))
        (graph-function-graph a-graph-function)))
 
+
+
+;; translate-input: X -> Y
+(define (translate-input an-input)
+  (cond
+    [(posn? an-input)
+     (list (posn-x an-input)
+           (posn-y an-input))]
+    [else
+     an-input]))
 
 
 ;; translate-output: X -> Y
