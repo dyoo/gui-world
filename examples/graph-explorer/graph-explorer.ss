@@ -56,8 +56,14 @@
 
 ;; world-function-sexpression: world -> s-expression
 (define (world-function-as-sexpression a-world)
-  `(define (,(string->symbol (world-name a-world))
-            ,@(map string->symbol (world-args a-world)))
+  `(define ,(string->symbol (world-name a-world))
+     ,(world-function-as-lambda a-world)))
+
+
+
+;; world-function-as-lambda: world -> s-expression
+(define (world-function-as-lambda a-world)
+  `(lambda (,@(map string->symbol (world-args a-world)))
      ,(read (open-input-string (world-body a-world)))))
 
 
@@ -121,11 +127,11 @@
 (define view
   (col
    (canvas on-canvas-redraw)
-   (button "Replot" on-replot-button-pressed)
    
    (row "(define (" 
         (text-field world-name update-world-name) 
         (message (lambda (a-world)
-                   (string-join (world-args a-world) " "))))
-   (text-field world-body on-text-field-change)
-   (message ")")))
+                   (string-join (world-args a-world) " ")))
+        ")")
+   (row (text-field world-body on-text-field-change) ")")
+   (button "Replot" on-replot-button-pressed)))
