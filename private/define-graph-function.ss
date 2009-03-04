@@ -79,8 +79,10 @@
     [(_ name a-graph)
      (identifier? #'name)
      (syntax/loc stx
-       (define-primitive name 
-         (choose-graph-function-implementation 'name 'a-graph)))]
+       (begin
+         (define -implementation  
+           (choose-graph-function-implementation 'name 'a-graph))
+         (define-primitive name -implementation)))]
     [(dfg args ...)
      (raise-syntax-error #f 
                          (format "Usage: (~s name-of-function a-graph)"
@@ -124,6 +126,7 @@
 
       
 (provide define-graph-function
+         choose-graph-function-implementation
          ;; Fixme: provide proper contracts
          #; graph-function-inputs
          #; (struct-out graph-function))
