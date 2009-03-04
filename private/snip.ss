@@ -95,33 +95,46 @@
     
     ;; update-the-world!: world -> void
     (define (update-the-world! new-world)
-      (when (not (equal? world new-world))
-        (set! world new-world)
-        (update-thumbnail-bitmap!)
-        (when (get-admin)
-          (send (get-admin) modified this #t))))
+      (let ([original-world world])
+        (when (not (equal? world new-world))
+          (set! world new-world)
+          (update-thumbnail-bitmap!)
+          (when (get-admin)            
+            (send (get-admin) modified this #t)
+            (send (send (get-admin) get-editor) 
+                  add-undo (lambda () 
+                             (update-the-world! original-world)
+                             #f))))))
     
     ;; Starts up the big bang.
+    ;; While big-bang is running, set up a background task to 
+    ;; keep the bitmap synchronized with the state of the current world.
     (define (initiate-big-bang!)
       (let* ([gui (registry-entry-gui registry-entry)]
              [ch (make-channel)]
              [calm-evt (make-calm-evt ch)]
              [eventspace (make-eventspace)])
-        (thread
-         (lambda ()
-           (let loop ()
-             (update-the-world! (sync calm-evt))
-             (loop))))
+
+        ;; submit-new-world: world -> void
+        ;; Add a new world to be processed by the background thread.
+        (define (submit-new-world a-world)
+          (parameterize ([current-eventspace eventspace])
+            (queue-callback (lambda ()
+                              (channel-put ch a-world)))))
+        (define background-thread
+          (thread
+           (lambda ()
+             (let loop ()
+               (update-the-world! (sync calm-evt))
+               (loop)))))
         
         (big-bang world gui 
                   #:dialog? #t
                   #:on-world-change (lambda (new-world)
-                                      (parameterize ([current-eventspace eventspace])
-                                        (queue-callback (lambda ()
-                                                          (channel-put ch new-world)))))
+                                      (submit-new-world new-world))
                   #:on-close (lambda (new-world)
-                               (update-the-world! new-world)
-                               (channel-put ch new-world)))))
+                               (thread-suspend background-thread)
+                               (update-the-world! new-world)))))
     
     
     
