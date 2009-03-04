@@ -12,25 +12,26 @@
                                graph ;; (listof row)
                                )
   #:transparent
-  #:property prop:procedure (lambda (a-graph-function . inputs)
-                              (let loop ([rows (graph-function-graph a-graph-function)])
-                                (cond
-                                  [(empty? rows)
-                                   (error (graph-function-name a-graph-function) 
-                                          "Can't be applied on inputs: ~s" 
-                                          inputs)]
-                                  [(equal? (map translate-input inputs)
-                                           (first (first rows)))
-                                   (translate-output
-                                    (second (first rows)))]
-                                  [else
-                                   (loop (rest rows))]))))
+  #:property prop:procedure 
+  (lambda (a-graph-function . inputs)
+    (let loop ([rows (graph-function-graph a-graph-function)])
+      (cond
+        [(empty? rows)
+         (error (graph-function-name a-graph-function) 
+                "Can't be applied on inputs: ~s" 
+                inputs)]
+        [(equal? (map translate-input inputs)
+                 (first (first rows)))
+         (translate-output
+          (second (first rows)))]
+        [else
+         (loop (rest rows))]))))
+
 
 ;; graph-function-inputs: graph-function -> (listof (listof input/c))
 (define (graph-function-inputs a-graph-function)
   (map (lambda (a-row) (first a-row))
        (graph-function-graph a-graph-function)))
-
 
 
 ;; translate-input: X -> Y
@@ -44,7 +45,8 @@
 
 
 ;; translate-output: X -> Y
-;; Translates the output values.  If we are returning a pair of numbers,
+;; Translates the output values.
+;; If we are returning a pair of numbers,
 ;; we want to do so as a posn.
 (define (translate-output an-output)
   (cond
