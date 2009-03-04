@@ -21,7 +21,7 @@
                 "Can't be applied on inputs: ~s" 
                 inputs)]
         [(equal? (map translate-input inputs)
-                 (first (first rows)))
+                 (map translate-input (first (first rows))))
          (translate-output
           (second (first rows)))]
         [else

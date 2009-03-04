@@ -412,7 +412,15 @@
 ;; world->syntax: world -> syntax
 ;; Produces syntax from the world, if the world is to be treated as code.
 (define (world->syntax a-world)
-  (with-syntax ([ios-stx (map io->sexp (world-ios a-world))])
+  (with-syntax ([ios-stx 
+                 (for/list ([an-io (world-ios a-world)])
+                   (let ([posn (input-posn (io-input an-io))]
+                         [event (input-event (io-input an-io))]
+                         [output (io-output an-io)])
+                     (list (list (list (posn-x posn) (posn-y posn))
+                                 event)
+                           (list (posn-x output)
+                                 (posn-y output)))))])
     #'(quote ios-stx)))
 
 
