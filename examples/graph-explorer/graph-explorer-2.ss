@@ -54,7 +54,8 @@
     
     (let* ([wf (world-function a-world)]
            [f (lambda (t)
-                (list->vector (wf t)))]
+                (let ([a-posn (wf t)])
+                  (vector (posn-x a-posn) (posn-y a-posn))))]
            [a-plot (plot:plot (plot:line f 
                                          #:mode 'parametric
                                          #:t-min 0
@@ -88,8 +89,8 @@
 ;; world-function-as-lambda: world -> s-expression
 (define (world-function-as-lambda a-world)
   `(lambda (,@(map string->symbol (world-args a-world)))
-     (list ,(read (open-input-string (world-x-body a-world)))
-           ,(read (open-input-string (world-y-body a-world))))))
+     (make-posn ,(read (open-input-string (world-x-body a-world)))
+                ,(read (open-input-string (world-y-body a-world))))))
 
 
 
