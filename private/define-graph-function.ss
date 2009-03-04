@@ -3,21 +3,24 @@
 (require (for-syntax scheme/base))
 (require scheme/list
          lang/posn
-         lang/prim)
+         scheme/match
+         lang/prim
+         scheme/sandbox)
 
 ;; a row is a (list (listof input/c) output/c))
 
 
-(define-struct graph-function (name  ;; symbol
-                               graph ;; (listof row)
-                               )
+
+(define-struct tabular-graph-function (name  ;; symbol
+                                       graph ;; (listof row)
+                                       )
   #:transparent
   #:property prop:procedure 
   (lambda (a-graph-function . inputs)
-    (let loop ([rows (graph-function-graph a-graph-function)])
+    (let loop ([rows (tabular-graph-function-graph a-graph-function)])
       (cond
         [(empty? rows)
-         (error (graph-function-name a-graph-function) 
+         (error (tabular-graph-function-name a-graph-function) 
                 "Can't be applied on inputs: ~s" 
                 inputs)]
         [(equal? (map translate-input inputs)
@@ -26,12 +29,21 @@
           (second (first rows)))]
         [else
          (loop (rest rows))]))))
+  
+  
+
+(define-struct lambda-graph-function (name a-lambda-sexp lambda)
+  #:transparent
+  #:property prop:procedure
+  (lambda (a-graph-function . inputs)
+    (apply (lambda-graph-function-lambda a-graph-function) inputs)))
+
 
 
 ;; graph-function-inputs: graph-function -> (listof (listof input/c))
-(define (graph-function-inputs a-graph-function)
-  (map (lambda (a-row) (first a-row))
-       (graph-function-graph a-graph-function)))
+#;(define (graph-function-inputs a-graph-function)
+    (map (lambda (a-row) (first a-row))
+         (graph-function-graph a-graph-function)))
 
 
 ;; translate-input: X -> Y
@@ -67,7 +79,8 @@
     [(_ name a-graph)
      (identifier? #'name)
      (syntax/loc stx
-       (define-primitive name (make-graph-function 'name a-graph)))]
+       (define-primitive name 
+         (choose-graph-function 'name a-graph)))]
     [(dfg args ...)
      (raise-syntax-error #f 
                          (format "Usage: (~s name-of-function a-graph)"
@@ -75,8 +88,36 @@
                          stx)]))
 
 
+
+(define (choose-graph-function-implementation name a-graph)
+  (cond
+    [(lambda-graph? a-graph)
+     (make-lambda-graph-function name 
+                                 a-graph 
+                                 (parameterize ([sandbox-namespace-specs
+                                                 (let ([specs (sandbox-namespace-specs)])
+                                                   `(,(car specs)
+                                                     ,@(cdr specs)
+                                                     lang/posn
+                                                     ,@(if gui? '(mrlib/cache-image-snip) '())))])
+                                   (let ([my-eval (make-evaluator 'scheme/base)])
+                                     (my-eval a-graph))))]
+    [else
+     (make-tabular-graph-function name a-graph)]))
+
+
+(define (lambda-graph? a-graph)
+  (match a-graph
+    [(list (list 'lambda (list args ...) body))
+     #t]
+    [else
+     #f]))
+
+      
 (provide define-graph-function
+         
+         
          ;; Fixme: provide proper contracts
-         graph-function-inputs
-         (struct-out graph-function))
+         #; graph-function-inputs
+         #; (struct-out graph-function))
 

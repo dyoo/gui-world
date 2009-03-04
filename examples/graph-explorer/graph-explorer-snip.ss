@@ -6,7 +6,7 @@
 
 ;; world->syntax: world -> syntax
 (define (world->syntax a-world)
-  (datum->syntax #f (world-function-as-sexpression a-world)))
+  (datum->syntax #f (world-function-as-lambda a-world)))
 
 
 ;; world->bytes: world -> bytes
