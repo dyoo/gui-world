@@ -102,7 +102,7 @@
                                            lang/posn
                                            ,@(if gui? '(mrlib/cache-image-snip) '())))])
                                    (let ([my-eval 
-                                          (make-evaluator 'scheme/base)])
+                                          (make-evaluator 'lang/htdp-intermediate-lambda)])
                                      (let ([result
                                             (my-eval a-graph)])
                                        result))))]
