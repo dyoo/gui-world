@@ -1,7 +1,10 @@
-#lang scheme
+#lang scheme/base
 (require framework
          scheme/gui/base
+         scheme/match
+         scheme/class
          embedded-gui
+         scheme/async-channel
          "calm-evt.ss"
          "gui-world.ss"
          "scale-image-snip.ss"
@@ -102,21 +105,23 @@
     (define (initiate-big-bang!)
       (let* ([gui (registry-entry-gui registry-entry)]
              [ch (make-channel)]
-             [calm-evt (make-calm-evt ch)])
-        (thread 
-         (lambda ()
-           (big-bang world gui 
-                     #:dialog? #t
-                     #:on-world-change (lambda (new-world)
-                                         (channel-put ch new-world))
-                     #:on-close (lambda (new-world)
-                                  (update-the-world! new-world)
-                                  (channel-put ch new-world)))))
+             [calm-evt (make-calm-evt ch)]
+             [eventspace (make-eventspace)])
         (thread
          (lambda ()
            (let loop ()
              (update-the-world! (sync calm-evt))
-             (loop))))))
+             (loop))))
+        
+        (big-bang world gui 
+                  #:dialog? #t
+                  #:on-world-change (lambda (new-world)
+                                      (parameterize ([current-eventspace eventspace])
+                                        (queue-callback (lambda ()
+                                                          (channel-put ch new-world)))))
+                  #:on-close (lambda (new-world)
+                               (update-the-world! new-world)
+                               (channel-put ch new-world)))))
     
     
     
