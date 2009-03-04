@@ -95,14 +95,19 @@
      (make-lambda-graph-function name 
                                  a-graph 
                                  (parameterize 
-                                     ([sandbox-namespace-specs
+                                     ([sandbox-eval-limits (list #f #f)]
+                                      [sandbox-eval-handlers (list #f #f)]
+                                      [sandbox-memory-limit #f]
+                                      [sandbox-namespace-specs
                                        (let ([specs (sandbox-namespace-specs)])
                                          `(,(car specs)
                                            ,@(cdr specs)
                                            lang/posn
                                            ,@(if gui? '(mrlib/cache-image-snip) '())))])
                                    (let ([my-eval 
-                                          (make-evaluator 'lang/htdp-intermediate-lambda)])
+                                          (make-evaluator 
+                                           'scheme/base
+                                           #:requires (list 'lang/posn))])
                                      (let ([result
                                             (my-eval a-graph)])
                                        result))))]
