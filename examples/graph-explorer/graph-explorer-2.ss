@@ -1,6 +1,7 @@
 #lang scheme
 (require (prefix-in plot: plot)
          scheme/sandbox
+         lang/posn
          "../../gui-world.ss")
 
 ;; does parameteric
@@ -10,7 +11,7 @@
 
 (define WIDTH 400)
 (define HEIGHT 400)
-
+(define T-MAX 400)
 
 ;; The world consists of the name of a function and the body
 (define-struct world (name
@@ -57,9 +58,13 @@
            [a-plot (plot:plot (plot:line f 
                                          #:mode 'parametric
                                          #:t-min 0
-                                         #:t-max 10)
+                                         #:t-max T-MAX)
                               #:width WIDTH
-                              #:height HEIGHT)])
+                              #:height HEIGHT
+                              #:x-min 0
+                              #:x-max WIDTH
+                              #:y-min 0
+                              #:y-max HEIGHT)])
       (update-world-dirty? 
        (update-world-plot a-world 
                           (place-image (put-pinhole a-plot 0 0)
@@ -90,14 +95,22 @@
 
 ;; world-function: world -> (X Y ... -> number)
 (define (world-function a-world)
-  (let ([my-eval
-         (make-evaluator 
-          'lang/htdp-beginner
-          (world-function-as-sexpression a-world))])
+  (parameterize 
+      ([sandbox-namespace-specs
+        (let ([specs (sandbox-namespace-specs)])
+          `(,(car specs)
+            ,@(cdr specs)
+            lang/posn
+            ,@(if gui? '(mrlib/cache-image-snip) '())))]) 
     
-    (lambda args
-      (my-eval `(,(string->symbol (world-name a-world))
-                 ,@args)))))
+    (let ([my-eval
+           (make-evaluator 
+            'lang/htdp-beginner
+            (world-function-as-sexpression a-world))])
+      
+      (lambda args
+        (my-eval `(,(string->symbol (world-name a-world))
+                   ,@args))))))
 
 
 

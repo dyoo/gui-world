@@ -1,7 +1,8 @@
 #lang scheme
 (require (prefix-in plot: plot)
          scheme/sandbox
-         "../../gui-world.ss")
+         "../../gui-world.ss"
+         lang/posn)
 
 (provide (all-defined-out))
 
@@ -77,16 +78,23 @@
 
 ;; world-function: world -> (X Y ... -> number)
 (define (world-function a-world)
-  (let ([my-eval
-         (make-evaluator 
-          'lang/htdp-beginner
-          (world-function-as-sexpression a-world))])
-    
-    (lambda args
-      (my-eval `(,(string->symbol (world-name a-world))
-                 ,@args)))))
-
-
+  (parameterize 
+      ([sandbox-namespace-specs
+        (let ([specs (sandbox-namespace-specs)])
+          `(,(car specs)
+            ,@(cdr specs)
+            lang/posn
+            ,@(if gui? '(mrlib/cache-image-snip) '())))])
+    (let ([my-eval
+           (make-evaluator 
+            'lang/htdp-beginner
+            (world-function-as-sexpression a-world))])
+      
+      (lambda args
+        (my-eval `(,(string->symbol (world-name a-world))
+                   ,@args))))))
+  
+  
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Gui code.
