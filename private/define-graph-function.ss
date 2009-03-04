@@ -80,7 +80,7 @@
      (identifier? #'name)
      (syntax/loc stx
        (define-primitive name 
-         (choose-graph-function 'name a-graph)))]
+         (choose-graph-function-implementation 'name 'a-graph)))]
     [(dfg args ...)
      (raise-syntax-error #f 
                          (format "Usage: (~s name-of-function a-graph)"
@@ -94,29 +94,31 @@
     [(lambda-graph? a-graph)
      (make-lambda-graph-function name 
                                  a-graph 
-                                 (parameterize ([sandbox-namespace-specs
-                                                 (let ([specs (sandbox-namespace-specs)])
-                                                   `(,(car specs)
-                                                     ,@(cdr specs)
-                                                     lang/posn
-                                                     ,@(if gui? '(mrlib/cache-image-snip) '())))])
-                                   (let ([my-eval (make-evaluator 'scheme/base)])
-                                     (my-eval a-graph))))]
+                                 (parameterize 
+                                     ([sandbox-namespace-specs
+                                       (let ([specs (sandbox-namespace-specs)])
+                                         `(,(car specs)
+                                           ,@(cdr specs)
+                                           lang/posn
+                                           ,@(if gui? '(mrlib/cache-image-snip) '())))])
+                                   (let ([my-eval 
+                                          (make-evaluator 'scheme/base)])
+                                     (let ([result
+                                            (my-eval a-graph)])
+                                       result))))]
     [else
-     (make-tabular-graph-function name a-graph)]))
+     (make-tabular-graph-function name (second a-graph))]))
 
 
 (define (lambda-graph? a-graph)
   (match a-graph
-    [(list (list 'lambda (list args ...) body))
+    [(list 'lambda (list args ...) body)
      #t]
     [else
      #f]))
 
       
 (provide define-graph-function
-         
-         
          ;; Fixme: provide proper contracts
          #; graph-function-inputs
          #; (struct-out graph-function))
