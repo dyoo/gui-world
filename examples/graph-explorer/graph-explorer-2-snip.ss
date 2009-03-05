@@ -13,7 +13,7 @@
 (define (world->bytes a-world)
   (let ([op (open-output-bytes)])
     (match a-world
-      [(struct world (name args x-name x-args x-body y-name y-args y-body plot dirty?))
+      [(struct world (name args x-name x-args x-body y-name y-args y-body plot x-plot y-plot dirty?))
        (write (list name args x-name x-args x-body y-name y-args y-body dirty?) op)
        (get-output-bytes op)])))
 
@@ -24,7 +24,11 @@
     (match (read ip)
       [(list name args x-name x-args x-body y-name y-args y-body dirty?)
        (world-replot
-        (make-world name args x-name x-args x-body y-name y-args y-body (empty-scene WIDTH HEIGHT) dirty?))])))
+        (make-world name args x-name x-args x-body y-name y-args y-body 
+                    (empty-scene WIDTH HEIGHT)
+                    (empty-scene WIDTH HEIGHT)
+                    (empty-scene WIDTH HEIGHT)
+                    dirty?))])))
 
 
 ;; world->thumbnail: world -> scene
