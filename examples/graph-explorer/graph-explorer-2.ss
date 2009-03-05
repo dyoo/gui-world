@@ -22,7 +22,10 @@
                       y-name
                       y-args
                       y-body
-                      plot dirty?) #:transparent)
+                      plot
+                      x-plot
+                      y-plot
+                      dirty?) #:transparent)
 (define-updaters world)
 
 (define initial-world 
@@ -33,30 +36,31 @@
               "y" (list "t")
               "t"
               (empty-scene WIDTH HEIGHT)
+              (empty-scene WIDTH HEIGHT)
+              (empty-scene WIDTH HEIGHT)
               #t))
 
+
+;; 2d-plot->scene: 2d-plot -> scene
+(define (2d-plot->scene a-plot)
+  (place-image (put-pinhole a-plot 0 0)
+               0
+               0
+               (empty-scene (image-width a-plot)
+                            (image-height a-plot))))
+  
 
 ;; world-replot: world -> world
 (define (world-replot a-world)
   (with-handlers ([void
                    (lambda (exn)
-                     (raise exn)
-                     #;(let ([error-msg-text 
-                              (text (exn-message exn) 10 "black")])
-                         (update-world-dirty?
-                          (update-world-plot a-world
-                                             (place-image error-msg-text
-                                                          0
-                                                          0
-                                                          (empty-scene WIDTH
-                                                                       HEIGHT)))
-                          #f)))])
-    
+                     (raise exn))])
     (let* ([wf (world-function a-world)]
            [f (lambda (t)
                 (let ([a-posn (wf t)])
                   (vector (posn-x a-posn) (posn-y a-posn))))]
-           [a-plot (plot:plot (plot:line f 
+           [a-plot (2d-plot->scene
+                    (plot:plot (plot:line f 
                                          #:mode 'parametric
                                          #:t-min 0
                                          #:t-max T-MAX)
@@ -65,14 +69,37 @@
                               #:x-min 0
                               #:x-max WIDTH
                               #:y-min 0
-                              #:y-max HEIGHT)])
+                              #:y-max HEIGHT))]
+           [an-x-plot (2d-plot->scene
+                       (plot:plot (plot:line (lambda (t) (posn-x (wf t)))
+                                            #:t-min 0
+                                            #:t-max T-MAX)
+                                 #:width WIDTH
+                                 #:height HEIGHT
+                                 #:x-label "t"
+                                 #:x-min 0
+                                 #:x-max WIDTH
+                                 #:y-label "x"
+                                 #:y-min 0
+                                 #:y-max HEIGHT))]
+           [a-y-plot (2d-plot->scene
+                      (plot:plot (plot:line (lambda (t) (posn-y (wf t))) 
+                                           #:t-min 0
+                                           #:t-max T-MAX)
+                                #:width WIDTH
+                                #:height HEIGHT
+                                #:x-label "t"
+                                #:x-min 0
+                                #:x-max WIDTH
+                                #:y-label "y"
+                                #:y-min 0
+                                #:y-max HEIGHT))])
       (update-world-dirty? 
-       (update-world-plot a-world 
-                          (place-image (put-pinhole a-plot 0 0)
-                                       0
-                                       0
-                                       (empty-scene (image-width a-plot)
-                                                    (image-height a-plot))))
+       (update-world-y-plot
+        (update-world-x-plot
+         (update-world-plot a-world a-plot)
+         an-x-plot)
+        a-y-plot)
        #f))))
 
 
@@ -138,7 +165,7 @@
 
 
 ;; on-canvas-redraw: world -> scene
-(define (on-canvas-redraw a-world)
+(define ((on-canvas-redraw world-plot-selector) a-world)
   (cond
     [(world-dirty? a-world)
      (let* ([out-of-sync-text (text "Out of sync" 10 "black")])
@@ -150,9 +177,9 @@
                                                "yellow")
                                  0
                                  0
-                                 (world-plot a-world))))]
+                                 (world-plot-selector a-world))))]
     [else
-     (world-plot a-world)]))
+     (world-plot-selector a-world)]))
 
 
 ;; define-function-message: world -> string
@@ -166,21 +193,22 @@
 
 (define view
   (col
-   (canvas on-canvas-redraw)
    
-   (col (row "(define (" 
-             (message world-x-name)
-             (message (lambda (a-world)
-                        (string-join (world-x-args a-world) " ")))
-             ")")
-        (row (text-field world-x-body on-x-text-field-change) ")"))
-
-   (col (row "(define (" 
-             (message world-y-name)
-             (message (lambda (a-world)
-                        (string-join (world-y-args a-world) " ")))
-             ")")
-        (row (text-field world-y-body on-y-text-field-change) ")"))
+   (row (col (canvas (on-canvas-redraw world-x-plot))
+             (row "(define (" 
+                  (message world-x-name)
+                  (message (lambda (a-world)
+                             (string-join (world-x-args a-world) " ")))
+                  ")")
+             (row (text-field world-x-body on-x-text-field-change) ")"))
+        
+        (col (canvas (on-canvas-redraw world-y-plot))
+             (row "(define (" 
+                  (message world-y-name)
+                  (message (lambda (a-world)
+                             (string-join (world-y-args a-world) " ")))
+                  ")")
+             (row (text-field world-y-body on-y-text-field-change) ")")))
 
    
    (button "Replot" on-replot-button-pressed)))
