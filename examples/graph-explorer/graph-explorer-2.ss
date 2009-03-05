@@ -195,19 +195,21 @@
   (col
    
    (row (col (canvas (on-canvas-redraw world-x-plot))
-             (row "(define (" 
-                  (message world-x-name)
-                  (message (lambda (a-world)
-                             (string-join (world-x-args a-world) " ")))
-                  ")")
+             (row (message (lambda (w)
+                             (string-append "(define (" 
+                                            (world-x-name w)
+                                            " "
+                                            (string-join (world-x-args w) " ")
+                                            ")"))))
              (row (text-field world-x-body on-x-text-field-change) ")"))
         
         (col (canvas (on-canvas-redraw world-y-plot))
-             (row "(define (" 
-                  (message world-y-name)
-                  (message (lambda (a-world)
-                             (string-join (world-y-args a-world) " ")))
-                  ")")
+             (row (message (lambda (w)
+                             (string-append "(define (" 
+                                            (world-y-name w)
+                                            " "
+                                            (string-join (world-y-args w) " ")
+                                            ")"))))
              (row (text-field world-y-body on-y-text-field-change) ")")))
 
    
