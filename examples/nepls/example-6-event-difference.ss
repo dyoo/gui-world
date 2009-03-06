@@ -6,7 +6,10 @@
 
 ;; f: posn event -> posn
 (define-graph-function f 
-  ...)
+  
+  
+  
+  )
 
 
 

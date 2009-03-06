@@ -7,5 +7,7 @@
 
 ;; f: number -> posn
 (define-graph-function f 
-  ...
+  
+  
+  
   )
