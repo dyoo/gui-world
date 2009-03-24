@@ -98,8 +98,8 @@
                                  a-graph 
                                  (parameterize 
                                      ([sandbox-eval-limits (list #f #f)]
-                                      [sandbox-eval-handlers (list #f #f)]
-                                      [sandbox-memory-limit #f]
+                                      #;[sandbox-eval-handlers (list #f #f)]
+                                      #;[sandbox-memory-limit #f]
                                       [sandbox-namespace-specs
                                        (let ([specs (sandbox-namespace-specs)])
                                          `(,(car specs)
