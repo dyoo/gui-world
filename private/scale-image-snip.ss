@@ -2,7 +2,7 @@
 (require scheme/class
          scheme/gui/base)
 
-(require (prefix-in slideshow: slideshow))
+(require (prefix-in slideshow: slideshow/pict))
 
 ;; scale-image-snip: image-snip number number -> image-snip
 ;; Scales an image snip

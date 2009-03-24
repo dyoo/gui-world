@@ -1,7 +1,8 @@
 #lang scheme
 (require (prefix-in plot: plot)
          scheme/sandbox
-         "../../gui-world.ss")
+         "../../gui-world.ss"
+         lang/posn)
 
 (provide (all-defined-out))
 
@@ -9,6 +10,7 @@
 (define WIDTH 400)
 (define HEIGHT 400)
 
+(define MAX-TIME 400)
 
 ;; The world consists of the name of a function and the body
 (define-struct world (name args body plot dirty?) #:transparent)
@@ -16,7 +18,7 @@
 
 (define initial-world 
   (make-world "y" (list "x") 
-              "x"
+              "200"
               (empty-scene WIDTH HEIGHT)
               #t))
 
@@ -38,9 +40,15 @@
                           #f)))])
     
     (let* ([a-plot (plot:plot (plot:line 
-                               (world-function a-world))
+                               (world-function a-world)
+                               #:t-min 0
+                               #:t-max MAX-TIME)
                               #:width WIDTH
-                              #:height HEIGHT)])
+                              #:height HEIGHT
+                              #:x-min 0
+                              #:x-max WIDTH
+                              #:y-min 0
+                              #:y-max HEIGHT)])
       (update-world-dirty? 
        (update-world-plot a-world 
                           (place-image (put-pinhole a-plot 0 0)
@@ -70,16 +78,23 @@
 
 ;; world-function: world -> (X Y ... -> number)
 (define (world-function a-world)
-  (let ([my-eval
-         (make-evaluator 
-          'lang/htdp-beginner
-          (world-function-as-sexpression a-world))])
-    
-    (lambda args
-      (my-eval `(,(string->symbol (world-name a-world))
-                 ,@args)))))
-
-
+  (parameterize 
+      ([sandbox-namespace-specs
+        (let ([specs (sandbox-namespace-specs)])
+          `(,(car specs)
+            ,@(cdr specs)
+            lang/posn
+            ,@(if gui? '(mrlib/cache-image-snip) '())))])
+    (let ([my-eval
+           (make-evaluator 
+            'lang/htdp-beginner
+            (world-function-as-sexpression a-world))])
+      
+      (lambda args
+        (my-eval `(,(string->symbol (world-name a-world))
+                   ,@args))))))
+  
+  
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Gui code.

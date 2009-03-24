@@ -61,44 +61,58 @@
 
 ;; render-canvas: world -> scene
 ;; Renders the canvas containing all the posns.
-(define (render-canvas a-world)
+(define (render-canvas a-world #:as-thumbnail (as-thumbnail #f))
   (render-canvas-ios a-world 
                      (world-ios a-world)
-                     (empty-scene CANVAS-WIDTH CANVAS-HEIGHT)))
+                     (empty-scene CANVAS-WIDTH CANVAS-HEIGHT)
+                     #:as-thumbnail as-thumbnail))
 
 
 
 ;; render-canvas-ios: world (listof ios) scene -> scene
-(define (render-canvas-ios a-world ios a-scene)
+(define (render-canvas-ios a-world ios a-scene #:as-thumbnail (as-thumbnail #f))
   (cond
     [(empty? ios)
      a-scene]
     [else
      (render-canvas-ios a-world 
                         (rest ios)
-                        (draw-canvas-posn a-world (first ios) a-scene))]))
+                        (draw-canvas-posn a-world (first ios) a-scene
+                                          #:as-thumbnail as-thumbnail)
+                        #:as-thumbnail as-thumbnail)]))
 
 ;; draw-canvas-io: world posn scene -> scene
-(define (draw-canvas-posn a-world an-io a-scene)
-  (cond [(= (world-current-input a-world) (io-input an-io))
-         
-         (place-image (text (io->string an-io (world-input-name a-world)) 10 "purple")
-                      (coordinate-x->canvas-x a-world (posn-x (io-output an-io)))
-                      (coordinate-y->canvas-y a-world (posn-y (io-output an-io)))
-                      (place-image (circle 2 "solid" (io-color an-io (world-current-input a-world)))
-                                   (coordinate-x->canvas-x a-world (posn-x (io-output an-io)))
-                                   (coordinate-y->canvas-y a-world (posn-y (io-output an-io)))
-                                   a-scene))]
-        [else
-         (place-image (text (string-append "f(" (number->string (io-input an-io)) ")")
-                            10 "lightgray")
-                      (coordinate-x->canvas-x a-world (posn-x (io-output an-io)))
-                      (coordinate-y->canvas-y a-world (posn-y (io-output an-io)))
-                      
-                      (place-image (circle 2 "solid" (io-color an-io (world-current-input a-world)))
-                                   (coordinate-x->canvas-x a-world (posn-x (io-output an-io)))
-                                   (coordinate-y->canvas-y a-world (posn-y (io-output an-io)))
-                                   a-scene))]))
+(define (draw-canvas-posn a-world an-io a-scene
+                          #:as-thumbnail (as-thumbnail #f))
+  (cond
+    [as-thumbnail
+     (place-image (text (string-append "f(" (number->string (io-input an-io)) ")")
+                        20 "blue")                         
+                  (coordinate-x->canvas-x a-world (posn-x (io-output an-io)))
+                  (coordinate-y->canvas-y a-world (posn-y (io-output an-io)))
+                  (place-image (circle 10 "solid" "black")
+                               (coordinate-x->canvas-x a-world (posn-x (io-output an-io)))
+                               (coordinate-y->canvas-y a-world (posn-y (io-output an-io)))
+                               a-scene))]
+    [else
+     (cond [(= (world-current-input a-world) (io-input an-io))         
+            (place-image (text (io->string an-io (world-input-name a-world)) 10 "purple")
+                         (coordinate-x->canvas-x a-world (posn-x (io-output an-io)))
+                         (coordinate-y->canvas-y a-world (posn-y (io-output an-io)))
+                         (place-image (circle 2 "solid" (io-color an-io (world-current-input a-world)))
+                                      (coordinate-x->canvas-x a-world (posn-x (io-output an-io)))
+                                      (coordinate-y->canvas-y a-world (posn-y (io-output an-io)))
+                                      a-scene))]
+           [else
+            (place-image (text (string-append "f(" (number->string (io-input an-io)) ")")
+                               10 "lightgray")
+                         (coordinate-x->canvas-x a-world (posn-x (io-output an-io)))
+                         (coordinate-y->canvas-y a-world (posn-y (io-output an-io)))
+                         
+                         (place-image (circle 2 "solid" (io-color an-io (world-current-input a-world)))
+                                      (coordinate-x->canvas-x a-world (posn-x (io-output an-io)))
+                                      (coordinate-y->canvas-y a-world (posn-y (io-output an-io)))
+                                      a-scene))])]))
 
 
 
@@ -240,7 +254,7 @@
 
 ;; world->thumbnail: world -> scene
 (define (world->thumbnail a-world)
-  (render-canvas a-world))
+  (render-canvas a-world #:as-thumbnail #t))
 
 
 

@@ -44,8 +44,13 @@
            "gui-world" "examples" "graph-function"))
     
     (register-gui-world-sniptype!
-     "number -> number"
+     "number -> number (graph explorer)"
      '(lib "graph-explorer-snip.ss"
+           "gui-world" "examples" "graph-explorer"))
+    
+    (register-gui-world-sniptype!
+     "number -> posn (graph explorer)"
+     '(lib "graph-explorer-2-snip.ss"
            "gui-world" "examples" "graph-explorer")))
 
       

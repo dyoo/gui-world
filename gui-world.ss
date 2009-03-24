@@ -2,7 +2,7 @@
 (require "private/gui-world.ss"
          "private/accessor.ss"
          "private/prim.ss"
-         "private/define-graph-function.ss"
+         "support.ss"
          "private/arrow.ss"
          htdp/image
          (only-in htdp/world key=? key-event?))

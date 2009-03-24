@@ -2,7 +2,7 @@
 
 (require scheme/match
          "../../gui-world.ss"
-         "graph-explorer.ss")
+         "graph-explorer-2.ss")
 
 ;; world->syntax: world -> syntax
 (define (world->syntax a-world)
@@ -13,8 +13,8 @@
 (define (world->bytes a-world)
   (let ([op (open-output-bytes)])
     (match a-world
-      [(struct world (name args body plot dirty?))
-       (write (list name args body dirty?) op)
+      [(struct world (name args x-name x-args x-body y-name y-args y-body plot x-plot y-plot dirty?))
+       (write (list name args x-name x-args x-body y-name y-args y-body dirty?) op)
        (get-output-bytes op)])))
 
 
@@ -22,9 +22,13 @@
 (define (bytes->world some-bytes)
   (let ([ip (open-input-bytes some-bytes)])
     (match (read ip)
-      [(list name args body dirty?)
+      [(list name args x-name x-args x-body y-name y-args y-body dirty?)
        (world-replot
-        (make-world name args body (empty-scene WIDTH HEIGHT) dirty?))])))
+        (make-world name args x-name x-args x-body y-name y-args y-body 
+                    (empty-scene WIDTH HEIGHT)
+                    (empty-scene WIDTH HEIGHT)
+                    (empty-scene WIDTH HEIGHT)
+                    dirty?))])))
 
 
 ;; world->thumbnail: world -> scene

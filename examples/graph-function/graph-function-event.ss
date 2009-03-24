@@ -28,6 +28,10 @@
 (define (string->event an-str)
   (string->symbol an-str))
 
+(define (event=? an-evt-1 an-evt-2)
+  (equal? an-evt-1 an-evt-2))
+
+
 
 
 ;; A mode is one of the following: 
@@ -38,7 +42,8 @@
 (define mode:create-io "create-io")
 (define mode:update-input-position "update-input-position")
 (define mode:update-output-position "update-output-position")
-
+(define (mode=? m1 m2)
+  (string=? m1 m2))
 
 
 ;;  A world consists of the bounds on the graph.
@@ -74,8 +79,8 @@
 (define (input=? input-1 input-2)
   (and (posn=? (input-posn input-1) 
                (input-posn input-2))
-       (string=? (input-event input-1) 
-                 (input-event input-2))))
+       (event=? (input-event input-1) 
+                (input-event input-2))))
 
 
 
@@ -296,24 +301,24 @@
 ;; world-status-string: world -> string
 (define (world-status-string a-world)
   (cond
-    [(string=? (world-mode a-world) mode:create-io)
+    [(mode=? (world-mode a-world) mode:create-io)
      "Creating a new case"]
-    [(string=? (world-mode a-world) mode:update-input-position)
+    [(mode=? (world-mode a-world) mode:update-input-position)
      "Updating the input"]
-    [(string=? (world-mode a-world) mode:update-output-position)
+    [(mode=? (world-mode a-world) mode:update-output-position)
      "Updating the output"]))
 
 
 ;; on-canvas-clicked: world number number -> world
 (define (on-canvas-clicked a-world x y)
   (cond
-    [(string=? (world-mode a-world) mode:create-io)
+    [(mode=? (world-mode a-world) mode:create-io)
      (update-world-mode (world-create-io a-world (snap-to-grid x) (snap-to-grid y))
                         mode:update-output-position)]
-    [(string=? (world-mode a-world) mode:update-input-position)
+    [(mode=? (world-mode a-world) mode:update-input-position)
      (world-update-current-input-position a-world
                                  (canvas-posn->coordinate-posn a-world (make-posn (snap-to-grid x) (snap-to-grid y))))]
-    [(string=? (world-mode a-world) mode:update-output-position)
+    [(mode=? (world-mode a-world) mode:update-output-position)
      (world-update-current-output-position a-world
                                   (canvas-posn->coordinate-posn a-world (make-posn (snap-to-grid x) (snap-to-grid y))))]))
 
@@ -341,17 +346,17 @@
 
 ;; create-button-selectable?: world -> boolean
 (define (create-button-selectable? a-world)
-  (not (string=? (world-mode a-world) mode:create-io)))
+  (not (mode=? (world-mode a-world) mode:create-io)))
 
 ;; input-button-selectable?: world -> boolean
 (define (input-button-selectable? a-world)
   (and (not (empty? (world-ios a-world)))
-       (not (string=? (world-mode a-world) mode:update-input-position))))
+       (not (mode=? (world-mode a-world) mode:update-input-position))))
 
 ;; output-button-selectable?: world -> boolean
 (define (output-button-selectable? a-world)
   (and (not (empty? (world-ios a-world)))
-       (not (string=? (world-mode a-world) mode:update-output-position))))
+       (not (mode=? (world-mode a-world) mode:update-output-position))))
 
 
 ;; world-input-event: world -> event
@@ -368,7 +373,7 @@
 ;; world-input-event-enabled?: world -> boolean
 (define (world-input-event-enabled? a-world)
   (and (not (empty? (world-ios a-world)))
-       (not (string=? (world-mode a-world) mode:create-io))))
+       (not (mode=? (world-mode a-world) mode:create-io))))
 
 
 ;; input-event-choices: world -> (listof event)
@@ -412,7 +417,15 @@
 ;; world->syntax: world -> syntax
 ;; Produces syntax from the world, if the world is to be treated as code.
 (define (world->syntax a-world)
-  (with-syntax ([ios-stx (map io->sexp (world-ios a-world))])
+  (with-syntax ([ios-stx 
+                 (for/list ([an-io (world-ios a-world)])
+                   (let ([posn (input-posn (io-input an-io))]
+                         [event (input-event (io-input an-io))]
+                         [output (io-output an-io)])
+                     (list (list (list (posn-x posn) (posn-y posn))
+                                 event)
+                           (list (posn-x output)
+                                 (posn-y output)))))])
     #'(quote ios-stx)))
 
 
