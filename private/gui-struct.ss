@@ -169,12 +169,12 @@
 
 (define (box-group/enabled val a-gui [enabled? #t])
   (make-box-group-elt (wrap-primitive 'box-group/enabled displayable? val)
-                      a-gui
+                      (coerse-primitive-to-elt a-gui)
                       (wrap-primitive 'box-group/enabled boolean? enabled?)))
 
 (define (box-group val a-gui)
   (make-box-group-elt (wrap-primitive 'box-group displayable? val)
-                      a-gui
+                      (coerse-primitive-to-elt a-gui)
                       (wrap-primitive 'box-group boolean? #t)))
 
 
