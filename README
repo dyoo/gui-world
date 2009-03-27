@@ -1,17 +1,48 @@
-function-graph
----
-
-Installation: you'll need to sym-link the Dropbox/work/gui-world as
-the "gui-world" collection, and run setup-plt afterwards so DrScheme
-knows about it.  Afterwards, restart DrScheme.
+GUI-World: functional library for GUIs.
 
 
-Usage: The Insert menu should have an "Insert Graph Function" item.
-Running it should insert an Edit button; pressing Edit will drive the
-gui-world program.
+GUI-World is a PLT Scheme GUI library that allows one to write
+graphical programs in the style of the World teachpack.  For example,
 
-You should be able to define functions as
+    (require (lib "gui-world.ss" "gui-world"))
 
-   (define f <<Edit>>)
+    ;; show-message: world -> string
+    (define (show-message w)
+      (string-append "I see: " (number->string w)))
 
-where <<Edit>> is the graphical snip.
+    ;; The world is a number, initially 0.
+    (define initial-world 0)
+
+    ;; The view is a message and a button to increment
+    ;; the world.
+    (define view (col (message show-message)
+                      (button "Press me!" add1)))
+
+    (big-bang initial-world view)
+
+
+is a simple program that shows a message and a button for changing
+the message's contents.
+
+
+Installation:
+
+    1.  Grab the sources from github.com.  The repository's home is in:
+
+    http://github.com/dyoo/gui-world/tree/master
+
+
+    For example:
+
+       $ git clone git://github.com/dyoo/gui-world.git
+
+
+    2.  Symbolically link the gui-world directory into the collects of
+    your PLT Scheme installation.
+
+    For example, if gui-world is under the home directory, and PLT Scheme
+    under the ~/local/plt directory, then the command:
+
+        $ ln -s ~/gui-world ~/local/plt/collects/gui-world
+
+    will set up the necessary symbolic link.

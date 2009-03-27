@@ -1,0 +1,19 @@
+
+
+function-graph
+---
+
+Installation: you'll need to sym-link the Dropbox/work/gui-world as
+the "gui-world" collection, and run setup-plt afterwards so DrScheme
+knows about it.  Afterwards, restart DrScheme.
+
+
+Usage: The Insert menu should have an "Insert Graph Function" item.
+Running it should insert an Edit button; pressing Edit will drive the
+gui-world program.
+
+You should be able to define functions as
+
+   (define f <<Edit>>)
+
+where <<Edit>> is the graphical snip.
