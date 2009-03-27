@@ -1,4 +1,5 @@
 GUI-World: functional library for GUIs.
+----------------------------------------------------------------------
 
 
 GUI-World is a PLT Scheme GUI library that allows one to write
@@ -46,3 +47,77 @@ Installation:
         $ ln -s ~/gui-world ~/local/plt/collects/gui-world
 
     will set up the necessary symbolic link.
+
+
+----------------------------------------------------------------------
+
+
+
+A 'gui' is one of the following:
+
+     (row (listof gui))
+
+   | (col (listof gui))
+
+   | (message (gvalueof string))            ;; label text
+
+   | (box-group (gvalueof string)           ;; label text
+                gui                         ;; the inner gui
+                (gvalueof boolean?))        ;; enabled?
+
+   | (canvas (gvalueof scene)               ;; the displayed scene
+             (gcallbackof-2 number number)) ;; on-click callback
+
+   | (button (gvalueof string)              ;; label text
+             gcallbackof-0                  ;; button press callback
+             (gvalueof boolean))            ;; enabled?
+
+   | (slider (gvalueof number)              ;; current value
+             (gvalueof number)              ;; min
+             (gvalueof number)              ;; max
+             (gcallbackof-1 number)         ;; slider moved callback
+             (gvalueof boolean))            ;; enabled?
+
+   | (drop-down (gvalueof string)           ;; current value
+                (gvalueof (listof string))  ;; choices
+                (gcallbackof-1 string)      ;; selection callback
+                (gvalueof boolean))         ;; enabled?
+
+   | (text-field (gvalueof string)          ;; text
+                 (gcallbackof-1 string)     ;; text changed callback
+                 (gvalueof boolean))        ;; enabled?
+
+   | (checkbox (gvalueof string)            ;; label
+               (gvalueof boolean)           ;; current checked value
+               (gcallbackof-1 boolean)      ;; callback
+               (gvalueof boolean))          ;; enabled?
+
+where:
+
+    (gcallbackof-0 t): world -> world
+    (gcallbackof-1 t): world t -> world
+    (gcallbackof-2 t1 t2): world t1 t2 -> world
+    (gvalueof t): world -> t
+
+A gui is a declarative definition of the view and controller of a
+graphical program.  The gvalueof functions map the world model to the
+view.  The gcallbackof functions map controller actions to the world
+model.  The gui's display is refreshed whenever a user acts on the
+controller, or when the current world changes.
+
+
+Syntactic sugar: literals put in gvalueof position are treated as the
+constant function that returns that value.  i.e.:
+
+    (message "hello world")
+
+should be treated as:
+
+    (message (lambda (a-world) "hello world"))
+
+
+To hook into the world system, we provide:
+
+    big-bang: world gui -> ???   ;; FIXME
+
+which consumes an initial world and a gui.
