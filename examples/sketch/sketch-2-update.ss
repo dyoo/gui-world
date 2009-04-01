@@ -150,5 +150,5 @@
    (button "down" change-direction-down)
    (button "shake!" shake-to-clear)))
 
-(big-bang initial-world a-gui)
-(on-tick 1/20 move-by-drifting)
+(big-bang initial-world a-gui
+          (on-tick 1/20 move-by-drifting))

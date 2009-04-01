@@ -142,8 +142,9 @@
     (thread-send *on-tick-thread* 'shutdown)))
 
 
-;; big-bang: world gui -> void
-;; Shows the frame, creates the initial world.
+;; big-bang: world gui -> world
+;; Shows the frame, creates the initial world.  When the frame
+;; is closed or stop-when is evaluated, returns the last world.
 (define (big-bang initial-world a-gui
                   #:dialog? (dialog? #f)
                   #:on-world-change (on-world-change (lambda (a-world) (void)))

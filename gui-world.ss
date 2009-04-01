@@ -14,7 +14,9 @@
 
 (provide-higher-order-primitive on-tick (_ on-tick-handler))
 
-(provide-higher-order-primitive on-key-event (key-handler))
+(provide-higher-order-primitive on-key (key-handler))
+
+(provide-higher-order-primitive stop-when (handler))
 
 (provide-primitive elt?)
 
@@ -66,6 +68,7 @@
          (all-from-out "private/arrow.ss"))
 
 
+(provide-primitive place-image/posn)
 
 (provide get/accessor
          update/accessor
