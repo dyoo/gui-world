@@ -30,5 +30,5 @@
      world]))
 
 
-(big-bang "???" view)
-(on-key-event handle-key)
+(big-bang "???" view
+          (on-key handle-key))

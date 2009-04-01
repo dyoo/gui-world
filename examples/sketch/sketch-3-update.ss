@@ -157,5 +157,5 @@
    (button "shake!" shake-to-clear)
    (drop-down world-color COLORS update-world-color)))
 
-(big-bang initial-world a-gui)
-(on-tick 1/20 move-by-drifting)
+(big-bang initial-world a-gui
+          (on-tick 1/20 move-by-drifting))

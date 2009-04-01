@@ -469,5 +469,5 @@
 
 
 
-(big-bang initial-world a-main-gui)
-(on-tick 1/2 toggle-blinking)
+(big-bang initial-world a-main-gui
+          (on-tick 1/2 toggle-blinking))
