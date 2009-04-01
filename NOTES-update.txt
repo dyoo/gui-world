@@ -79,6 +79,11 @@ a-selector, so the definition desugars to:
 which is not the intended update.
 
 
+----------------------------------------------------------------------
+
+Accessors
+
+
 A proposed solution to the higher-order problem is to use the concept
 of an accessor.  An accessor is a
 
@@ -103,6 +108,7 @@ update/accessor are defined to get and update a specific field:
 ;; update/accessor: (accessorof world X) world X -> world
 (define (update/accessor an-accessor a-world a-val)
   ((accessor-updater an-accessor) a-world a-val))
+
 
 
 Accessors can be composed by chaining them:
