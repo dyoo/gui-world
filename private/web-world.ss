@@ -14,6 +14,23 @@
          "gui-struct.ss"
          "world-support.ss")
 
+(define image-directory
+  (make-parameter
+   (find-system-path 'temp-dir)))
+
+; scene->file : scene path -> path
+; saves the scene to file in the directory and returns the path
+(define (scene->file s dir)
+  (define filepath (make-temporary-file	"tmp~a.png" #f dir))
+  (define width (image-width s))
+  (define height (image-height s))
+  (define bm (make-object bitmap% width height))
+  (define dc (make-object bitmap-dc% bm))
+  (send dc clear)
+  (send s draw dc 0 0 0 0 width height 0 0 #f)
+  (send bm save-file filepath 'png)
+  filepath)
+
 (define (gui->render an-elt)
   (match an-elt
     [(struct row-elt (elts))
@@ -36,14 +53,31 @@
      (lambda (world embed/url)
        (val-f world))]    
     [(struct canvas-elt (scene-f callback))
-     ; XXX
-     (error 'canvas "Can't implement a canvas yet")]    
+     (lambda (world embed/url)
+       ; XXX Maybe we can be smart by hashing the scene so we generate fewer images
+       (define the-scene (scene-f world))
+       (define image-path (scene->file the-scene (image-directory)))
+       (define-values (base file-name must-be-dir?) (split-path image-path))
+       (define name (symbol->string (gensym 'img)))
+       `(form ([action
+                ,(embed/url
+                  (lambda (req)
+                    (define (get-pos f)
+                      ; XXX Better error checking
+                      (string->number
+                       (bytes->string/utf-8
+                        (binding:form-value
+                         (bindings-assq (string->bytes/utf-8 f)
+                                        (request-bindings/raw req))))))
+                    (define x-pos (get-pos (format "~a.x" name)))
+                    (define y-pos (get-pos (format "~a.y" name)))
+                    (callback world x-pos y-pos)))])
+              (input ([type "image"] [name ,name] [src ,(format "/~a" file-name)]))))]
     [(struct button-elt (val-f callback enabled?-f))
      (lambda (world embed/url)
        `(form ([action 
                 ,(embed/url
                   (lambda (req)
-                    (printf "Button click!~n")
                     (callback world)))]
                [method "post"])
               (input ([type "submit"]
@@ -60,6 +94,7 @@
                 ,(embed/url
                   (lambda (req)
                     (callback
+                     world
                      ; XXX Better error checking
                      (bytes->string/utf-8
                       (binding:form-value
@@ -85,6 +120,7 @@
                   (lambda (req)
                     (printf "text-field!~n")
                     (callback
+                     world
                      ; XXX Better error checking
                      (bytes->string/utf-8
                       (binding:form-value
@@ -111,9 +147,9 @@
                         (bindings-assq (string->bytes/utf-8 name)
                                        (request-bindings/raw req))
                       [#f
-                       (callback #f)]
+                       (callback world #f)]
                       [_
-                       (callback #t)])))]
+                       (callback world #t)])))]
                [method "post"])
               ; XXX How to force submit?
               (input ([name ,name]
@@ -139,7 +175,9 @@
            `(html
              (body
               ,(render world 
-                       embed/url))))))))))
+                       embed/url))))))))
+   #:extra-files-paths
+   (list (image-directory))))
 
 ;; on-tick: number (world -> world) -> void
 (define (on-tick freq callback)
