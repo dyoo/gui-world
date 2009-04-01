@@ -40,13 +40,15 @@
 (define *window* #f)
 (define *eventspace* #f)
 
-
+(define *stopped?* #f)
 (define *on-tick-callback* #f)
 (define *on-tick-frequency* #f)
 (define *on-tick-thread* #f)
 (define *on-key-event-callback* #f)
 (define *on-world-change* #f)
 (define *on-close* #f)
+(define *stop-when* #f)
+(define *last-world-ch* (make-channel))
 
 ;                       
 ;                       
@@ -79,7 +81,10 @@
                              (raise exn))])
        (set! *world* (new-world-f *world*))
        (refresh-widgets!)
-       (*on-world-change* *world*)))))
+       (*on-world-change* *world*)
+       (when (and *stop-when* (*stop-when* *world*))
+         (set! *stopped?* #t)
+         (thread (lambda () (channel-put *last-world-ch* *world*))))))))
 
 
 
@@ -91,36 +96,44 @@
                                                 (send a-key-event get-key-code))))))
 
 
-;; on-key-event: (world key -> world) -> void
-(define (on-key-event callback)
-  (set! *on-key-event-callback* callback))
+(define (stop-when callback)
+  (lambda ()
+    (set! *stop-when* callback)))
 
-;; on-tick: number (world -> world) -> void
+;; on-key: (world key -> world) -> (-> void)
+(define (on-key callback)
+  (lambda ()
+    (set! *on-key-event-callback* callback)))
+
+
+;; on-tick: number (world -> world) -> (-> void)
 (define (on-tick freq callback)
-  (set! *on-tick-frequency* freq)
-  (set! *on-tick-callback* callback)
-  (set! *on-tick-thread*
-        (thread (lambda ()
-                  (define (new-alarm-evt)
-                    (alarm-evt (+ (current-inexact-milliseconds) (* 1000 *on-tick-frequency*))))
-                  
-                  (let loop ([an-alarm-evt (new-alarm-evt)])
-                    (sync (handle-evt an-alarm-evt 
-                                      (lambda (_)
-                                        ;; We run this at low priority, to avoid fighting
-                                        ;; gui callbacks.
-                                        (parameterize ([current-eventspace *eventspace*])
-                                          (queue-callback 
-                                           (lambda ()
-                                             (change-world/f! (lambda (a-world)
-                                                                (*on-tick-callback* a-world))))
-                                           #f))
-                                        (loop (new-alarm-evt))))
-                          (handle-evt (thread-receive-evt)
-                                      (lambda (msg)
-                                        ;; Stops the thread.
-                                        (void))))))))
-  (void))
+  (lambda ()
+    (set! *on-tick-frequency* freq)
+    (set! *on-tick-callback* callback)
+    (set! *on-tick-thread*
+          (thread (lambda ()
+                    (define (new-alarm-evt)
+                      (alarm-evt (+ (current-inexact-milliseconds) (* 1000 *on-tick-frequency*))))
+                    
+                    (let loop ([an-alarm-evt (new-alarm-evt)])
+                      (sync (handle-evt an-alarm-evt 
+                                        (lambda (_)
+                                          ;; We run this at low priority, to avoid fighting
+                                          ;; gui callbacks.
+                                          (parameterize ([current-eventspace *eventspace*])
+                                            (queue-callback 
+                                             (lambda ()
+                                               (change-world/f! (lambda (a-world)
+                                                                  (*on-tick-callback* a-world))))
+                                             #f))
+                                          (when (not *stopped?*)
+                                            (loop (new-alarm-evt)))))
+                            (handle-evt (thread-receive-evt)
+                                        (lambda (msg)
+                                          ;; Stops the thread.
+                                          (void))))))))
+    (void)))
 
 
 ;; shutdown-on-tick-thread: -> void
@@ -134,7 +147,10 @@
 (define (big-bang initial-world a-gui
                   #:dialog? (dialog? #f)
                   #:on-world-change (on-world-change (lambda (a-world) (void)))
-                  #:on-close (on-close (lambda (a-world) (void))))
+                  #:on-close (on-close (lambda (a-world) (void)))
+                  . registry-hooks)
+  (set! *stopped?* #f)
+  (set! *last-world-ch* (make-channel))
   (set! *world* initial-world)
   (set! *gui* a-gui)
   (set! *eventspace* (current-eventspace))
@@ -145,8 +161,12 @@
   (render-elt! *gui* *window*)
   (change-world/f! (lambda (a-world)
                      initial-world))
+  
+  (for-each (lambda (t) (t)) registry-hooks)
   ;; WARNING: this must be last, to avoid conflict with the dialog's modal behavior.
-  (send *window* show #t))
+  (send *window* show #t)
+  (yield *last-world-ch*))
+
 
 
 ;; refresh-widgets!: -> void
@@ -292,7 +312,9 @@
     (define/augment (on-close)
       (inner (void) on-close)
       (shutdown-on-tick-thread)
-      (*on-close* *world*))
+      (*on-close* *world*)
+      (set! *stopped?* #t)
+      (thread (lambda () (channel-put *last-world-ch* *world*))))
     (super-new)))
 
 (define world-gui:dialog%
@@ -300,7 +322,9 @@
     (define/augment (on-close)
       (inner (void) on-close)
       (shutdown-on-tick-thread)
-      (*on-close* *world*))
+      (*on-close* *world*)
+      (set! *stopped?* #t)
+      (thread (lambda () (channel-put *last-world-ch* *world*))))
     (super-new)
     (new button% 
          [parent this]
@@ -708,7 +732,8 @@
 
 (provide big-bang 
          on-tick 
-         on-key-event
+         on-key
+         stop-when
          
          elt? 
          row 
