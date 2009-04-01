@@ -34,31 +34,37 @@
 (define (gui->render an-elt)
   (match an-elt
     [(struct row-elt (elts))
-     (lambda (world embed/url)
-       `(table
-         ,@(map (lambda (render)
-                  `(tr (td ,(render world embed/url))))
-                (map gui->render elts))))]    
-    [(struct column-elt (elts))
+     (define guis (map gui->render elts))
      (lambda (world embed/url)
        `(table
          (tr
           ,@(map (lambda (render)
                    `(td ,(render world embed/url)))
-                 (map gui->render elts)))))]    
+                 guis))))]    
+    [(struct column-elt (elts))
+     (define guis (map gui->render elts))
+     (lambda (world embed/url)
+       `(table
+         ,@(map (lambda (render)
+                  `(tr (td ,(render world embed/url))))
+                guis)))]    
     [(struct box-group-elt (val-f a-subelt enabled?-f))
-     ; XXX
-     (error 'box-group "Don't know what a box group should be")]    
+     (define subelt-render (gui->render a-subelt))
+     ; XXX Handle enabled?-f
+     (lambda (world embed/url)
+       `(fieldset
+         (legend ,(val-f world))
+         ,(subelt-render world embed/url)))]    
     [(struct displayable-elt (val-f))
      (lambda (world embed/url)
-       (val-f world))]    
+       (displayable->string (val-f world)))]    
     [(struct canvas-elt (scene-f callback))
+     (define name (symbol->string (gensym 'img)))
      (lambda (world embed/url)
        ; XXX Maybe we can be smart by hashing the scene so we generate fewer images
        (define the-scene (scene-f world))
        (define image-path (scene->file the-scene (image-directory)))
        (define-values (base file-name must-be-dir?) (split-path image-path))
-       (define name (symbol->string (gensym 'img)))
        `(form ([action
                 ,(embed/url
                   (lambda (req)
@@ -87,10 +93,12 @@
                       [value
                        ,(val-f world)]))))]
     [(struct drop-down-elt (val-f choices-f callback enabled?-f))
-     (lambda (world embed/url)
-       (define name (symbol->string (gensym 'drop-down)))
+     (define name (symbol->string (gensym 'dropdown)))
+       (define form-name (symbol->string (gensym 'dropdownform)))
+     (lambda (world embed/url)       
        (define selection (val-f world))
-       `(form ([action
+       `(form ([name ,form-name]
+               [action
                 ,(embed/url
                   (lambda (req)
                     (callback
@@ -102,6 +110,7 @@
                                       (request-bindings/raw req)))))))]
                [method "post"])
               (select ([name ,name]
+                       [onchange ,(format "document.~a.submit()" form-name)]
                        ,@(if (enabled?-f world)
                              empty
                              `([disabled "disabled"])))
@@ -113,8 +122,8 @@
                                  ,choice))
                              (choices-f world)))))]    
     [(struct text-field-elt (val-f callback enabled?-f))
-     (lambda (world embed/url)
-       (define name (symbol->string (gensym 'text-field)))
+     (define name (symbol->string (gensym 'textfield)))
+     (lambda (world embed/url)       
        `(form ([action
                 ,(embed/url
                   (lambda (req)
@@ -137,12 +146,13 @@
      ; XXX
      (error 'slider "Can't make a slider look nice yet")]    
     [(struct checkbox-elt (label-f val-f callback enabled?-f))
-     (lambda (world embed/url)
-       (define name (symbol->string (gensym 'checkbox)))
-       `(form ([action
+     (define name (symbol->string (gensym 'checkbox)))
+     (define form-name (symbol->string (gensym 'checkboxform)))
+     (lambda (world embed/url)       
+       `(form ([name ,form-name]
+               [action
                 ,(embed/url
                   (lambda (req)
-                    (printf "checkbox!~n")
                     (match 
                         (bindings-assq (string->bytes/utf-8 name)
                                        (request-bindings/raw req))
@@ -151,8 +161,8 @@
                       [_
                        (callback world #t)])))]
                [method "post"])
-              ; XXX How to force submit?
               (input ([name ,name]
+                      [onchange ,(format "document.~a.submit()" form-name)]
                       [type "checkbox"]
                       ,@(if (val-f world)
                             `([checked "on"])
