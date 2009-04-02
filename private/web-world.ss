@@ -94,7 +94,7 @@
                        ,(val-f world)]))))]
     [(struct drop-down-elt (val-f choices-f callback enabled?-f))
      (define name (symbol->string (gensym 'dropdown)))
-       (define form-name (symbol->string (gensym 'dropdownform)))
+     (define form-name (symbol->string (gensym 'dropdownform)))
      (lambda (world embed/url)       
        (define selection (val-f world))
        `(form ([name ,form-name]
@@ -143,8 +143,54 @@
                             `([disabled "disabled"])))
                      ,(val-f world))))]    
     [(struct slider-elt (val-f min-f max-f callback enabled?-f))
-     ; XXX
-     (error 'slider "Can't make a slider look nice yet")]    
+     (lambda (world embed/url)
+       (define val (val-f world))
+       (define min-v (min-f world))
+       (define max-v (max-f world))
+       (define len (number->string (string-length (number->string max-v))))
+       (define down-name (symbol->string (gensym 'sliderdown)))
+       (define up-name (symbol->string (gensym 'sliderup)))
+       (define val-name (symbol->string (gensym 'sliderval)))
+       `(form ([action
+                ,(embed/url
+                  (lambda (req)
+                    (define new-val 
+                      (match (bindings-assq (string->bytes/utf-8 down-name) (request-bindings/raw req))
+                        [#f
+                         (match (bindings-assq (string->bytes/utf-8 up-name) (request-bindings/raw req))
+                           [#f
+                            (string->number
+                             (bytes->string/utf-8
+                              (binding:form-value
+                               (bindings-assq (string->bytes/utf-8 val-name) (request-bindings/raw req)))))]
+                           [_
+                            (min max-v (add1 val))])]
+                        [_
+                         (max min-v (sub1 val))]))
+                    (callback world new-val)))])
+              (table
+               (tr
+                (td 
+                 (input ([name ,down-name]
+                         [type "submit"]
+                         [value "-"]
+                         ,@(if (val . <= . min-v)
+                               `([disabled "disabled"])
+                               empty)
+                         )))
+                (td
+                 (input ([name ,val-name]
+                         [type "text"]
+                         [size ,len]
+                         [value ,(number->string val)]
+                         [disabled "disabled"])))
+                (td 
+                 (input ([name ,up-name]
+                         [type "submit"]
+                         [value "+"]
+                         ,@(if (max-v . <= . val)
+                               `([disabled "disabled"])
+                               empty))))))))]
     [(struct checkbox-elt (label-f val-f callback enabled?-f))
      (define name (symbol->string (gensym 'checkbox)))
      (define form-name (symbol->string (gensym 'checkboxform)))
