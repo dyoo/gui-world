@@ -18,6 +18,33 @@
 
 (provide-higher-order-primitive stop-when (handler))
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;
+;; The following are stubs that don't do anything for now, and
+;; are merely meant for compatibility with Moby Scheme.
+;;;; 
+(provide-higher-order-primitive on-location-change (handler))
+(provide-higher-order-primitive on-message (handler))
+(provide-higher-order-primitive on-tilt (handler))
+(provide-higher-order-primitive on-acceleration (handler))
+;;;;
+
+(define (on-location-change handler)
+  (lambda () (void)))
+
+(define (on-message handler)
+  (lambda () (void)))
+
+(define (on-tilt handler)
+  (lambda () (void)))
+
+(define (on-acceleration handler)
+  (lambda () (void)))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+
 (provide-primitive elt?)
 
 (provide-primitives col row)
