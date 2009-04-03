@@ -25,4 +25,4 @@
    (box-group label-text (col))
    (checkbox label-text true ignore-bool-update)))
 
-(big-bang "hello world" a-gui)
+(gui-big-bang "hello world" a-gui)

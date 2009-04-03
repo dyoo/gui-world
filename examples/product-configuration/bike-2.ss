@@ -714,5 +714,5 @@
        (message complete-configuration-status)
        (message legal-configuration-status)))
 
-
-(big-bang initial-config main-gui)
+(define last-world
+  (gui-big-bang initial-config main-gui))

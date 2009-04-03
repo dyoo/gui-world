@@ -10,7 +10,9 @@
 #;(printf "gui world instantiated~n")
 
 
-(provide-primitive big-bang)
+(provide-primitive gui-big-bang)
+(define gui-big-bang big-bang)
+
 
 (provide-higher-order-primitive on-tick (_ on-tick-handler))
 

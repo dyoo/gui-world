@@ -419,5 +419,5 @@
        (button button-label add-current-shape-to-flag)
        (button/enabled "Undo" undo can-undo?)))
 
-
-(big-bang initial-world a-main-gui)
+(define last-world
+  (gui-big-bang initial-world a-main-gui))

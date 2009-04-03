@@ -84,4 +84,5 @@
        (button "SQ" key-square)
        (button "C" key-clear)))
 
-(big-bang initial-world a-gui)
+(define last-world
+  (gui-big-bang initial-world a-gui))

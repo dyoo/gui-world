@@ -27,5 +27,5 @@
   (col (canvas render-ball)
        (slider world-radius 20 50 update-world-radius)))
 
-
-(big-bang initial-world a-gui)
+(define last-world
+  (gui-big-bang initial-world a-gui))

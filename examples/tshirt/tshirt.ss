@@ -51,4 +51,5 @@
        (row (button "Add horizontal stripe" world-add-horizontal)
             (button "Add vertical stripe" world-add-vertical))))
 
-(big-bang initial-world a-gui)
+(define last-world
+  (gui-big-bang initial-world a-gui))

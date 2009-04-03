@@ -29,5 +29,6 @@
        (col "Color 2" (make-color-gui world-color2 update-world-color2))
        (col "Color 3" (make-color-gui world-color3 update-world-color3))))
 
-(big-bang (make-world (make-color 0 0 0) (make-color 0 0 0) (make-color 0 0 0))
-          main-gui)
+(define last-world
+  (gui-big-bang (make-world (make-color 0 0 0) (make-color 0 0 0) (make-color 0 0 0))
+                main-gui))

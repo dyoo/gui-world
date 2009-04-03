@@ -57,8 +57,8 @@
        (col "Color 2" (make-color-gui world-color-2-accessor))
        (col "Color 3" (make-color-gui world-color-3-accessor))))
 
-
-(big-bang (make-world (make-color 0 0 0) 
-                      (make-color 0 0 0)
-                      (make-color 0 0 0))
-          main-gui)
+(define last-world
+  (gui-big-bang (make-world (make-color 0 0 0) 
+                            (make-color 0 0 0)
+                            (make-color 0 0 0))
+                main-gui))

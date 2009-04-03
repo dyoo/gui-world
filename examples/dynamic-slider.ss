@@ -29,4 +29,5 @@
                (row (button "bump to 5" update-n-to-5)
                     (button "bump to 10" update-n-to-10))))
 
-(big-bang (make-world 1 5) a-gui)
+(define last-world
+  (gui-big-bang (make-world 1 5) a-gui))

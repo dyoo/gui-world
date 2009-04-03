@@ -29,6 +29,6 @@
     [else
      world]))
 
-
-(big-bang "???" view
-          (on-key handle-key))
+(define last-world
+  (gui-big-bang "???" view
+                (on-key handle-key)))

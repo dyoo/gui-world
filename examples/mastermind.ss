@@ -90,5 +90,5 @@
         (drop-down mm-g2 COLORS+BLANK on-g2-change))
    (message world-status-message)))
 
-
-(big-bang initial-world a-gui)
+(define last-world
+  (gui-big-bang initial-world a-gui))

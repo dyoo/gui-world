@@ -301,5 +301,5 @@
             (project/inject/gui misc-gui world-misc-state update-world-misc-state))
        (button button-label add-current-shape-to-flag)))
 
-
-(big-bang initial-world a-main-gui)
+(define last-world
+  (gui-big-bang initial-world a-main-gui))

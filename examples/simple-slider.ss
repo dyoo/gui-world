@@ -23,4 +23,6 @@
   (col (slider get-val 0 5 update-val)
        (message status-message)))
 
-(big-bang 0 a-gui)
+
+(define last-world
+  (gui-big-bang 0 a-gui))

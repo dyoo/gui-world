@@ -76,7 +76,8 @@ Constraints:
    (col (box-group "Summary"
                    (message "Still need to fill in")))))
 
-(big-bang emptybase gui1)
+(define last-world
+  (gui-big-bang emptybase gui1))
 
 ;; VERSION 2 -- detect illegal configurations, use naive cond statements
 

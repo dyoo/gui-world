@@ -80,6 +80,6 @@
                             not-blue-button-selected?))
        (slider world-radius 20 50 update-world-radius)))
 
-
-(big-bang initial-world a-gui
-          (on-tick 1/20 move-ball))
+(define last-world
+  (gui-big-bang initial-world a-gui
+                (on-tick 1/20 move-ball)))

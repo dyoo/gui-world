@@ -468,6 +468,6 @@
             (button/enabled "Redo" redo can-redo?))))
 
 
-
-(big-bang initial-world a-main-gui
-          (on-tick 1/2 toggle-blinking))
+(define last-world
+  (gui-big-bang initial-world a-main-gui
+                (on-tick 1/2 toggle-blinking)))

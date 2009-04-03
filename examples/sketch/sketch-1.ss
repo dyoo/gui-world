@@ -114,4 +114,5 @@
    (button "down" move-down)
    (button "shake!" shake-to-clear)))
 
-(big-bang initial-world a-gui)
+(define last-world
+  (gui-big-bang initial-world a-gui))

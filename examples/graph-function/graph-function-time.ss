@@ -239,7 +239,7 @@
        (button "Clear Canvas" on-clear-pressed)))
 
 
-#;(big-bang initial-world view)
+#;(define last-world (gui-big-bang initial-world view))
 
 
 
