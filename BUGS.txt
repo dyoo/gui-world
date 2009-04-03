@@ -1,0 +1,4 @@
+* gui-big-bang doesn't currently allow nested calls.  One might like
+to have a handler call gui-big-bang to create an auxiliary dialog box;
+gui-world can't do this right now because it keeps all of its state in
+global variables.

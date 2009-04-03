@@ -116,8 +116,12 @@ should be treated as:
     (message (lambda (a-world) "hello world"))
 
 
+
 To hook into the world system, we provide:
 
-    big-bang: world gui -> ???   ;; FIXME
+    gui-big-bang: world gui -> world
 
-which consumes an initial world and a gui.
+which consumes an initial world and a gui.  When called, gui-big-bang
+will show a frame with the visualized world, and will block until
+either the stop-when handler becomes true, or the window is closed.
+It returns the value of the last known world.
