@@ -114,22 +114,16 @@
                 (alarm-evt (+ (current-inexact-milliseconds) (* 1000 freq))))
               
               (let loop ([an-alarm-evt (new-alarm-evt)])
-                (yield (choice-evt 
-                        (handle-evt an-alarm-evt 
-                                    (lambda (_)
-                                      ;; We run this at low priority, to avoid fighting
-                                      ;; gui callbacks.
-                                      (queue-on-world-thread
-                                       (lambda ()
-                                         (printf "Tick~n")
-                                         (change-world/f! (lambda (a-world)
-                                                            (callback a-world)))))
-                                      (when (not (unbox (current-stopped?)))
-                                        (loop (new-alarm-evt)))))
-                        (handle-evt (thread-receive-evt)
-                                    (lambda (msg)
-                                      ;; Stops the thread.
-                                      (void))))))))))
+                (yield  
+                 (handle-evt an-alarm-evt 
+                             (lambda (_)
+                               (queue-on-world-thread
+                                (lambda ()
+                                  (change-world/f! (lambda (a-world)
+                                                     (callback a-world)))))
+                               (when (not (unbox (current-stopped?)))
+                                 (loop (new-alarm-evt)))))))))))
+   
 
 
 
@@ -161,7 +155,9 @@
                                              initial-world))
                           
                           (for-each (lambda (t) (t)) registry-hooks)
-                          ;; WARNING: this must be last, to avoid conflict with the dialog's modal behavior.
+                          ;; WARNING: the following must be last, 
+                          ;; to avoid conflict with the dialog's modal behavior.
+                          ;; This will immediately yield if the window is a dialog.
                           (send window show #t)))))
     (yield ch)))
 
@@ -169,7 +165,9 @@
 ;; add-listener!: (world -> void) -> void
 ;; Adds a listener that will react when the world changes.
 (define (add-listener! a-listener)
-  (current-world-listeners (cons a-listener (current-world-listeners))))
+  (queue-on-world-thread
+   (lambda ()
+     (current-world-listeners (cons a-listener (current-world-listeners))))))
 
 
 ;; refresh-widgets!: world gui window -> void
