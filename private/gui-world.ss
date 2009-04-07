@@ -180,11 +180,15 @@
       ;; Reentrancy
       [else
        ;; hide the old top
+       (send (current-top-window) begin-container-sequence)
        (send (current-top-window) change-children (lambda (x) empty))
        (run es ch #:make-window (lambda () (current-top-window)))
+       (send (current-top-window) end-container-sequence)
        (let ([result (yield ch)])
+         (send (current-top-window) begin-container-sequence)
          (send (current-top-window) change-children (lambda (x) empty))
          (send (current-top-window) add-child (current-top-panel))
+         (send (current-top-window) end-container-sequence)
          result)])))
 
 
