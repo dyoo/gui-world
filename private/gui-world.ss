@@ -143,14 +143,15 @@
                         (current-last-world-ch ch)
                         (current-world initial-world)
                         (current-gui-world-eventspace es)
-                        (let ([window (new (if dialog? world-gui:dialog% world-gui:frame%)
-                                           [label ""])])
+                        (let* ([window (new (if dialog? world-gui:dialog% world-gui:frame%)
+                                            [label ""])]
+                               [top-panel (new world-gui:top-panel% [parent window])])
                           
                           (add-listener! on-world-change)
                           (add-listener! (lambda (w)
-                                           (refresh-widgets! w a-gui window)))
+                                           (refresh-widgets! w a-gui top-panel)))
                           
-                          (render-elt! a-gui window)
+                          (render-elt! a-gui top-panel)
                           (change-world/f! (lambda (a-world)
                                              initial-world))
                           
@@ -159,7 +160,9 @@
                           ;; to avoid conflict with the dialog's modal behavior.
                           ;; This will immediately yield if the window is a dialog.
                           (send window show #t)))))
-    (yield ch)))
+    (let ([result (yield ch)])
+      result)))
+
 
 
 ;; add-listener!: (world -> void) -> void
@@ -330,6 +333,9 @@
                      (send this show #f))])))
 
 
+(define world-gui:top-panel%
+  (class horizontal-panel%
+    (super-new)))
 
 
 
