@@ -65,6 +65,11 @@
   (parameterize ([current-eventspace (current-gui-world-eventspace)])
     (queue-callback f)))
 
+(define (queue-on-eventspace es f)
+  (parameterize ([current-eventspace es])
+    (queue-callback f)))
+
+
 
 ;; change-world!: (-> world) -> void
 ;; Changes the world.
@@ -137,11 +142,10 @@
                   #:dialog? (dialog? #f)
                   #:on-world-change (on-world-change (lambda (a-world) (void)))
                   . registry-hooks)
-  (define (run ch #:make-window make-window)
-    (let ([es (make-eventspace)])
-      (parameterize ([current-eventspace es])
-        (queue-callback (lambda ()
-                          (current-stopped? (box #f))
+  (define (run es ch #:make-window make-window)
+    (parameterize ([current-eventspace es])
+      (queue-callback (lambda ()
+                        (current-stopped? (box #f))
                           (current-last-world-ch ch)
                           (current-world initial-world)
                           (current-gui-world-eventspace es)
@@ -153,7 +157,7 @@
                             (add-listener! (lambda (w)
                                              (refresh-widgets! w a-gui top-panel)))
                             
-                            (render-elt! a-gui top-panel)
+                            (render-elt! a-gui top-panel es)
                             (change-world/f! (lambda (a-world)
                                                initial-world))
                             
@@ -161,25 +165,26 @@
                             ;; WARNING: the following must be last, 
                             ;; to avoid conflict with the dialog's modal behavior.
                             ;; This will immediately yield if the window is a dialog.
-                            (send window show #t)))))))
-  (let ([ch (make-channel)])
+                            (send window show #t))))))
+  (let ([es (make-eventspace)]
+        [ch (make-channel)])
     (cond 
       ;; Fresh run
       [(not (current-top-panel))
-       (run ch #:make-window (lambda () 
-                               (new (if dialog? world-gui:dialog% world-gui:frame%)
-                                    [label ""])))
+       (run es ch #:make-window (lambda () 
+                                  (new (if dialog? world-gui:dialog% world-gui:frame%)
+                                       [label ""])))
        (let ([result (yield ch)])
          result)]
       
       ;; Reentrancy
       [else
        ;; hide the old top
-       (send (current-top-panel) show #f)
-       (run ch #:make-window (lambda () (current-top-window)))
+       (send (current-top-window) change-children (lambda (x) empty))
+       (run es ch #:make-window (lambda () (current-top-window)))
        (let ([result (yield ch)])
-         (printf "back~n")
-         (send (current-top-panel) show #t)
+         (send (current-top-window) change-children (lambda (x) empty))
+         (send (current-top-window) add-child (current-top-panel))
          result)])))
 
 
@@ -208,18 +213,20 @@
 
 
 
-;; render-elt!: elt container% -> world-gui<%>
-;; Consumes an elt, and produces a world-gui<%> widget that's installed in a-container. 
-(define (render-elt! an-elt a-container)
+;; render-elt!: elt container% eventspace -> world-gui<%>
+;; Consumes an elt, and produces a world-gui<%> widget that's installed in a-container.
+;; GUI Events that occur should be run in the context of the given eventspace es.
+(define (render-elt! an-elt a-container an-eventspace)
   (match an-elt
     [(struct row-elt (elts))
      (let ([row-container 
             (new world-gui:row% 
                  [parent a-container]
                  [stretchable-width #f]
-                 [stretchable-height #f])])
+                 [stretchable-height #f]
+                 [eventspace an-eventspace])])
        (for ([sub-elt elts])
-         (render-elt! sub-elt row-container))
+         (render-elt! sub-elt row-container an-eventspace))
        row-container)]
     
     [(struct column-elt (elts))
@@ -227,9 +234,10 @@
             (new world-gui:column% 
                  [parent a-container]
                  [stretchable-width #f]
-                 [stretchable-height #f])])
+                 [stretchable-height #f]
+                 [eventspace an-eventspace])])
        (for ([sub-elt elts])
-         (render-elt! sub-elt column-container))
+         (render-elt! sub-elt column-container an-eventspace))
        column-container)]
     
     [(struct box-group-elt (label-f sub-elt enabled?-f))
@@ -237,21 +245,25 @@
             (new world-gui:group-box%
                  [parent a-container]
                  [label (displayable->string (label-f (current-world)))]
-                 [enabled (enabled?-f (current-world))])])
-       (render-elt! sub-elt a-group-box)
+                 [enabled (enabled?-f (current-world))]
+                 [eventspace an-eventspace])])
+       (render-elt! sub-elt a-group-box an-eventspace)
        a-group-box)]
     
     [(struct displayable-elt (s-f))
-     (new world-gui:string% [label 
-                             (displayable->string (s-f (current-world)))]
-          [parent a-container])]
+     (new world-gui:string% 
+          [label 
+           (displayable->string (s-f (current-world)))]
+          [parent a-container]
+          [eventspace an-eventspace])]
     
     [(struct button-elt (label-f callback enabled?-f))
      (new world-gui:button% 
           [label (displayable->string (label-f (current-world)))]
           [parent a-container]
           [world-callback callback]
-          [enabled (enabled?-f (current-world))])]
+          [enabled (enabled?-f (current-world))]
+          [eventspace an-eventspace])]
     
     [(struct text-field-elt (v-f callback enabled?-f))
      (new world-gui:text-field% 
@@ -259,7 +271,8 @@
           [parent a-container]
           [init-value (displayable->string (v-f (current-world)))]
           [enabled (enabled?-f (current-world))]
-          [world-callback callback])]
+          [world-callback callback]
+          [eventspace an-eventspace])]
     
     [(struct drop-down-elt (val-f choices-f callback enabled?-f))
      (let ([val (displayable->string (val-f (current-world)))]
@@ -272,7 +285,8 @@
                                    choices)]
             [enabled (enabled?-f (current-world))]
             [parent a-container]
-            [world-callback callback]))]
+            [world-callback callback]
+            [eventspace an-eventspace]))]
     
     [(struct slider-elt (val-f min-f max-f callback enabled?-f))
      (new world-gui:slider% 
@@ -282,7 +296,8 @@
           [max-value (max-f (current-world))]
           [init-value (val-f (current-world))]
           [enabled (enabled?-f (current-world))]
-          [world-callback callback])]
+          [world-callback callback]
+          [eventspace an-eventspace])]
     
     [(struct checkbox-elt (label-f val-f callback enabled?-f))
      (new world-gui:checkbox%
@@ -290,7 +305,8 @@
           [parent a-container]
           [value (val-f (current-world))]
           [enabled (enabled?-f (current-world))]
-          [world-callback callback])]
+          [world-callback callback]
+          [eventspace an-eventspace])]
     
     [(struct canvas-elt (an-image-snip-f callback))
      (let* ([pasteboard (new pasteboard%)]
@@ -307,7 +323,8 @@
                          [stretchable-width #f]
                          [stretchable-height #f]
                          [style '(no-hscroll no-vscroll)]
-                         [editor pasteboard])])
+                         [editor pasteboard]
+                         [eventspace an-eventspace])])
        (send canvas min-client-width (+ (image-width img-snip) INSET INSET))
        (send canvas min-client-height (+ (image-height img-snip) INSET INSET))
        (send pasteboard insert img-snip 0 0)
@@ -365,6 +382,7 @@
 (define world-gui:row%
   (class* horizontal-panel% #;(on-subwindow-char-mixin horizontal-panel%) (world-gui<%>)
     (inherit get-children)
+    (init-field eventspace)
     
     (define/public (update-with! an-elt)
       (for-each (lambda (sub-elt sub-gui-elt)
@@ -378,6 +396,7 @@
 (define world-gui:column%
   (class* vertical-panel% #;(on-subwindow-char-mixin vertical-panel%) (world-gui<%>)
     (inherit get-children)
+    (init-field eventspace)
     
     (define/public (update-with! an-elt)
       (for-each (lambda (sub-elt sub-gui-elt)
@@ -391,18 +410,21 @@
 (define world-gui:group-box%
   (class* group-box-panel% #;(on-subwindow-char-mixin group-box-panel%) (world-gui<%>)
     (inherit get-children get-label set-label is-enabled? enable)
+    (init-field eventspace)
     
     (define/public (update-with! an-elt)
-      (match an-elt
-        [(struct box-group-elt (val-f sub-elt enabled?-f))
-         (let ([new-val (displayable->string (val-f (current-world)))]
-               [new-enabled? (enabled?-f (current-world))])
-           (unless (string=? new-val (get-label))
-             (set-label new-val))
-           (unless (boolean=? new-enabled? (is-enabled?))
-             (enable new-enabled?))
-           
-           (send (first (get-children)) update-with! sub-elt))]))
+      (queue-on-eventspace eventspace
+                           (lambda ()
+                             (match an-elt
+                               [(struct box-group-elt (val-f sub-elt enabled?-f))
+                                (let ([new-val (displayable->string (val-f (current-world)))]
+                                      [new-enabled? (enabled?-f (current-world))])
+                                  (unless (string=? new-val (get-label))
+                                    (set-label new-val))
+                                  (unless (boolean=? new-enabled? (is-enabled?))
+                                    (enable new-enabled?))
+                                  
+                                  (send (first (get-children)) update-with! sub-elt))]))))
     
     (super-new)))
 
@@ -410,14 +432,17 @@
 (define world-gui:string% 
   (class* (on-subwindow-char-mixin message%) (world-gui<%>)
     (inherit get-label set-label)
+    (init-field eventspace)
     
     (define/public (update-with! an-elt)
-      (match an-elt 
-        [(struct displayable-elt (val-f))
-         (let ([a-str (displayable->string (val-f (current-world)))])
-           (unless (string=? a-str (get-label))
-             (set-label a-str)))]))
-    
+      (queue-on-eventspace eventspace
+                           (lambda ()
+                             (match an-elt 
+                               [(struct displayable-elt (val-f))
+                                (let ([a-str (displayable->string (val-f (current-world)))])
+                                  (unless (string=? a-str (get-label))
+                                    (set-label a-str)))]))))
+         
     (super-new [auto-resize #t])))
 
 
@@ -428,17 +453,20 @@
              vert-margin horiz-margin)
     
     (init-field world-callback)
+    (init-field eventspace)
     
     (define/public (update-with! an-elt)
-      (match an-elt
-        [(struct button-elt (val-f callback enabled?-f))
-         (let ([new-val (displayable->string (val-f (current-world)))]
-               [new-enabled? (enabled?-f (current-world))])
-           (unless (string=? new-val (get-label))
-             (set-label new-val))
-           (unless (boolean=? (is-enabled?) new-enabled?)
-             (enable new-enabled?)))]))
-    
+      (queue-on-eventspace eventspace 
+                           (lambda ()
+                             (match an-elt
+                               [(struct button-elt (val-f callback enabled?-f))
+                                (let ([new-val (displayable->string (val-f (current-world)))]
+                                      [new-enabled? (enabled?-f (current-world))])
+                                  (unless (string=? new-val (get-label))
+                                    (set-label new-val))
+                                  (unless (boolean=? (is-enabled?) new-enabled?)
+                                    (enable new-enabled?)))]))))
+         
     ;; set-label: string -> void
     ;; Sets the label, but also auto-resizes based on the label's size.
     (define/override (set-label new-label)
@@ -456,9 +484,11 @@
     
     
     (super-new [callback (lambda (b e)
-                           (change-world/f!
-                            (lambda (a-world)
-                              (world-callback a-world))))])
+                           (queue-on-eventspace eventspace
+                                                (lambda ()
+                                                  (change-world/f!
+                                                   (lambda (a-world)
+                                                     (world-callback a-world))))))])
     
     ;; We record the old space-padding values around the button's label.  For some
     ;; reason, using horiz-margin and vert-margin isn't correct, but I don't
@@ -473,17 +503,20 @@
   (class* text-field% (world-gui<%>)
     (inherit get-value set-value is-enabled? enable min-width min-height)
     (init-field world-callback)
+    (init-field eventspace)
     
     (define/public (update-with! an-elt)
-      (match an-elt
-        [(struct text-field-elt (val-f callback enabled?-f))
-         (let ([new-text (displayable->string (val-f (current-world)))]
-               [new-enabled? (enabled?-f (current-world))])
-           (unless (string=? new-text (get-value))
-             (set-value new-text))
-           (unless (boolean=? (is-enabled?) new-enabled?)
-             (enable new-enabled?)))
-         (auto-resize)]))
+      (queue-on-eventspace eventspace
+                           (lambda ()
+                             (match an-elt
+                               [(struct text-field-elt (val-f callback enabled?-f))
+                                (let ([new-text (displayable->string (val-f (current-world)))]
+                                      [new-enabled? (enabled?-f (current-world))])
+                                  (unless (string=? new-text (get-value))
+                                    (set-value new-text))
+                                  (unless (boolean=? (is-enabled?) new-enabled?)
+                                    (enable new-enabled?)))
+                                (auto-resize)]))))
     
     (define/override (on-subwindow-char receiver event)
       (super on-subwindow-char receiver event))
@@ -498,9 +531,11 @@
           (min-height (+ dy mh)))))
     
     (super-new [callback (lambda (f e)
-                           (change-world/f!
-                            (lambda (a-world)
-                              (world-callback a-world (get-value)))))])
+                           (queue-on-eventspace eventspace 
+                                                (lambda ()
+                                                  (change-world/f!
+                                                   (lambda (a-world)
+                                                     (world-callback a-world (get-value)))))))])
     
     
      ;; We record the old space-padding values around the button's label.  For some
