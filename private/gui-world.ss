@@ -14,11 +14,6 @@
          "world-support.ss")
 
 
-(define ... 'FIXME)
-
-
-
-
 ;                                                   
 ;                                                   
 ;          ;;;           ;             ;;;          
@@ -35,20 +30,15 @@
 ;                                                   
 ;                                           ;   ;;  
 
-(define *world* #f)
-(define *gui* #f)
-(define *window* #f)
-(define *eventspace* #f)
+(define current-world (make-parameter #f))
+(define current-gui-world-eventspace (make-parameter (make-eventspace)))
+(define current-world-listeners (make-parameter '()))
+(define current-stopped? (make-parameter (box #f)))
+(define current-stop-when (make-parameter #f))
+(define current-last-world-ch (make-parameter (make-channel)))
+(define current-on-key-event-callback (make-parameter #f))
 
-(define *stopped?* #f)
-(define *on-tick-callback* #f)
-(define *on-tick-frequency* #f)
-(define *on-tick-thread* #f)
-(define *on-key-event-callback* #f)
-(define *on-world-change* #f)
-(define *on-close* #f)
-(define *stop-when* #f)
-(define *last-world-ch* (make-channel))
+
 
 ;                       
 ;                       
@@ -67,79 +57,81 @@
 ;                ; ;  ;;
 
 
+;; queue-on-world-thread: (-> void) -> void
+;; Adds something for the current-gui-world-eventspace's thread to evaluate.
+(define (queue-on-world-thread f)
+  (parameterize ([current-eventspace (current-gui-world-eventspace)])
+    (queue-callback f)))
 
-(define world-sema (make-semaphore 1))
+
 ;; change-world!: (-> world) -> void
-;; Changes the world.  Ensures that only one thing at a time
-;; will be able to get into the critical region.
+;; Changes the world.
 (define (change-world/f! new-world-f)
-  (call-with-semaphore 
-   world-sema
+  (queue-on-world-thread
    (lambda ()
      (with-handlers ([void (lambda (exn)
-                             (shutdown-on-tick-thread)
+                             (set-box! (current-stopped?) #t)
                              (raise exn))])
-       (set! *world* (new-world-f *world*))
-       (refresh-widgets!)
-       (*on-world-change* *world*)
-       (when (and *stop-when* (*stop-when* *world*))
-         (set! *stopped?* #t)
-         (thread (lambda () (channel-put *last-world-ch* *world*))))))))
+       (current-world (new-world-f (current-world)))
+       (for ([listener (current-world-listeners)])
+         (listener (current-world)))
+       (when (and (current-stop-when) ((current-stop-when) (current-world)))
+         (set-box! (current-stopped?) #t)
+         (thread (lambda () (channel-put (current-last-world-ch) (current-world)))))))))
 
 
 
 ;; handle-key-event!: key-event -> void
 (define (handle-key-event! a-key-event)
-  (when *on-key-event-callback*
-    (change-world/f! (lambda (a-world)
-                       (*on-key-event-callback* a-world 
-                                                (send a-key-event get-key-code))))))
+  (queue-on-world-thread
+   (lambda ()
+     (when (current-on-key-event-callback)
+       (change-world/f! (lambda (a-world)
+                          ((current-on-key-event-callback) a-world 
+                                                           (send a-key-event get-key-code))))))))
 
 
+;; stop-when: (world -> boolean) -> void
+;; Register a handler that tells when we should stop running a big-bang.
 (define (stop-when callback)
   (lambda ()
-    (set! *stop-when* callback)))
+    (current-stop-when callback)))
+
 
 ;; on-key: (world key -> world) -> (-> void)
+;; Register an on-key handler.
 (define (on-key callback)
   (lambda ()
-    (set! *on-key-event-callback* callback)))
+    (current-on-key-event-callback callback)))
 
 
 ;; on-tick: number (world -> world) -> (-> void)
+;; Register an on-tick handler.
 (define (on-tick freq callback)
   (lambda ()
-    (set! *on-tick-frequency* freq)
-    (set! *on-tick-callback* callback)
-    (set! *on-tick-thread*
-          (thread (lambda ()
-                    (define (new-alarm-evt)
-                      (alarm-evt (+ (current-inexact-milliseconds) (* 1000 *on-tick-frequency*))))
-                    
-                    (let loop ([an-alarm-evt (new-alarm-evt)])
-                      (sync (handle-evt an-alarm-evt 
-                                        (lambda (_)
-                                          ;; We run this at low priority, to avoid fighting
-                                          ;; gui callbacks.
-                                          (parameterize ([current-eventspace *eventspace*])
-                                            (queue-callback 
-                                             (lambda ()
-                                               (change-world/f! (lambda (a-world)
-                                                                  (*on-tick-callback* a-world))))
-                                             #f))
-                                          (when (not *stopped?*)
-                                            (loop (new-alarm-evt)))))
-                            (handle-evt (thread-receive-evt)
-                                        (lambda (msg)
-                                          ;; Stops the thread.
-                                          (void))))))))
-    (void)))
+    (thread (lambda ()
+              (define (new-alarm-evt)
+                (alarm-evt (+ (current-inexact-milliseconds) (* 1000 freq))))
+              
+              (let loop ([an-alarm-evt (new-alarm-evt)])
+                (yield (choice-evt 
+                        (handle-evt an-alarm-evt 
+                                    (lambda (_)
+                                      ;; We run this at low priority, to avoid fighting
+                                      ;; gui callbacks.
+                                      (queue-on-world-thread
+                                       (lambda ()
+                                         (printf "Tick~n")
+                                         (change-world/f! (lambda (a-world)
+                                                            (callback a-world)))))
+                                      (when (not (unbox (current-stopped?)))
+                                        (loop (new-alarm-evt)))))
+                        (handle-evt (thread-receive-evt)
+                                    (lambda (msg)
+                                      ;; Stops the thread.
+                                      (void))))))))))
 
 
-;; shutdown-on-tick-thread: -> void
-(define (shutdown-on-tick-thread)
-  (when (and *on-tick-thread* (thread-running? *on-tick-thread*))
-    (thread-send *on-tick-thread* 'shutdown)))
 
 
 ;; big-bang: world gui -> world
@@ -148,40 +140,50 @@
 (define (big-bang initial-world a-gui
                   #:dialog? (dialog? #f)
                   #:on-world-change (on-world-change (lambda (a-world) (void)))
-                  #:on-close (on-close (lambda (a-world) (void)))
                   . registry-hooks)
-  (set! *stopped?* #f)
-  (set! *last-world-ch* (make-channel))
-  (set! *world* initial-world)
-  (set! *gui* a-gui)
-  (set! *eventspace* (current-eventspace))
-  (set! *window* (new (if dialog? world-gui:dialog% world-gui:frame%)
-                      [label ""]))
-  (set! *on-world-change* on-world-change)
-  (set! *on-close* on-close)
-  (render-elt! *gui* *window*)
-  (change-world/f! (lambda (a-world)
-                     initial-world))
-  
-  (for-each (lambda (t) (t)) registry-hooks)
-  ;; WARNING: this must be last, to avoid conflict with the dialog's modal behavior.
-  (send *window* show #t)
-  (yield *last-world-ch*))
+  (let ([es (make-eventspace)]
+        [ch (make-channel)])
+    (parameterize ([current-eventspace es])
+      (queue-callback (lambda ()
+                        (current-stopped? (box #f))
+                        (current-last-world-ch ch)
+                        (current-world initial-world)
+                        (current-gui-world-eventspace es)
+                        (let ([window (new (if dialog? world-gui:dialog% world-gui:frame%)
+                                           [label ""])])
+                          
+                          (add-listener! on-world-change)
+                          (add-listener! (lambda (w)
+                                           (refresh-widgets! w a-gui window)))
+                          
+                          (render-elt! a-gui window)
+                          (change-world/f! (lambda (a-world)
+                                             initial-world))
+                          
+                          (for-each (lambda (t) (t)) registry-hooks)
+                          ;; WARNING: this must be last, to avoid conflict with the dialog's modal behavior.
+                          (send window show #t)))))
+    (yield ch)))
 
 
+;; add-listener!: (world -> void) -> void
+;; Adds a listener that will react when the world changes.
+(define (add-listener! a-listener)
+  (current-world-listeners (cons a-listener (current-world-listeners))))
 
-;; refresh-widgets!: -> void
+
+;; refresh-widgets!: world gui window -> void
 ;; Update the widgets in the frame with the new contents in the world.
-(define (refresh-widgets!)
+(define (refresh-widgets! a-world a-gui a-window)
   (let ([top-widget (first 
                      (filter (lambda (x) (is-a? x world-gui<%>))
-                             (send *window* get-children)))])
+                             (send a-window get-children)))])
     (dynamic-wind (lambda ()
-                    (send *window* begin-container-sequence))
+                    (send a-window begin-container-sequence))
                   (lambda ()
-                    (send top-widget update-with! *gui*))
+                    (send top-widget update-with! a-gui))
                   (lambda ()
-                    (send *window* end-container-sequence)))))
+                    (send a-window end-container-sequence)))))
 
 
 
@@ -214,41 +216,41 @@
      (let ([a-group-box
             (new world-gui:group-box%
                  [parent a-container]
-                 [label (displayable->string (label-f *world*))]
-                 [enabled (enabled?-f *world*)])])
+                 [label (displayable->string (label-f (current-world)))]
+                 [enabled (enabled?-f (current-world))])])
        (render-elt! sub-elt a-group-box)
        a-group-box)]
     
     [(struct displayable-elt (s-f))
      (new world-gui:string% [label 
-                             (displayable->string (s-f *world*))]
+                             (displayable->string (s-f (current-world)))]
           [parent a-container])]
     
     [(struct button-elt (label-f callback enabled?-f))
      (new world-gui:button% 
-          [label (displayable->string (label-f *world*))]
+          [label (displayable->string (label-f (current-world)))]
           [parent a-container]
           [world-callback callback]
-          [enabled (enabled?-f *world*)])]
+          [enabled (enabled?-f (current-world))])]
     
     [(struct text-field-elt (v-f callback enabled?-f))
      (new world-gui:text-field% 
           [label #f]
           [parent a-container]
-          [init-value (displayable->string (v-f *world*))]
-          [enabled (enabled?-f *world*)]
+          [init-value (displayable->string (v-f (current-world)))]
+          [enabled (enabled?-f (current-world))]
           [world-callback callback])]
     
     [(struct drop-down-elt (val-f choices-f callback enabled?-f))
-     (let ([val (displayable->string (val-f *world*))]
-           [choices (map displayable->string (choices-f *world*))])
+     (let ([val (displayable->string (val-f (current-world)))]
+           [choices (map displayable->string (choices-f (current-world)))])
        (new world-gui:drop-down% 
             [label #f]
             [choices choices]
             [selection (list-index (lambda (x) 
                                      (string=? x val))
                                    choices)]
-            [enabled (enabled?-f *world*)]
+            [enabled (enabled?-f (current-world))]
             [parent a-container]
             [world-callback callback]))]
     
@@ -256,23 +258,23 @@
      (new world-gui:slider% 
           [label #f]
           [parent a-container]
-          [min-value (min-f *world*)]
-          [max-value (max-f *world*)]
-          [init-value (val-f *world*)]
-          [enabled (enabled?-f *world*)]
+          [min-value (min-f (current-world))]
+          [max-value (max-f (current-world))]
+          [init-value (val-f (current-world))]
+          [enabled (enabled?-f (current-world))]
           [world-callback callback])]
     
     [(struct checkbox-elt (label-f val-f callback enabled?-f))
      (new world-gui:checkbox%
-          [label (displayable->string (label-f *world*))]
+          [label (displayable->string (label-f (current-world)))]
           [parent a-container]
-          [value (val-f *world*)]
-          [enabled (enabled?-f *world*)]
+          [value (val-f (current-world))]
+          [enabled (enabled?-f (current-world))]
           [world-callback callback])]
     
     [(struct canvas-elt (an-image-snip-f callback))
      (let* ([pasteboard (new pasteboard%)]
-            [img-snip (send (an-image-snip-f *world*) copy)]
+            [img-snip (send (an-image-snip-f (current-world)) copy)]
             [canvas (new world-gui:canvas%
                          [parent a-container]
                          [world-callback callback]
@@ -312,20 +314,16 @@
   (class frame% #;(on-subwindow-char-mixin frame%)
     (define/augment (on-close)
       (inner (void) on-close)
-      (shutdown-on-tick-thread)
-      (*on-close* *world*)
-      (set! *stopped?* #t)
-      (thread (lambda () (channel-put *last-world-ch* *world*))))
+      (set-box! (current-stopped?) #t)
+      (thread (lambda () (channel-put (current-last-world-ch) (current-world)))))
     (super-new)))
 
 (define world-gui:dialog%
   (class dialog% #;(on-subwindow-char-mixin dialog%)
     (define/augment (on-close)
       (inner (void) on-close)
-      (shutdown-on-tick-thread)
-      (*on-close* *world*)
-      (set! *stopped?* #t)
-      (thread (lambda () (channel-put *last-world-ch* *world*))))
+      (set-box! (current-stopped?) #t)
+      (thread (lambda () (channel-put (current-last-world-ch) (current-world)))))
     (super-new)
     (new button% 
          [parent this]
@@ -374,8 +372,8 @@
     (define/public (update-with! an-elt)
       (match an-elt
         [(struct box-group-elt (val-f sub-elt enabled?-f))
-         (let ([new-val (displayable->string (val-f *world*))]
-               [new-enabled? (enabled?-f *world*)])
+         (let ([new-val (displayable->string (val-f (current-world)))]
+               [new-enabled? (enabled?-f (current-world))])
            (unless (string=? new-val (get-label))
              (set-label new-val))
            (unless (boolean=? new-enabled? (is-enabled?))
@@ -393,7 +391,7 @@
     (define/public (update-with! an-elt)
       (match an-elt 
         [(struct displayable-elt (val-f))
-         (let ([a-str (displayable->string (val-f *world*))])
+         (let ([a-str (displayable->string (val-f (current-world)))])
            (unless (string=? a-str (get-label))
              (set-label a-str)))]))
     
@@ -411,8 +409,8 @@
     (define/public (update-with! an-elt)
       (match an-elt
         [(struct button-elt (val-f callback enabled?-f))
-         (let ([new-val (displayable->string (val-f *world*))]
-               [new-enabled? (enabled?-f *world*)])
+         (let ([new-val (displayable->string (val-f (current-world)))]
+               [new-enabled? (enabled?-f (current-world))])
            (unless (string=? new-val (get-label))
              (set-label new-val))
            (unless (boolean=? (is-enabled?) new-enabled?)
@@ -456,8 +454,8 @@
     (define/public (update-with! an-elt)
       (match an-elt
         [(struct text-field-elt (val-f callback enabled?-f))
-         (let ([new-text (displayable->string (val-f *world*))]
-               [new-enabled? (enabled?-f *world*)])
+         (let ([new-text (displayable->string (val-f (current-world)))]
+               [new-enabled? (enabled?-f (current-world))])
            (unless (string=? new-text (get-value))
              (set-value new-text))
            (unless (boolean=? (is-enabled?) new-enabled?)
@@ -510,9 +508,9 @@
     (define/public (update-with! an-elt)
       (match an-elt
         [(struct drop-down-elt (val-f choices-f callback enabled?-f))
-         (let ([new-val (displayable->string (val-f *world*))]
-               [new-choices (map displayable->string (choices-f *world*))]
-               [new-enabled? (enabled?-f *world*)])
+         (let ([new-val (displayable->string (val-f (current-world)))]
+               [new-choices (map displayable->string (choices-f (current-world)))]
+               [new-enabled? (enabled?-f (current-world))])
            
            (unless (and (= (length (get-choices))
                            (length new-choices))
@@ -597,10 +595,10 @@
     (define/public (update-with! an-elt)
       (match an-elt
         [(struct slider-elt (val-f min-f max-f callback enabled?-f))
-         (let* ([new-min (min-f *world*)]
-                [new-max (max-f *world*)]
-                [new-val (clamp (val-f *world*) new-min new-max)]
-                [new-enabled? (enabled?-f *world*)])
+         (let* ([new-min (min-f (current-world))]
+                [new-max (max-f (current-world))]
+                [new-val (clamp (val-f (current-world)) new-min new-max)]
+                [new-enabled? (enabled?-f (current-world))])
            
            (unless (and (= new-min (send inner-slider get-min-value))
                         (= new-max (send inner-slider get-max-value)))
@@ -642,9 +640,9 @@
     (define/public (update-with! an-elt)
       (match an-elt
         [(struct checkbox-elt (label-f val-f callback enabled?-f))
-         (let ([new-label (displayable->string (label-f *world*))]
-               [new-val (val-f *world*)]
-               [new-enabled? (enabled?-f *world*)])
+         (let ([new-label (displayable->string (label-f (current-world)))]
+               [new-val (val-f (current-world))]
+               [new-enabled? (enabled?-f (current-world))])
            (unless (string=? new-label (get-label))
              (set-label new-label))
            
@@ -710,7 +708,7 @@
     (define/public (update-with! an-elt)
       (match an-elt
         [(struct canvas-elt (scene-f callback))
-         (let ([new-scene (scene-f *world*)]
+         (let ([new-scene (scene-f (current-world))]
                [editor (get-editor)])
            (dynamic-wind 
             (lambda () 
