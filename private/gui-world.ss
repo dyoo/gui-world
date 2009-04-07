@@ -342,7 +342,9 @@
         (cond
           [result result]
           [else
-           (handle-key-event! event)])))
+           (queue-on-eventspace (get-field eventspace this)
+                                (lambda ()
+                                  (handle-key-event! event)))])))
     (super-new)))
 
 
@@ -518,9 +520,6 @@
                                     (enable new-enabled?)))
                                 (auto-resize)]))))
     
-    (define/override (on-subwindow-char receiver event)
-      (super on-subwindow-char receiver event))
-    
     
     ;; auto-resize: -> void
     ;; Automatically resize the button to fit the label.
@@ -548,8 +547,11 @@
 
 
 (define world-gui:drop-down% 
-  (class* choice% #;(on-subwindow-char-mixin choice%) (world-gui<%>)
+  (class* choice% (world-gui<%>)
+    
     (init-field world-callback)
+    (init-field eventspace)
+    
     (inherit get-string-selection get-number get-string clear append 
              set-selection
              is-enabled? enable)
@@ -564,33 +566,35 @@
     (define internal-selection-string "")
     
     (define/public (update-with! an-elt)
-      (match an-elt
-        [(struct drop-down-elt (val-f choices-f callback enabled?-f))
-         (let ([new-val (displayable->string (val-f (current-world)))]
-               [new-choices (map displayable->string (choices-f (current-world)))]
-               [new-enabled? (enabled?-f (current-world))])
-           
-           (unless (and (= (length (get-choices))
-                           (length new-choices))
-                        (andmap string=? (get-choices) new-choices))
-             (clear)
-             (for ([choice new-choices])
-               (append choice))
-             (set-selection (or (list-index
-                                 (lambda (x) 
-                                   (string=? x internal-selection-string))
-                                 new-choices)
-                                0))
-             (queue-callback (lambda () (internal-callback))))
-           
-           (unless (string=? internal-selection-string new-val)
-             (set-selection (list-index (lambda (x) 
-                                          (string=? x new-val))
-                                        new-choices))
-             (set! internal-selection-string new-val))
-           
-           (unless (boolean=? (is-enabled?) new-enabled?)
-             (enable new-enabled?)))]))
+      (queue-on-eventspace eventspace
+                           (lambda ()
+                             (match an-elt
+                               [(struct drop-down-elt (val-f choices-f callback enabled?-f))
+                                (let ([new-val (displayable->string (val-f (current-world)))]
+                                      [new-choices (map displayable->string (choices-f (current-world)))]
+                                      [new-enabled? (enabled?-f (current-world))])
+                                  
+                                  (unless (and (= (length (get-choices))
+                                                  (length new-choices))
+                                               (andmap string=? (get-choices) new-choices))
+                                    (clear)
+                                    (for ([choice new-choices])
+                                      (append choice))
+                                    (set-selection (or (list-index
+                                                        (lambda (x) 
+                                                          (string=? x internal-selection-string))
+                                                        new-choices)
+                                                       0))
+                                    (queue-callback (lambda () (internal-callback))))
+                                  
+                                  (unless (string=? internal-selection-string new-val)
+                                    (set-selection (list-index (lambda (x) 
+                                                                 (string=? x new-val))
+                                                               new-choices))
+                                    (set! internal-selection-string new-val))
+                                  
+                                  (unless (boolean=? (is-enabled?) new-enabled?)
+                                    (enable new-enabled?)))]))))
     
     ;; get-choices: -> (listof string)
     (define (get-choices)
@@ -603,11 +607,13 @@
     
     
     (define (internal-callback)
-      (set! internal-selection-string (get-string-selection))
-      (change-world/f!
-       (lambda (a-world)
-         (world-callback 
-          a-world (get-string-selection)))))
+      (queue-on-eventspace eventspace
+                           (lambda ()
+                             (set! internal-selection-string (get-string-selection))
+                             (change-world/f!
+                              (lambda (a-world)
+                                (world-callback 
+                                 a-world (get-string-selection)))))))
     (super-new
      [callback (lambda (c e) (internal-callback))])))
 
@@ -627,7 +633,9 @@
   (class* horizontal-panel% (world-gui<%>)
     
     (init-field min-value max-value world-callback)
+    (init-field eventspace)
     (init init-value label)
+    
     (inherit delete-child)
     
     ;; We maintain an inner class that represents the real slider.
@@ -646,32 +654,36 @@
          [min-value min-value]
          [max-value max-value]
          [callback (lambda (s e)
-                     (change-world/f!
-                      (lambda (a-world)
-                        (world-callback a-world (get-value)))))])))
+                     (queue-on-eventspace eventspace
+                                          (lambda ()
+                                            (change-world/f!
+                                             (lambda (a-world)
+                                               (world-callback a-world (get-value)))))))])))
     
     (define/public (update-with! an-elt)
-      (match an-elt
-        [(struct slider-elt (val-f min-f max-f callback enabled?-f))
-         (let* ([new-min (min-f (current-world))]
-                [new-max (max-f (current-world))]
-                [new-val (clamp (val-f (current-world)) new-min new-max)]
-                [new-enabled? (enabled?-f (current-world))])
-           
-           (unless (and (= new-min (send inner-slider get-min-value))
-                        (= new-max (send inner-slider get-max-value)))
-             (delete-child inner-slider)
-             (set! inner-slider (make-inner-slider new-min new-max new-val))
-             (queue-callback (lambda () 
-                               (change-world/f!
-                                (lambda (a-world)
-                                  (world-callback a-world (send inner-slider get-value)))))))
-           
-           (unless (= new-val (send inner-slider get-value))
-             (send inner-slider set-value new-val))
-           
-           (unless (boolean=? (send inner-slider is-enabled?) new-enabled?)
-             (send inner-slider enable new-enabled?)))]))
+      (queue-on-eventspace eventspace
+                           (lambda ()
+                             (match an-elt
+                               [(struct slider-elt (val-f min-f max-f callback enabled?-f))
+                                (let* ([new-min (min-f (current-world))]
+                                       [new-max (max-f (current-world))]
+                                       [new-val (clamp (val-f (current-world)) new-min new-max)]
+                                       [new-enabled? (enabled?-f (current-world))])
+                                  
+                                  (unless (and (= new-min (send inner-slider get-min-value))
+                                               (= new-max (send inner-slider get-max-value)))
+                                    (delete-child inner-slider)
+                                    (set! inner-slider (make-inner-slider new-min new-max new-val))
+                                    (queue-callback (lambda () 
+                                                      (change-world/f!
+                                                       (lambda (a-world)
+                                                         (world-callback a-world (send inner-slider get-value)))))))
+                                  
+                                  (unless (= new-val (send inner-slider get-value))
+                                    (send inner-slider set-value new-val))
+                                  
+                                  (unless (boolean=? (send inner-slider is-enabled?) new-enabled?)
+                                    (send inner-slider enable new-enabled?)))]))))
     
     
     ;; make-inner-slider: number number number -> inner-slider%
@@ -693,22 +705,25 @@
 (define world-gui:checkbox%
   (class* check-box% #;(on-subwindow-char-mixin check-box%) (world-gui<%>)
     (init-field world-callback)
+    (init-field eventspace)
     (inherit get-value set-value get-label is-enabled? enable min-width min-height)
     
     (define/public (update-with! an-elt)
-      (match an-elt
-        [(struct checkbox-elt (label-f val-f callback enabled?-f))
-         (let ([new-label (displayable->string (label-f (current-world)))]
-               [new-val (val-f (current-world))]
-               [new-enabled? (enabled?-f (current-world))])
-           (unless (string=? new-label (get-label))
-             (set-label new-label))
-           
-           (unless (boolean=? new-val (get-value))
-             (set-value new-val))
-           
-           (unless (boolean=? (is-enabled?) new-enabled?)
-             (enable new-enabled?)))]))
+      (queue-on-eventspace eventspace
+                           (lambda ()
+                             (match an-elt
+                               [(struct checkbox-elt (label-f val-f callback enabled?-f))
+                                (let ([new-label (displayable->string (label-f (current-world)))]
+                                      [new-val (val-f (current-world))]
+                                      [new-enabled? (enabled?-f (current-world))])
+                                  (unless (string=? new-label (get-label))
+                                    (set-label new-label))
+                                  
+                                  (unless (boolean=? new-val (get-value))
+                                    (set-value new-val))
+                                  
+                                  (unless (boolean=? (is-enabled?) new-enabled?)
+                                    (enable new-enabled?)))]))))
     
     
     (define/override (set-label a-label)
@@ -726,9 +741,11 @@
     
     (super-new
      [callback (lambda (s e)
-                 (change-world/f!
-                  (lambda (a-world)
-                    (world-callback a-world (get-value)))))])
+                 (queue-on-eventspace eventspace
+                                      (lambda ()
+                                        (change-world/f!
+                                         (lambda (a-world)
+                                           (world-callback a-world (get-value)))))))])
     
     
     ;; We record the old space-padding values around the button's label.  For some
@@ -749,41 +766,48 @@
     (inherit get-editor min-width min-height)
     
     (init-field world-callback)
+    (init-field eventspace)
     
     (define/override (on-char evt)
-      (handle-key-event! evt)
+      (queue-on-eventspace eventspace
+                           (lambda ()
+                             (handle-key-event! evt)))
       (void))
     
     (define/override (on-event evt)
-      (when (send evt get-left-down)
-        (let ([x (send evt get-x)]
-              [y (send evt get-y)])
-          (change-world/f!
-           (lambda (a-world)
-             (world-callback a-world x y))))))
+      (queue-on-eventspace eventspace
+                           (lambda ()
+                             (when (send evt get-left-down)
+                               (let ([x (send evt get-x)]
+                                     [y (send evt get-y)])
+                                 (change-world/f!
+                                  (lambda (a-world)
+                                    (world-callback a-world x y))))))))
     
     
     (define/public (update-with! an-elt)
-      (match an-elt
-        [(struct canvas-elt (scene-f callback))
-         (let ([new-scene (scene-f (current-world))]
-               [editor (get-editor)])
-           (dynamic-wind 
-            (lambda () 
-              (send editor begin-edit-sequence))
-            (lambda () 
-              (send editor erase)
-              (let ([snip (send new-scene copy)])
-                (send editor insert snip 0 0)
-                (let ([new-width (+ (image-width snip) INSET)]
-                      [new-height (+ (image-height snip) INSET)])
-                  (when (or (not (= (min-width) new-width))
-                            (not (= (min-height)  new-height)))
-                    (min-width new-width)
-                    (min-height new-height)))))
-            (lambda () 
-              (send editor end-edit-sequence))))]))
-    
+      (queue-on-eventspace eventspace
+                           (lambda ()
+                             (match an-elt
+                               [(struct canvas-elt (scene-f callback))
+                                (let ([new-scene (scene-f (current-world))]
+                                      [editor (get-editor)])
+                                  (dynamic-wind 
+                                   (lambda () 
+                                     (send editor begin-edit-sequence))
+                                   (lambda () 
+                                     (send editor erase)
+                                     (let ([snip (send new-scene copy)])
+                                       (send editor insert snip 0 0)
+                                       (let ([new-width (+ (image-width snip) INSET)]
+                                             [new-height (+ (image-height snip) INSET)])
+                                         (when (or (not (= (min-width) new-width))
+                                                   (not (= (min-height)  new-height)))
+                                           (min-width new-width)
+                                           (min-height new-height)))))
+                                   (lambda () 
+                                     (send editor end-edit-sequence))))]))))
+                           
     (super-new)))
 
 
