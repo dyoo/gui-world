@@ -32,8 +32,10 @@
 
 (define current-world (make-parameter #f))
 (define current-gui-world-eventspace (make-parameter (make-eventspace)))
+(define current-top-window (make-parameter #f))
+(define current-top-panel (make-parameter #f))
 (define current-world-listeners (make-parameter '()))
-(define current-stopped? (make-parameter (box #f)))
+(define current-stopped? (make-parameter (box #t)))
 (define current-stop-when (make-parameter #f))
 (define current-last-world-ch (make-parameter (make-channel)))
 (define current-on-key-event-callback (make-parameter #f))
@@ -135,33 +137,50 @@
                   #:dialog? (dialog? #f)
                   #:on-world-change (on-world-change (lambda (a-world) (void)))
                   . registry-hooks)
-  (let ([es (make-eventspace)]
-        [ch (make-channel)])
-    (parameterize ([current-eventspace es])
-      (queue-callback (lambda ()
-                        (current-stopped? (box #f))
-                        (current-last-world-ch ch)
-                        (current-world initial-world)
-                        (current-gui-world-eventspace es)
-                        (let* ([window (new (if dialog? world-gui:dialog% world-gui:frame%)
-                                            [label ""])]
-                               [top-panel (new world-gui:top-panel% [parent window])])
-                          
-                          (add-listener! on-world-change)
-                          (add-listener! (lambda (w)
-                                           (refresh-widgets! w a-gui top-panel)))
-                          
-                          (render-elt! a-gui top-panel)
-                          (change-world/f! (lambda (a-world)
-                                             initial-world))
-                          
-                          (for-each (lambda (t) (t)) registry-hooks)
-                          ;; WARNING: the following must be last, 
-                          ;; to avoid conflict with the dialog's modal behavior.
-                          ;; This will immediately yield if the window is a dialog.
-                          (send window show #t)))))
-    (let ([result (yield ch)])
-      result)))
+  (define (run ch #:make-window make-window)
+    (let ([es (make-eventspace)])
+      (parameterize ([current-eventspace es])
+        (queue-callback (lambda ()
+                          (current-stopped? (box #f))
+                          (current-last-world-ch ch)
+                          (current-world initial-world)
+                          (current-gui-world-eventspace es)
+                          (let* ([window (make-window)]
+                                 [top-panel (new world-gui:top-panel% [parent window])])
+                            (current-top-window window)
+                            (current-top-panel top-panel)
+                            (add-listener! on-world-change)
+                            (add-listener! (lambda (w)
+                                             (refresh-widgets! w a-gui top-panel)))
+                            
+                            (render-elt! a-gui top-panel)
+                            (change-world/f! (lambda (a-world)
+                                               initial-world))
+                            
+                            (for-each (lambda (t) (t)) registry-hooks)
+                            ;; WARNING: the following must be last, 
+                            ;; to avoid conflict with the dialog's modal behavior.
+                            ;; This will immediately yield if the window is a dialog.
+                            (send window show #t)))))))
+  (let ([ch (make-channel)])
+    (cond 
+      ;; Fresh run
+      [(not (current-top-panel))
+       (run ch #:make-window (lambda () 
+                               (new (if dialog? world-gui:dialog% world-gui:frame%)
+                                    [label ""])))
+       (let ([result (yield ch)])
+         result)]
+      
+      ;; Reentrancy
+      [else
+       ;; hide the old top
+       (send (current-top-panel) show #f)
+       (run ch #:make-window (lambda () (current-top-window)))
+       (let ([result (yield ch)])
+         (printf "back~n")
+         (send (current-top-panel) show #t)
+         result)])))
 
 
 
@@ -173,18 +192,18 @@
      (current-world-listeners (cons a-listener (current-world-listeners))))))
 
 
-;; refresh-widgets!: world gui window -> void
+;; refresh-widgets!: world gui panel -> void
 ;; Update the widgets in the frame with the new contents in the world.
-(define (refresh-widgets! a-world a-gui a-window)
+(define (refresh-widgets! a-world a-gui a-panel)
   (let ([top-widget (first 
                      (filter (lambda (x) (is-a? x world-gui<%>))
-                             (send a-window get-children)))])
+                             (send a-panel get-children)))])
     (dynamic-wind (lambda ()
-                    (send a-window begin-container-sequence))
+                    (send a-panel begin-container-sequence))
                   (lambda ()
                     (send top-widget update-with! a-gui))
                   (lambda ()
-                    (send a-window end-container-sequence)))))
+                    (send a-panel end-container-sequence)))))
 
 
 
