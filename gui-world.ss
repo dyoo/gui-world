@@ -46,6 +46,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
+(provide pasteboard)
+
 
 (provide-primitive elt?)
 
@@ -61,6 +63,9 @@
 ;;
 ;; TODO: we need to figure out how to allow non-higher-order values in higher-order
 ;; position to fit the original design of gui-world.
+
+;; Fixme: do the right thing for pasteboard.
+
 (provide-maybe-higher-order-primitive message (val-f))
 (provide-maybe-higher-order-primitive button (val-f callback))
 (provide-maybe-higher-order-primitive button/enabled (val-f callback enabled?-f))

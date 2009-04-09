@@ -322,6 +322,7 @@
   
 (provide col 
          row
+         pasteboard
          message 
          button
          button/enabled

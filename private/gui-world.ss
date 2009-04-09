@@ -201,7 +201,9 @@
     
     [(struct pasteboard-elt (elts-f css-f))
      (let ([a-pasteboard (new world-gui:pasteboard% 
-                              [parent a-container])])
+                              [parent a-container]
+                              [eventspace an-eventspace])])
+       (send a-pasteboard update-with! an-elt)
        a-pasteboard)]
     
     
@@ -415,34 +417,53 @@
       (queue-on-eventspace 
        eventspace
        (lambda ()
+         (printf "In update-with~n")
+
          (match an-elt
            [(struct pasteboard-elt (elts-f css-f))
-            (let* ([new-element-snips 
+            (let* ([old-element-snips
+                    (pasteboard-children editor)]
+                   [new-element-snips 
                     (map (lambda (elt)
                            (elt->snip elt eventspace))
                          (elts-f (current-world)))]
-                   [css (css-f (current-world))])
+                   [css (css-f (current-world) (make-css))])
+              (printf "old-element-snips: ~a~n"
+                      (length old-element-snips))
+              (printf "new-element-snips: ~a~n"
+                      (length new-element-snips))
               ;; Delete all the children of the pasteboard that don't
               ;; correspond to an element, and insert all the children of the pasteboard that 
               ;; correspond to an element.
-              (send editor change-children
-                    (lambda (old-element-snips)
-                      (append (find-snips-to-keep old-element-snips new-element-snips)
-                              (find-snips-to-add new-element-snips new-element-snips))))
+              (for ([snip (find-snips-to-delete old-element-snips new-element-snips)])
+                (printf "deleting~n")
+                (send editor delete snip))
+
+              (for ([snip (find-snips-to-add old-element-snips new-element-snips)])
+                (printf "inserting~n")
+                (send editor insert snip))
               
               ;; Next, refresh everyone.
-              (for ([snip (send editor get-children)])
+              (for ([snip (pasteboard-children editor)])
                 (send editor move-to snip (snip-left snip css) (snip-top snip css))
                 ;; Relocate the snip where it should go.
                 (send snip refresh (current-world) css)))]))))
+
+    (define (pasteboard-children a-pasteboard)
+      (let loop ([snip (send a-pasteboard find-next-selected-snip #f)])
+        (cond
+          [(not snip)
+           '()]
+          [else
+           (cons snip (send a-pasteboard find-next-selected-snip snip))])))
     
     
-    ;; find-snips-to-keep: (listof element-snip) (listof element-snip) -> (listof element-snip)
-    ;; Produces the snips in old-snips that have a corresponding element in new-snips.
-    (define (find-snips-to-keep old-snips new-snips)
+    ;; find-snips-to-delete: (listof element-snip) (listof element-snip) -> (listof element-snip)
+    ;; Produces the snips in old-snips aren't in new snips.
+    (define (find-snips-to-delete old-snips new-snips)
       (let ([new-snip-elts (map get-elt new-snips)])
         (filter (lambda (e)
-                  (memq (get-elt e) new-snip-elts))
+                  (not (memq (get-elt e) new-snip-elts)))
                 old-snips)))
     
     (define (find-snips-to-add old-snips new-snips)
@@ -847,6 +868,7 @@
          elt? 
          row 
          col
+         pasteboard
          message
          button
          button/enabled
