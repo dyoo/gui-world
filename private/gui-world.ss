@@ -424,7 +424,6 @@
       (queue-on-eventspace 
        eventspace
        (lambda ()
-         (printf "In update-with~n")
          (match an-elt
            [(struct pasteboard-elt (elts-f css-f))
             (let* ([old-element-snips
@@ -448,7 +447,6 @@
               (for ([snip (pasteboard-children editor)])
                 (send editor move-to snip (snip-left snip css) (snip-top snip css))
                 ;; Relocate the snip where it should go.
-                (printf "Refreshing~n")
                 (send snip refresh (current-world) css)))]))))
 
     
