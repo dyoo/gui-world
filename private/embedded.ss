@@ -174,8 +174,10 @@
        eventspace
        (lambda ()
          (let ([new-label ((displayable-elt-val-f elt) a-world)])
+           (send editor begin-edit-sequence)
            (send editor erase)
-           (send editor insert new-label)))))
+           (send editor insert new-label)
+           (send editor end-edit-sequence)))))
                              
     
     (super-new [snip inner-snip])))
@@ -199,6 +201,7 @@
        (lambda ()
          (match elt
            [(struct button-elt (val-f callback enabled?-f))
+            (send editor begin-edit-sequence)
             (let ([b-label (val-f a-world)]
                   [b-callback (lambda (b e)
                                 (change-world/f! (lambda (a-world) (callback a-world))))])
@@ -208,7 +211,8 @@
               (set! button (new embedded-text-button%
                                 [parent editor]
                                 [label b-label]
-                                [callback b-callback])))]))))                  
+                                [callback b-callback])))
+            (send editor end-edit-sequence)]))))
     
     (super-new (snip inner-snip))))
 
@@ -218,7 +222,6 @@
     (init-field elt)
     (init-field eventspace)
     (super-new [snip (new editor-snip% [editor (new text%)])])))
-
 
 
 (define (test-1)
