@@ -428,6 +428,7 @@
     ;; State:
     (init-field eventspace)
     (define editor (new pasteboard%))
+    (send editor set-dragable #f)
     
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     ;; Methods

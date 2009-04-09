@@ -32,7 +32,7 @@
     
     (define/public (refresh a-world a-css)
       (queue-on-eventspace eventspace
-                           (lambda () (send alignment update a-world a-css))))
+                           (lambda () (send alignment refresh a-world a-css))))
     
     
     (define/override (set-admin admin)
@@ -73,10 +73,12 @@
 
     
     [(struct column-elt (elts))
-     ...
-     #;(let ([alignment (new col% [elt an-elt] [parent parent])])
+     (let ([alignment (new elt:column%
+                           [elt an-elt] 
+                           [parent parent]
+                           [eventspace an-eventspace])])
        (for ([sub-elt elts])
-         (elt->alignment sub-elt alignment an-eventspace))
+           (elt->alignment sub-elt alignment an-eventspace))
        alignment)]
     
       
@@ -135,15 +137,32 @@
 #;(define row% 
   (class horizontal-alignment%
     (init-field elt)
-    (init-field parent)
     (super-new [parent parent])))
                                     
 
-#;(define column% 
+(define elt:column% 
   (class vertical-alignment%
     (init-field elt)
-    (init-field parent)
-    (super-new [parent parent])))
+    (init-field eventspace)
+
+    (define children '())
+    
+    (define/override (add-child a-child)
+      (super add-child a-child)
+      (set! children (cons a-child children)))
+    
+    (define/override (delete-child a-child)
+      (super delete-child a-child)
+      (set! children (remq a-child children)))
+    
+    (define/public (refresh a-world a-css)
+      (queue-on-eventspace 
+       eventspace
+       (lambda ()
+         (for ([child children])
+           (send child refresh (current-world) a-css)))))
+    
+    (super-new)))
 
 
 #;(define box-group%
@@ -172,7 +191,7 @@
 
     (send editor insert "uninitialized")
     
-    (define/public (update a-world a-css)
+    (define/public (refresh a-world a-css)
       (queue-on-eventspace 
        eventspace
        (lambda ()
@@ -198,7 +217,7 @@
     (define button #f)
     
 
-    (define/public (update a-world a-css)
+    (define/public (refresh a-world a-css)
       (queue-on-eventspace
        eventspace
        (lambda ()
