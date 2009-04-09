@@ -93,6 +93,7 @@
 (define (big-bang initial-world a-gui
                   #:dialog? (dialog? #f)
                   #:on-world-change (on-world-change (lambda (a-world) (void)))
+                  #:css (css (make-css))
                   . registry-hooks)
   (define (run es ch #:make-window make-window)
     (parameterize ([current-eventspace es])
@@ -107,9 +108,9 @@
                             (current-top-panel top-panel)
                             (add-listener! on-world-change)
                             (add-listener! (lambda (w)
-                                             (refresh-widgets! w a-gui top-panel)))
+                                             (refresh-widgets! w a-gui top-panel css)))
                             
-                            (render-elt! a-gui top-panel es)
+                            (render-elt! a-gui top-panel es css)
                             (change-world/f! (lambda (a-world)
                                                initial-world))
                             
@@ -146,16 +147,16 @@
 
 
 
-;; refresh-widgets!: world gui panel -> void
+;; refresh-widgets!: world gui panel css -> void
 ;; Update the widgets in the frame with the new contents in the world.
-(define (refresh-widgets! a-world a-gui a-panel)
+(define (refresh-widgets! a-world a-gui a-panel a-css)
   (let ([top-widget (first 
                      (filter (lambda (x) (is-a? x world-gui<%>))
                              (send a-panel get-children)))])
     (dynamic-wind (lambda ()
                     (send a-panel begin-container-sequence))
                   (lambda ()
-                    (send top-widget update-with! a-gui))
+                    (send top-widget update-with! a-gui a-css))
                   (lambda ()
                     (send a-panel end-container-sequence)))))
 
@@ -165,14 +166,14 @@
   (define f (new frame% [label ""]))
   (define p (new world-gui:pasteboard% [parent f]
                  [eventspace (current-eventspace)]))
-  (send p update-with! (pasteboard (list (message "hello world"))))
+  (send p update-with! (pasteboard (list (message "hello world"))) (make-css))
   (send f show #t))
 
 
 ;; render-elt!: elt container% eventspace -> world-gui<%>
 ;; Consumes an elt, and produces a world-gui<%> widget that's installed in a-container.
 ;; GUI Events that occur should be run in the context of the given eventspace es.
-(define (render-elt! an-elt a-container an-eventspace)
+(define (render-elt! an-elt a-container an-eventspace a-css)
   (match an-elt
     [(struct row-elt (elts))
      (let ([row-container 
@@ -182,7 +183,7 @@
                  [stretchable-height #f]
                  [eventspace an-eventspace])])
        (for ([sub-elt elts])
-         (render-elt! sub-elt row-container an-eventspace))
+         (render-elt! sub-elt row-container an-eventspace a-css))
        row-container)]
     
     [(struct column-elt (elts))
@@ -193,7 +194,7 @@
                  [stretchable-height #f]
                  [eventspace an-eventspace])])
        (for ([sub-elt elts])
-         (render-elt! sub-elt column-container an-eventspace))
+         (render-elt! sub-elt column-container an-eventspace a-css))
        column-container)]
     
     [(struct box-group-elt (label-f sub-elt enabled?-f))
@@ -203,14 +204,14 @@
                  [label (displayable->string (label-f (current-world)))]
                  [enabled (enabled?-f (current-world))]
                  [eventspace an-eventspace])])
-       (render-elt! sub-elt a-group-box an-eventspace)
+       (render-elt! sub-elt a-group-box an-eventspace a-css)
        a-group-box)]
     
     [(struct pasteboard-elt (elts-f css-f))
      (let ([a-pasteboard (new world-gui:pasteboard% 
                               [parent a-container]
                               [eventspace an-eventspace])])
-       (send a-pasteboard update-with! an-elt)
+       (send a-pasteboard update-with! an-elt a-css)
        a-pasteboard)]
     
     
@@ -350,9 +351,9 @@
     (inherit get-children)
     (init-field eventspace)
     
-    (define/public (update-with! an-elt)
+    (define/public (update-with! an-elt a-css)
       (for-each (lambda (sub-elt sub-gui-elt)
-                  (send sub-gui-elt update-with! sub-elt))
+                  (send sub-gui-elt update-with! sub-elt a-css))
                 (row-elt-elts an-elt)
                 (get-children)))
     
@@ -364,9 +365,9 @@
     (inherit get-children)
     (init-field eventspace)
     
-    (define/public (update-with! an-elt)
+    (define/public (update-with! an-elt a-css)
       (for-each (lambda (sub-elt sub-gui-elt)
-                  (send sub-gui-elt update-with! sub-elt))
+                  (send sub-gui-elt update-with! sub-elt a-css))
                 (column-elt-elts an-elt)
                 (get-children)))
     
@@ -379,7 +380,7 @@
     (inherit get-children get-label set-label is-enabled? enable)
     (init-field eventspace)
     
-    (define/public (update-with! an-elt)
+    (define/public (update-with! an-elt a-css)
       (queue-on-eventspace eventspace
                            (lambda ()
                              (match an-elt
@@ -391,7 +392,8 @@
                                   (unless (boolean=? new-enabled? (is-enabled?))
                                     (enable new-enabled?))
                                   
-                                  (send (first (get-children)) update-with! sub-elt))]))))
+                                  (send (first (get-children)) update-with! sub-elt
+                                        a-css))]))))
     
     (super-new)))
 
@@ -407,11 +409,20 @@
     (define (get-elt a-snip)
       (get-field element a-snip))
 
+    (define (as-number thing)
+      (cond
+        [(number? thing) thing]
+        [(and (string? thing) (string->number thing))
+         (string->number thing)]
+        [else
+         (log-debug (format "I don't know how to treat ~s as a number" thing))
+         0]))
+    
     (define (snip-top a-snip a-css)
-      (string->number (css-lookup a-css (get-elt a-snip) 'top (lambda () "0"))))
+      (as-number (css-lookup a-css (get-elt a-snip) 'top (lambda () "0"))))
     
     (define (snip-left a-snip a-css)
-      (string->number (css-lookup a-css (get-elt a-snip) 'left (lambda () "0"))))
+      (as-number (css-lookup a-css (get-elt a-snip) 'left (lambda () "0"))))
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     
     ;; State:
@@ -420,7 +431,7 @@
     
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     ;; Methods
-    (define/public (update-with! an-elt)
+    (define/public (update-with! an-elt a-css)
       (queue-on-eventspace 
        eventspace
        (lambda ()
@@ -432,7 +443,7 @@
                     (map (lambda (elt)
                            (elt->snip elt eventspace))
                          (elts-f (current-world)))]
-                   [css (css-f (current-world) (make-css))])
+                   [css (css-f (current-world) a-css)])
 
               ;; Delete all the children of the pasteboard that don't
               ;; correspond to an element, and insert all the children of the pasteboard that 
@@ -488,7 +499,7 @@
     (inherit get-label set-label)
     (init-field eventspace)
     
-    (define/public (update-with! an-elt)
+    (define/public (update-with! an-elt a-css)
       (queue-on-eventspace eventspace
                            (lambda ()
                              (match an-elt 
@@ -509,7 +520,7 @@
     (init-field world-callback)
     (init-field eventspace)
     
-    (define/public (update-with! an-elt)
+    (define/public (update-with! an-elt a-css)
       (queue-on-eventspace eventspace 
                            (lambda ()
                              (match an-elt
@@ -559,7 +570,7 @@
     (init-field world-callback)
     (init-field eventspace)
     
-    (define/public (update-with! an-elt)
+    (define/public (update-with! an-elt a-css)
       (queue-on-eventspace eventspace
                            (lambda ()
                              (match an-elt
@@ -617,7 +628,7 @@
     ;; chosen by a control event; see the callback for the set!.
     (define internal-selection-string "")
     
-    (define/public (update-with! an-elt)
+    (define/public (update-with! an-elt a-css)
       (queue-on-eventspace eventspace
                            (lambda ()
                              (match an-elt
@@ -712,7 +723,7 @@
                                              (lambda (a-world)
                                                (world-callback a-world (get-value)))))))])))
     
-    (define/public (update-with! an-elt)
+    (define/public (update-with! an-elt a-css)
       (queue-on-eventspace eventspace
                            (lambda ()
                              (match an-elt
@@ -760,7 +771,7 @@
     (init-field eventspace)
     (inherit get-value set-value get-label is-enabled? enable min-width min-height)
     
-    (define/public (update-with! an-elt)
+    (define/public (update-with! an-elt a-css)
       (queue-on-eventspace eventspace
                            (lambda ()
                              (match an-elt
@@ -837,7 +848,7 @@
                                     (world-callback a-world x y))))))))
     
     
-    (define/public (update-with! an-elt)
+    (define/public (update-with! an-elt a-css)
       (queue-on-eventspace eventspace
                            (lambda ()
                              (match an-elt
@@ -908,4 +919,4 @@
  (all-from-out htdp/image))
 
 
-(provide css-update css-lookup)
+(provide make-css css-update css-lookup)

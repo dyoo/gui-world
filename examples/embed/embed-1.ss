@@ -1,11 +1,11 @@
 #lang scheme
 
-;; Very simple program: a message on the pasteboard starts descending toward the bottom left,
+;; A message on the pasteboard descends toward the bottom right.
 ;; based on changing the world.
 ;;
 ;; The style defines how the object will look.
 
-(require "../gui-world.ss")
+(require "../../private/gui-world.ss")
 
 ;; m is a message
 (define m (message "hello world"))
@@ -19,9 +19,9 @@
   (pasteboard (list m)
               
               #:css-f (lambda (world css)
-                        (let* ([css (css-update css m 'top (number->string world))]
-                               [css (css-update css m 'left (number->string world))])
+                        (let* ([css (css-update css m 'top world)]
+                               [css (css-update css m 'left world)])
                           css))))
 
-(gui-big-bang initial-world view
+(big-bang initial-world view
           (on-tick 1/2 (lambda (world) (+ world 5))))

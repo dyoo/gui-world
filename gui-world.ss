@@ -113,4 +113,4 @@
 (provide key=? key-event?)
 
 
-(provide-primitives css-update css-lookup)
+(provide-primitives make-css css-update css-lookup)

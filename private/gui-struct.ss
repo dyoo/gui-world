@@ -13,14 +13,16 @@
 (define (-make-css)
   (make-css (make-immutable-hash '())))
 
-;; css-update: css elt symbol string -> css
+;; css-update: css elt symbol X -> css
 (define (css-update a-css an-elt a-name a-value)
   (match a-css 
     [(struct css (h))
      (make-css (hash-set h (list an-elt a-name) a-value))]))
 
-;; css-lookup: css elt symbol [(-> string)] -> string
-(define (css-lookup a-css an-elt a-name (default (lambda () (error 'css-lookup "Couldn't find ~s" a-name))))
+;; css-lookup: css elt symbol [(-> X)] -> X
+(define (css-lookup a-css an-elt a-name 
+                    (default (lambda () 
+                               (error 'css-lookup "Couldn't find ~s" a-name))))
   (match a-css
     [(struct css (h))
      (hash-ref h (list an-elt a-name) default)]))
@@ -391,6 +393,6 @@
                   
                   [rename -make-css make-css (-> css?)]
                   [css-lookup
-                   ((css? elt? symbol?) ((-> string?)) . ->* . string?)]
+                   ((css? elt? symbol?) ((-> any/c)) . ->* . any)]
                   [css-update
-                   (css? elt? symbol? string? . -> . css?)])
+                   (css? elt? symbol? any/c . -> . css?)])
