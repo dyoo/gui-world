@@ -28,6 +28,12 @@
 
     (inherit get-editor)
 
+    
+    (define/public (refresh a-world a-css)
+      (queue-on-eventspace eventspace
+                           (lambda () (send alignment update a-world a-css))))
+    
+    
     (define/override (set-admin admin)
       (super set-admin admin)
       ;; When the admin is set, then the alignment should
@@ -155,7 +161,22 @@
   (class snip-wrapper%
     (init-field elt)
     (init-field eventspace)
-    (super-new [snip (new editor-snip% [editor (new text%)])])))
+    
+    (define editor (new text%))
+    (define inner-snip (new editor-snip% 
+                            [editor editor]
+                            [with-border? #f]))
+
+    (define/public (update a-world a-css)
+      (queue-on-eventspace 
+       eventspace
+       (lambda ()
+         (let ([new-label ((displayable-elt-val-f elt) a-world)])
+           (send editor clear)
+           (send editor insert new-label)))))
+                             
+    
+    (super-new [snip inner-snip])))
 
 
 (define elt:text-field%
@@ -166,12 +187,22 @@
 
 
 
-(define (test)
+(define (test-1)
   (let* ([f (new frame% [label ""])]
-         [t (new text%)]
+         [e (new pasteboard%)]
          [c (new editor-canvas% 
                  [parent f]
-                 [editor t])])
-    (send t insert (elt->snip (message "hello")
-                              (current-eventspace)))
+                 [editor e])]
+         [s1 (elt->snip (message (lambda (world)
+                                  (format "hello ~s" world)))
+                       (current-eventspace))]
+         
+         [s2 (elt->snip (button "Press me!"
+                                (lambda (world)
+                                  (add1 world)))
+                        (current-eventspace))])
+    (send e insert s1)
+    (send e insert s2)
+    (send s1 refresh 0 (make-css))
+    (send s2 refresh 0 (make-css))
     (send f show #t)))

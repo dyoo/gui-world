@@ -9,7 +9,6 @@
 
 
 (define-struct css (mappings) #:prefab)
-(define-struct css-attr (name value) #:prefab)
 
 (define (-make-css)
   (make-css (make-immutable-hash '())))
@@ -380,4 +379,9 @@
                                               [enabled?-f (gvalueof boolean?)])]
                   
                   [displayable? (any/c . -> . boolean?)]
-                  [displayable->string (displayable? . -> . displayable?)])
+                  [displayable->string (displayable? . -> . displayable?)]
+
+                  
+                  [rename -make-css make-css (-> css?)]
+
+                  )
