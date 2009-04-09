@@ -111,3 +111,6 @@
 (provide define-graph-function)
 
 (provide key=? key-event?)
+
+
+(provide-primitives css-update css-lookup)
