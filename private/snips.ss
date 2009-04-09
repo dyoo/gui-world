@@ -100,8 +100,10 @@
 
      
     [(struct button-elt (label-f callback enabled?-f))
-     ;; FIXME!
-     ...]
+     (new elt:button%
+          [elt an-elt]
+          [parent parent]
+          [eventspace an-eventspace])]
     
     [(struct text-field-elt (v-f callback enabled?-f))
      ;; FIXME!
@@ -172,11 +174,43 @@
        eventspace
        (lambda ()
          (let ([new-label ((displayable-elt-val-f elt) a-world)])
-           (send editor clear)
+           (send editor erase)
            (send editor insert new-label)))))
                              
     
     (super-new [snip inner-snip])))
+
+
+(define elt:button%
+  (class snip-wrapper%
+    (init-field elt)
+    (init-field eventspace)
+    
+    (define editor (new aligned-pasteboard%))
+    (define inner-snip (new editor-snip%
+                            [editor editor]
+                            [with-border? #f]))
+    (define button #f)
+    
+
+    (define/public (update a-world a-css)
+      (queue-on-eventspace
+       eventspace
+       (lambda ()
+         (match elt
+           [(struct button-elt (val-f callback enabled?-f))
+            (let ([b-label (val-f a-world)]
+                  [b-callback (lambda (b e)
+                                (change-world/f! (lambda (a-world) (callback a-world))))])
+              (when button
+                (send editor delete-child button))
+              
+              (set! button (new embedded-text-button%
+                                [parent editor]
+                                [label b-label]
+                                [callback b-callback])))]))))                  
+    
+    (super-new (snip inner-snip))))
 
 
 (define elt:text-field%
@@ -188,8 +222,11 @@
 
 
 (define (test-1)
+  (define initial-world 0)
+  (current-gui-world-eventspace (current-eventspace))
+  (current-world initial-world)
   (let* ([f (new frame% [label ""])]
-         [e (new pasteboard%)]
+         [e (new text%)]
          [c (new editor-canvas% 
                  [parent f]
                  [editor e])]
@@ -197,12 +234,18 @@
                                   (format "hello ~s" world)))
                        (current-eventspace))]
          
-         [s2 (elt->snip (button "Press me!"
+         [s2 (elt->snip (button (lambda (world) (format "Press me! (~a)" world))
                                 (lambda (world)
+                                  (printf "calling button press~n")
                                   (add1 world)))
                         (current-eventspace))])
     (send e insert s1)
     (send e insert s2)
-    (send s1 refresh 0 (make-css))
-    (send s2 refresh 0 (make-css))
+    (send s1 refresh initial-world (make-css))
+    (send s2 refresh initial-world (make-css))
+    
+    (add-listener! (lambda (w)
+                     (send s1 refresh w (make-css))
+                     (send s2 refresh w (make-css))))
+    
     (send f show #t)))

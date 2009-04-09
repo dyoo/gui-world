@@ -29,9 +29,6 @@
 
 
 
-
-
-
 ;; queue-on-world-thread: (-> void) -> void
 ;; Adds something for the current-gui-world-eventspace's thread to evaluate.
 (define (queue-on-world-thread f)
@@ -58,6 +55,16 @@
        (when (and (current-stop-when) ((current-stop-when) (current-world)))
          (set-box! (current-stopped?) #t)
          (thread (lambda () (channel-put (current-last-world-ch) (current-world)))))))))
+
+
+
+
+;; add-listener!: (world -> void) -> void
+;; Adds a listener that will react when the world changes.
+(define (add-listener! a-listener)
+  (queue-on-world-thread
+   (lambda ()
+     (current-world-listeners (cons a-listener (current-world-listeners))))))
 
 
 

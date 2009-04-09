@@ -144,13 +144,6 @@
 
 
 
-;; add-listener!: (world -> void) -> void
-;; Adds a listener that will react when the world changes.
-(define (add-listener! a-listener)
-  (queue-on-world-thread
-   (lambda ()
-     (current-world-listeners (cons a-listener (current-world-listeners))))))
-
 
 ;; refresh-widgets!: world gui panel -> void
 ;; Update the widgets in the frame with the new contents in the world.
