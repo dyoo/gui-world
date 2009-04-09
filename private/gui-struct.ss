@@ -8,12 +8,36 @@
          (only-in lang/htdp-beginner image?))
 
 
+(define-struct css (mappings) #:prefab)
+(define-struct css-attr (name value) #:prefab)
+
+(define (-make-css)
+  (make-css (make-immutable-hash '())))
+
+;; css-update: css elt symbol string -> css
+(define (css-update a-css an-elt a-name a-value)
+  (match a-css 
+    [(struct css (h))
+     (make-css (hash-set h (list an-elt a-name) a-value))]))
+
+;; css-lookup: css elt symbol [(-> X)] -> X
+(define (css-lookup a-css an-elt a-name (default (lambda () (error 'css-lookup "Couldn't find ~s" a-name))))
+  (match a-css
+    [(struct css (h))
+     (hash-ref h (list an-elt a-name) default)]))
+
+
+
+
+
 (define-struct elt () #:prefab)
 ;; An gui element is one of the following:
 
 (define-struct (row-elt elt) (elts) #:prefab)
 (define-struct (column-elt elt) (elts) #:prefab)
 (define-struct (box-group-elt elt) (val-f elt enabled?-f) #:prefab)
+(define-struct (pasteboard-elt elt) (elts) #:prefab)
+
 (define-struct (displayable-elt elt) (val-f) #:prefab)
 (define-struct (canvas-elt elt) (scene-f callback) #:prefab)
 (define-struct (button-elt elt) (val-f callback enabled?-f) #:prefab)
@@ -100,6 +124,9 @@
 
 (define (col . elts)
   (make-column-elt (coerse-primitive-types-to-elts elts)))
+
+(define (pasteboard . elts)
+  (make-pasteboard-elt (coerse-primitive-types-to-elts elts)))
 
 
 (define (message a-gvalue)
@@ -225,6 +252,10 @@
      (make-box-group-elt (project val-f w->s)
                          (project/inject/gui a-subelt w->s s->w)
                          (project enabled?-f w->s))]
+    
+    [(struct pasteboard-elt (elts))
+     (make-pasteboard-elt (map (lambda (a-subelt) (project/inject/gui a-subelt w->s s->w))
+                               elts))]
 
     [(struct displayable-elt (val-f))
      (make-displayable-elt (project val-f w->s))]
@@ -316,6 +347,8 @@
                   [struct (box-group-elt elt) ([val-f (gvalueof displayable?)]
                                                [elt elt?]
                                                [enabled?-f (gvalueof boolean?)])]
+
+                  [struct (pasteboard-elt elt) ([elts (listof elt?)])]
                   
                   [struct (displayable-elt elt) ([val-f (gvalueof displayable?)])]
                   
