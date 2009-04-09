@@ -19,7 +19,7 @@
     [(struct css (h))
      (make-css (hash-set h (list an-elt a-name) a-value))]))
 
-;; css-lookup: css elt symbol [(-> X)] -> X
+;; css-lookup: css elt symbol [(-> string)] -> string
 (define (css-lookup a-css an-elt a-name (default (lambda () (error 'css-lookup "Couldn't find ~s" a-name))))
   (match a-css
     [(struct css (h))
@@ -28,14 +28,14 @@
 
 
 
-
 (define-struct elt () #:prefab)
 ;; An gui element is one of the following:
 
-(define-struct (row-elt elt) (elts) #:prefab)
-(define-struct (column-elt elt) (elts) #:prefab)
+(define-struct (row-elt elt) (elts) #:prefab)       ;; fixme: elts should be dynamic
+(define-struct (column-elt elt) (elts) #:prefab)    ;; fixme: elts should be dynamic
+
 (define-struct (box-group-elt elt) (val-f elt enabled?-f) #:prefab)
-(define-struct (pasteboard-elt elt) (elts) #:prefab)
+(define-struct (pasteboard-elt elt) (elts-f css-f) #:prefab)
 
 (define-struct (displayable-elt elt) (val-f) #:prefab)
 (define-struct (canvas-elt elt) (scene-f callback) #:prefab)
@@ -124,8 +124,10 @@
 (define (col . elts)
   (make-column-elt (coerse-primitive-types-to-elts elts)))
 
-(define (pasteboard . elts)
-  (make-pasteboard-elt (coerse-primitive-types-to-elts elts)))
+(define (pasteboard elts-f #:css-f (css-f (lambda (world css) css)))
+  (make-pasteboard-elt (wrap-primitive 'pasteboard (flat-contract-predicate (listof elt?))
+                                       elts-f)
+                       (wrap-primitive 'pasteboard css? css-f)))
 
 
 (define (message a-gvalue)
@@ -252,9 +254,10 @@
                          (project/inject/gui a-subelt w->s s->w)
                          (project enabled?-f w->s))]
     
-    [(struct pasteboard-elt (elts))
+    [(struct pasteboard-elt (elts css-f))
      (make-pasteboard-elt (map (lambda (a-subelt) (project/inject/gui a-subelt w->s s->w))
-                               elts))]
+                               elts)
+                          (project/inject-1 css-f w->s s->w))]
 
     [(struct displayable-elt (val-f))
      (make-displayable-elt (project val-f w->s))]
@@ -347,7 +350,10 @@
                                                [elt elt?]
                                                [enabled?-f (gvalueof boolean?)])]
 
-                  [struct (pasteboard-elt elt) ([elts (listof elt?)])]
+                  [struct (pasteboard-elt elt) ([elts-f (gvalueof (listof elt?))]
+                                                ;; slightly abusing the contract...
+                                                ;; 
+                                                [css-f (gcallbackof css?)])]
                   
                   [struct (displayable-elt elt) ([val-f (gvalueof displayable?)])]
                   
@@ -383,5 +389,7 @@
 
                   
                   [rename -make-css make-css (-> css?)]
-
-                  )
+                  [css-lookup
+                   ((css? elt? symbol?) ((-> string?)) . ->* . string?)]
+                  [css-update
+                   (css? elt? symbol? string? . -> . css?)])

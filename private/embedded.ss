@@ -3,6 +3,7 @@
 (require scheme/gui/base
          scheme/match
          scheme/class
+         scheme/contract
          embedded-gui
          "gui-struct.ss"
          "params.ss")
@@ -85,7 +86,7 @@
        (elt->alignment sub-elt alignment an-eventspace)
        alignment)]
     
-    [(struct pasteboard-elt (elts))
+    [(struct pasteboard-elt (elts css-f))
      (new elt:pasteboard% 
           [elt an-elt]
           [parent parent]
@@ -239,7 +240,6 @@
          
          [s2 (elt->snip (button (lambda (world) (format "Press me! (~a)" world))
                                 (lambda (world)
-                                  (printf "calling button press~n")
                                   (add1 world)))
                         (current-eventspace))])
     (send e insert s1)
@@ -252,3 +252,6 @@
                      (send s2 refresh w (make-css))))
     
     (send f show #t)))
+
+
+(provide/contract [elt->snip (elt? eventspace? . -> . (is-a?/c element-snip%))])

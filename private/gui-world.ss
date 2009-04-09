@@ -12,7 +12,8 @@
 
          "params.ss"
          "gui-struct.ss"
-         "world-support.ss")
+         "world-support.ss"
+         "embedded.ss")
 
 
 
@@ -198,6 +199,12 @@
        (render-elt! sub-elt a-group-box an-eventspace)
        a-group-box)]
     
+    [(struct pasteboard-elt (elts-f css-f))
+     (let ([a-pasteboard (new world-gui:pasteboard% 
+                              [parent a-container])])
+       a-pasteboard)]
+    
+    
     [(struct displayable-elt (s-f))
      (new world-gui:string% 
           [label 
@@ -357,6 +364,7 @@
     (super-new)))
 
 
+
 (define world-gui:group-box%
   (class* group-box-panel% #;(on-subwindow-char-mixin group-box-panel%) (world-gui<%>)
     (inherit get-children get-label set-label is-enabled? enable)
@@ -377,6 +385,78 @@
                                   (send (first (get-children)) update-with! sub-elt))]))))
     
     (super-new)))
+
+
+
+(define world-gui:pasteboard%
+  (class* editor-canvas% (world-gui<%>)
+
+    
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    ;; helpers
+    ;; get-elt: element-snip -> snip
+    (define (get-elt a-snip)
+      (get-field element a-snip))
+
+    (define (snip-top a-css a-snip)
+      (css-lookup a-css (get-elt a-snip) 'top (lambda () 0)))
+    
+    (define (snip-left a-css a-snip)
+      (css-lookup a-css (get-elt a-snip) 'left (lambda () 0)))
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    
+    ;; State:
+    (init-field eventspace)
+    (define editor (new pasteboard%))
+    
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    ;; Methods
+    (define/public (update-with! an-elt)
+      (queue-on-eventspace 
+       eventspace
+       (lambda ()
+         (match an-elt
+           [(struct pasteboard-elt (elts-f css-f))
+            (let* ([new-element-snips 
+                    (map (lambda (elt)
+                           (elt->snip elt eventspace))
+                         (elts-f (current-world)))]
+                   [css (css-f (current-world))])
+              ;; Delete all the children of the pasteboard that don't
+              ;; correspond to an element, and insert all the children of the pasteboard that 
+              ;; correspond to an element.
+              (send editor change-children
+                    (lambda (old-element-snips)
+                      (append (find-snips-to-keep old-element-snips new-element-snips)
+                              (find-snips-to-add new-element-snips new-element-snips))))
+              
+              ;; Next, refresh everyone.
+              (for ([snip (send editor get-children)])
+                (send editor move-to snip (snip-left snip css) (snip-top snip css))
+                ;; Relocate the snip where it should go.
+                (send snip refresh (current-world) css)))]))))
+    
+    
+    ;; find-snips-to-keep: (listof element-snip) (listof element-snip) -> (listof element-snip)
+    ;; Produces the snips in old-snips that have a corresponding element in new-snips.
+    (define (find-snips-to-keep old-snips new-snips)
+      (let ([new-snip-elts (map get-elt new-snips)])
+        (filter (lambda (e)
+                  (memq (get-elt e) new-snip-elts))
+                old-snips)))
+    
+    (define (find-snips-to-add old-snips new-snips)
+      (let ([old-snip-elts (map get-elt old-snips)])
+        (filter (lambda (e)
+                  (not (memq (get-elt e) old-snip-elts)))
+                new-snips)))
+      
+      
+      
+    (super-new [editor (new pasteboard%)])))
+
+
+
 
 
 (define world-gui:string% 
