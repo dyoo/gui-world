@@ -170,6 +170,8 @@
                             [editor editor]
                             [with-border? #f]))
 
+    (send editor insert "uninitialized")
+    
     (define/public (update a-world a-css)
       (queue-on-eventspace 
        eventspace
@@ -230,7 +232,7 @@
   (current-gui-world-eventspace (current-eventspace))
   (current-world initial-world)
   (let* ([f (new frame% [label ""])]
-         [e (new text%)]
+         [e (new pasteboard%)]
          [c (new editor-canvas% 
                  [parent f]
                  [editor e])]
@@ -247,11 +249,23 @@
     (send s1 refresh initial-world (make-css))
     (send s2 refresh initial-world (make-css))
     
+    (printf "~a children~n" (length (pasteboard-children e)))
+    
     (add-listener! (lambda (w)
                      (send s1 refresh w (make-css))
                      (send s2 refresh w (make-css))))
     
     (send f show #t)))
+
+    
+(define (pasteboard-children a-pasteboard)
+  (let loop ([snip (send a-pasteboard find-first-snip)])
+    (cond
+      [(not snip)
+       '()]
+      [else
+       (cons snip (loop (send snip next)))])))
+
 
 
 (provide/contract [elt->snip (elt? eventspace? . -> . (is-a?/c element-snip%))])
