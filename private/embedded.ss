@@ -65,12 +65,14 @@
 (define (elt->alignment an-elt parent an-eventspace)
   (match an-elt
     [(struct row-elt (elts))
-     ...
-     #;(let ([alignment (new row% [elt an-elt] [parent parent])])
+     (let ([alignment (new elt:row%
+                           [elt an-elt] 
+                           [parent parent]
+                           [eventspace an-eventspace])])
        (for ([sub-elt elts])
-         (elt->alignment sub-elt alignment an-eventspace))
+           (elt->alignment sub-elt alignment an-eventspace))
        alignment)]
-
+    
     
     [(struct column-elt (elts))
      (let ([alignment (new elt:column%
@@ -80,8 +82,8 @@
        (for ([sub-elt elts])
            (elt->alignment sub-elt alignment an-eventspace))
        alignment)]
+
     
-      
     [(struct box-group-elt (label-f sub-elt enabled?-f))
      ...
      #;(let ([alignment (new box-group% [elt an-elt] [parent parent])])
@@ -133,15 +135,8 @@
      ...]))
 
 
-
-#;(define row% 
-  (class horizontal-alignment%
-    (init-field elt)
-    (super-new [parent parent])))
-                                    
-
-(define elt:column% 
-  (class vertical-alignment%
+(define (make-elt:parent% super%)
+  (class super%
     (init-field elt)
     (init-field eventspace)
 
@@ -163,6 +158,13 @@
            (send child refresh (current-world) a-css)))))
     
     (super-new)))
+
+(define elt:row%
+  (make-elt:parent% horizontal-alignment%))
+
+(define elt:column%
+  (make-elt:parent% vertical-alignment%))
+
 
 
 #;(define box-group%
