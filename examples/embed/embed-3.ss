@@ -43,7 +43,7 @@
 
            [a-block
             (make-block a-column (make-posn (* (length w) 100) 
-                                            100))])
+                                            200))])
     a-block))
           
 
