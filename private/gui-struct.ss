@@ -1,6 +1,7 @@
 #lang scheme/base
 
 (require scheme/contract
+         scheme/list
          htdp/image
          htdp/error
          scheme/match
@@ -82,21 +83,20 @@
 (define world/c any/c)
 (define subworld/c any/c)
 
+
 (define (gvalueof t)
-  (world/c . -> . t))
+  (world/c elt? . -> . t))
 
-(define (gvalueof* t)
-  (or/c (world/c . -> . t)
-        t))
 
-(define (gcallbackof t)
-  (world/c t . -> . world/c))
+(define gcallbackof 
+  (case-lambda
+    [()   
+     (world/c elt? . -> . world/c)]
+    [(t)
+     (world/c elt? t . -> . world/c)]
+    [(t1 t2)
+     (world/c elt? t1 t2 . -> . world/c)]))
 
-(define (gcallbackof-2 t1 t2)
-  (world/c t1 t2 . -> . world/c))
-
-(define callback/c
-  (world/c . -> . world/c))
 
 
 ;; displayable?: any -> boolean
@@ -129,26 +129,33 @@
        (= 0 (pinhole-y i))))
 
 
-;; wrap-primitive: (any/c -> boolean) (or/c X (world -> X)) -> (world -> X)
+;; wrap-primitive: symbol (any/c -> boolean) (or/c X (world -> X) (world elt -> X)) -> (world elt -> X)
 (define (wrap-primitive a-name a-pred a-gvalue)
   (cond
     [(a-pred a-gvalue)
-     (lambda (a-world) a-gvalue)]
+     (lambda (a-world an-elt) a-gvalue)]
     [(procedure? a-gvalue)
-     (check-fun-res a-gvalue a-pred (object-name a-pred))]
+     (cond [(procedure-arity-includes? a-gvalue 2)
+            ;; Fixme: add wrapper to check return type.
+            a-gvalue]
+
+           [(procedure-arity-includes? a-gvalue 1)
+            ;; Fixme: add wrapper to check return type.
+            (lambda (world elt)
+              (a-gvalue world))]
+
+           [else
+            (error a-name
+                      "Expected procedure of arity 1 or 2, but got ~s"
+                      a-gvalue)])]
     [else 
-     (gw-error a-name
+     (error a-name
                "Expected either a <~s> or a (world -> ~s) function, but got ~s instead"
                (object-name a-pred)
                (object-name a-pred)
                a-gvalue)]))
 
 
-(define-struct (gui-world-exn exn) ())
-
-(define (gw-error name fmt . args)
-  (raise (make-gui-world-exn (string-append (format "~a: " name) (apply format fmt args))
-                             (current-continuation-marks))))
 
 
 ;; wrap-css: symbol any/c -> (world elt css -> css)
@@ -171,6 +178,32 @@
        css)]))
 
 
+;; wrap-gcallback: symbol gcallback-or-value number -> gcallback
+(define (wrap-gcallback for-name a-callback-or-value min-arity)
+  (cond
+    [(procedure? a-callback-or-value) 
+     (cond  
+       [(procedure-arity-includes? a-callback-or-value (add1 min-arity))
+        a-callback-or-value]
+       
+       [(procedure-arity-includes? a-callback-or-value min-arity)
+        (lambda args
+          (let ([world (first args)]
+                [me (second args)]
+                [other-args (rest (rest args))])
+          (apply a-callback-or-value world other-args)))]
+       [else
+        (error 'for-name
+               (format "Procedure arity of ~s not in [~a, ~a]"
+                       a-callback-or-value
+                       min-arity (add1 min-arity)))])]
+    [else
+     (lambda args
+       a-callback-or-value)]))
+
+
+
+
 ;; default-css-f: world elt css -> css
 (define (default-css-f world elt css)
   css)
@@ -189,7 +222,8 @@
 
 
 (define (pasteboard elts-f #:css-f (css-f default-css-f))
-  (make-pasteboard-elt (wrap-primitive 'pasteboard (flat-contract-predicate (listof elt?))
+  (make-pasteboard-elt (wrap-primitive 'pasteboard 
+                                       (flat-contract-predicate (listof elt?))
                                        elts-f)
                        (wrap-css 'pasteboard css-f)
                        ))
@@ -204,58 +238,58 @@
 (define (button val callback 
                 #:enabled [enabled #t]
                 #:css-f (css-f default-css-f))
-  (make-button-elt (wrap-primitive 'button/enabled displayable? val)
-                   callback
-                   (wrap-primitive 'button/enabled boolean? enabled)
+  (make-button-elt (wrap-primitive 'button displayable? val)
+                   (wrap-gcallback 'button callback 1)
+                   (wrap-primitive 'button boolean? enabled)
                    (wrap-css 'button/enabled css-f)))
 
 
 (define (slider val min max callback
                 #:enabled [enabled? #t]
                 #:css (css-f default-css-f))
-  (make-slider-elt (wrap-primitive 'slider/enabled number? val)
-                   (wrap-primitive 'slider/enabled number? min)
-                   (wrap-primitive 'slider/enabled number? max)
-                   callback
-                   (wrap-primitive 'slider/enabled boolean? enabled?)
+  (make-slider-elt (wrap-primitive 'slider number? val)
+                   (wrap-primitive 'slider number? min)
+                   (wrap-primitive 'slider number? max)
+                   (wrap-gcallback 'slider callback 2)
+                   (wrap-primitive 'slider boolean? enabled?)
                    (wrap-css 'slider/enabled css-f)))
 
 
 (define (drop-down val choices callback
                    #:enabled [enabled? #t]
                    #:css (css-f default-css-f))
-  (make-drop-down-elt (wrap-primitive 'drop-down/enabled displayable? val)
-                      (wrap-primitive 'drop-down/enabled (flat-contract-predicate (listof displayable?))
+  (make-drop-down-elt (wrap-primitive 'drop-down displayable? val)
+                      (wrap-primitive 'drop-down (flat-contract-predicate (listof displayable?))
                                       choices)
-                      callback
-                      (wrap-primitive 'drop-down/enabled boolean? enabled?)
+                      (wrap-gcallback 'drop-down callback 2)
+                      (wrap-primitive 'drop-down boolean? enabled?)
                       (wrap-css 'drop-down/enabled css-f)))
 
 
 (define (text-field val callback
                     #:enabled [enabled? #t]
                     #:css (css-f default-css-f))
-  (make-text-field-elt (wrap-primitive 'text-field/enabled displayable? val)
-                       callback
-                       (wrap-primitive 'text-field/enabled boolean? enabled?)
+  (make-text-field-elt (wrap-primitive 'text-field displayable? val)
+                       (wrap-primitive 'text-field callback 2)
+                       (wrap-primitive 'text-field boolean? enabled?)
                        (wrap-css 'text-field/enabled css-f)))
 
 
 (define (canvas a-scene 
-                #:callback (callback (lambda (world x y) world))
+                #:callback (callback (lambda (world me x y) world))
                 #:css (css-f default-css-f))
-  (make-canvas-elt (wrap-primitive 'canvas/callback scene? a-scene) 
-                   callback
-                   (wrap-css 'canvas/callback css-f)))
+  (make-canvas-elt (wrap-primitive 'canvas scene? a-scene) 
+                   (wrap-gcallback 'canvas callback 3)
+                   (wrap-css 'canvas css-f)))
 
 
 
 (define (box-group val a-gui
                    #:enabled [enabled? #t]
                    #:css (css-f default-css-f))
-  (make-box-group-elt (wrap-primitive 'box-group/enabled displayable? val)
+  (make-box-group-elt (wrap-primitive 'box-group displayable? val)
                       (coerse-primitive-to-elt a-gui)
-                      (wrap-primitive 'box-group/enabled boolean? enabled?)
+                      (wrap-primitive 'box-group boolean? enabled?)
                       (wrap-css 'box-group/enabled css-f)))
 
 
@@ -263,10 +297,10 @@
 (define (checkbox label val callback 
                   #:enabled [enabled? #t]
                   #:css (css-f default-css-f))
-  (make-checkbox-elt (wrap-primitive 'checkbox/enabled displayable? label)
-                     (wrap-primitive 'checkbox/enabled boolean? val)
-                     callback
-                     (wrap-primitive 'checkbox/enabled boolean? enabled?)
+  (make-checkbox-elt (wrap-primitive 'checkbox displayable? label)
+                     (wrap-primitive 'checkbox boolean? val)
+                     (wrap-gcallback 'checkbox callback 2)
+                     (wrap-primitive 'checkbox boolean? enabled?)
                      (wrap-css 'checkbox/enabled css-f)))
 
 
@@ -309,7 +343,7 @@
      (make-pasteboard-elt (map (lambda (a-subelt) (project/inject/gui a-subelt w->s s->w))
                                elts)
                           (project/inject-1 css-f w->s s->w))]
-
+    
     [(struct displayable-elt (val-f css-f))
      (make-displayable-elt (project val-f w->s))]
     
@@ -339,7 +373,7 @@
                       (project max-f w->s)
                       (project/inject-1 callback w->s s->w)
                       (project enabled?-f w->s))]
-  
+    
     [(struct checkbox-elt (label-f val-f callback enabled?-f css-f))
      (make-checkbox-elt (project label-f w->s)
                         (project val-f w->s)
@@ -368,9 +402,9 @@
 (define (project/inject-0 a-gcallback w->s s->w)
   (lambda (a-world)
     (s->w a-world (a-gcallback (w->s a-world)))))
-  
-  
-  
+
+
+
 (provide col 
          row
          pasteboard
@@ -401,7 +435,7 @@
                                                [elt elt?]
                                                [enabled?-f (gvalueof boolean?)]
                                                [css-f css-f/c])]
-
+                  
                   [struct (pasteboard-elt elt) ([elts-f (gvalueof (listof elt?))]
                                                 ;; 
                                                 [css-f css-f/c]
@@ -411,11 +445,11 @@
                                                  [css-f css-f/c])]
                   
                   [struct (canvas-elt elt) ([scene-f (gvalueof scene?)]
-                                            [callback (gcallbackof-2 number? number?)]
+                                            [callback (gcallbackof number? number?)]
                                             [css-f css-f/c])]
                   
                   [struct (button-elt elt) ([val-f (gvalueof displayable?)]
-                                            [callback callback/c]
+                                            [callback (gcallbackof)]
                                             [enabled?-f (gvalueof boolean?)]
                                             [css-f css-f/c])]
                   
@@ -445,7 +479,7 @@
                   
                   [displayable? (any/c . -> . boolean?)]
                   [displayable->string (displayable? . -> . displayable?)]
-
+                  
                   
                   [rename -make-css make-css (-> css?)]
                   [css-lookup

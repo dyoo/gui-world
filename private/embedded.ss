@@ -206,7 +206,7 @@
              (lambda ()
                (send editor lock #f))
              (lambda ()
-               (let ([new-label (val-f a-world)])
+               (let ([new-label (val-f a-world elt)])
                  (send editor begin-edit-sequence)
                  (send editor erase)
                  (send editor insert new-label)
@@ -237,9 +237,10 @@
          (match elt
            [(struct button-elt (val-f callback enabled?-f css-f))
             (send editor begin-edit-sequence)
-            (let ([b-label (val-f a-world)]
+            (let ([b-label (val-f a-world elt)]
                   [b-callback (lambda (b e)
-                                (change-world/f! (lambda (a-world) (callback a-world))))])
+                                (change-world/f! (lambda (a-world) 
+                                                   (callback a-world elt))))])
               (when button
                 (send editor delete-child button))
               
@@ -270,7 +271,7 @@
        (lambda ()
          (match elt 
            [(struct displayable-elt (val-f css-f))
-            (let ([new-label (val-f a-world)])
+            (let ([new-label (val-f a-world elt)])
               (send editor begin-edit-sequence)
               (send editor erase)
               (send editor insert new-label)

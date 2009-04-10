@@ -201,8 +201,8 @@
      (let ([a-group-box
             (new world-gui:group-box%
                  [parent a-container]
-                 [label (displayable->string (label-f (current-world)))]
-                 [enabled (enabled?-f (current-world))]
+                 [label (displayable->string (label-f (current-world) an-elt))]
+                 [enabled (enabled?-f (current-world) an-elt)]
                  [eventspace an-eventspace])])
        (render-elt! sub-elt a-group-box an-eventspace (inner-css-f (current-world) an-elt a-css))
        a-group-box)]
@@ -218,67 +218,67 @@
     [(struct displayable-elt (s-f inner-css-f))
      (new world-gui:string% 
           [label 
-           (displayable->string (s-f (current-world)))]
+           (displayable->string (s-f (current-world) an-elt))]
           [parent a-container]
           [eventspace an-eventspace])]
     
     [(struct button-elt (label-f callback enabled?-f inner-css-f))
      (new world-gui:button% 
-          [label (displayable->string (label-f (current-world)))]
+          [label (displayable->string (label-f (current-world) an-elt))]
           [parent a-container]
-          [world-callback callback]
-          [enabled (enabled?-f (current-world))]
+          [world-callback (lambda (w) (callback w an-elt))]
+          [enabled (enabled?-f (current-world) an-elt)]
           [eventspace an-eventspace])]
     
     [(struct text-field-elt (v-f callback enabled?-f inner-css-f))
      (new world-gui:text-field% 
           [label #f]
           [parent a-container]
-          [init-value (displayable->string (v-f (current-world)))]
-          [enabled (enabled?-f (current-world))]
-          [world-callback callback]
+          [init-value (displayable->string (v-f (current-world) an-elt))]
+          [enabled (enabled?-f (current-world) an-elt)]
+          [world-callback (lambda (w) (callback w an-elt))]
           [eventspace an-eventspace])]
     
     [(struct drop-down-elt (val-f choices-f callback enabled?-f inner-css-f))
-     (let ([val (displayable->string (val-f (current-world)))]
-           [choices (map displayable->string (choices-f (current-world)))])
+     (let ([val (displayable->string (val-f (current-world) an-elt))]
+           [choices (map displayable->string (choices-f (current-world) an-elt))])
        (new world-gui:drop-down% 
             [label #f]
             [choices choices]
             [selection (list-index (lambda (x) 
                                      (string=? x val))
                                    choices)]
-            [enabled (enabled?-f (current-world))]
+            [enabled (enabled?-f (current-world) an-elt)]
             [parent a-container]
-            [world-callback callback]
+            [world-callback (lambda (w) (callback w an-elt))]
             [eventspace an-eventspace]))]
     
     [(struct slider-elt (val-f min-f max-f callback enabled?-f inner-css-f))
      (new world-gui:slider% 
           [label #f]
           [parent a-container]
-          [min-value (min-f (current-world))]
-          [max-value (max-f (current-world))]
-          [init-value (val-f (current-world))]
-          [enabled (enabled?-f (current-world))]
-          [world-callback callback]
+          [min-value (min-f (current-world) an-elt)]
+          [max-value (max-f (current-world) an-elt)]
+          [init-value (val-f (current-world) an-elt)]
+          [enabled (enabled?-f (current-world) an-elt)]
+          [world-callback (lambda (w) (callback w an-elt))]
           [eventspace an-eventspace])]
     
     [(struct checkbox-elt (label-f val-f callback enabled?-f inner-css-f))
      (new world-gui:checkbox%
-          [label (displayable->string (label-f (current-world)))]
+          [label (displayable->string (label-f (current-world) an-elt))]
           [parent a-container]
-          [value (val-f (current-world))]
-          [enabled (enabled?-f (current-world))]
-          [world-callback callback]
+          [value (val-f (current-world) an-elt)]
+          [enabled (enabled?-f (current-world) an-elt)]
+          [world-callback (lambda (w) (callback w an-elt))]
           [eventspace an-eventspace])]
     
     [(struct canvas-elt (an-image-snip-f callback inner-css-f))
      (let* ([pasteboard (new pasteboard%)]
-            [img-snip (send (an-image-snip-f (current-world)) copy)]
+            [img-snip (send (an-image-snip-f (current-world) an-elt) copy)]
             [canvas (new world-gui:canvas%
                          [parent a-container]
-                         [world-callback callback]
+                         [world-callback (lambda (w) (callback w an-elt))]
                          [min-width (image-width img-snip)]
                          [min-height (image-height img-snip)]
                          [horizontal-inset INSET]
@@ -385,8 +385,8 @@
                            (lambda ()
                              (match an-elt
                                [(struct box-group-elt (val-f sub-elt enabled?-f inner-css-f))
-                                (let ([new-val (displayable->string (val-f (current-world)))]
-                                      [new-enabled? (enabled?-f (current-world))])
+                                (let ([new-val (displayable->string (val-f (current-world) an-elt))]
+                                      [new-enabled? (enabled?-f (current-world) an-elt)])
                                   (unless (string=? new-val (get-label))
                                     (set-label new-val))
                                   (unless (boolean=? new-enabled? (is-enabled?))
@@ -443,7 +443,7 @@
                    [new-element-snips 
                     (map (lambda (elt)
                            (elt->snip elt eventspace))
-                         (elts-f (current-world)))]
+                         (elts-f (current-world) an-elt))]
                    [css (css-f (current-world) an-elt a-css)])
 
               ;; Delete all the children of the pasteboard that don't
@@ -507,7 +507,7 @@
                            (lambda ()
                              (match an-elt 
                                [(struct displayable-elt (val-f inner-css-f))
-                                (let ([a-str (displayable->string (val-f (current-world)))])
+                                (let ([a-str (displayable->string (val-f (current-world) an-elt))])
                                   (unless (string=? a-str (get-label))
                                     (set-label a-str)))]))))
          
@@ -528,8 +528,8 @@
                            (lambda ()
                              (match an-elt
                                [(struct button-elt (val-f callback enabled?-f inner-css-f))
-                                (let ([new-val (displayable->string (val-f (current-world)))]
-                                      [new-enabled? (enabled?-f (current-world))])
+                                (let ([new-val (displayable->string (val-f (current-world) an-elt))]
+                                      [new-enabled? (enabled?-f (current-world) an-elt)])
                                   (unless (string=? new-val (get-label))
                                     (set-label new-val))
                                   (unless (boolean=? (is-enabled?) new-enabled?)
@@ -578,8 +578,8 @@
                            (lambda ()
                              (match an-elt
                                [(struct text-field-elt (val-f callback enabled?-f inner-css-f))
-                                (let ([new-text (displayable->string (val-f (current-world)))]
-                                      [new-enabled? (enabled?-f (current-world))])
+                                (let ([new-text (displayable->string (val-f (current-world) an-elt))]
+                                      [new-enabled? (enabled?-f (current-world) an-elt)])
                                   (unless (string=? new-text (get-value))
                                     (set-value new-text))
                                   (unless (boolean=? (is-enabled?) new-enabled?)
@@ -636,9 +636,9 @@
                            (lambda ()
                              (match an-elt
                                [(struct drop-down-elt (val-f choices-f callback enabled?-f inner-css-f))
-                                (let ([new-val (displayable->string (val-f (current-world)))]
-                                      [new-choices (map displayable->string (choices-f (current-world)))]
-                                      [new-enabled? (enabled?-f (current-world))])
+                                (let ([new-val (displayable->string (val-f (current-world) an-elt))]
+                                      [new-choices (map displayable->string (choices-f (current-world) an-elt))]
+                                      [new-enabled? (enabled?-f (current-world) an-elt)])
                                   
                                   (unless (and (= (length (get-choices))
                                                   (length new-choices))
@@ -731,10 +731,10 @@
                            (lambda ()
                              (match an-elt
                                [(struct slider-elt (val-f min-f max-f callback enabled?-f inner-css-f))
-                                (let* ([new-min (min-f (current-world))]
-                                       [new-max (max-f (current-world))]
-                                       [new-val (clamp (val-f (current-world)) new-min new-max)]
-                                       [new-enabled? (enabled?-f (current-world))])
+                                (let* ([new-min (min-f (current-world) an-elt)]
+                                       [new-max (max-f (current-world) an-elt)]
+                                       [new-val (clamp (val-f (current-world) an-elt) new-min new-max)]
+                                       [new-enabled? (enabled?-f (current-world) an-elt)])
                                   
                                   (unless (and (= new-min (send inner-slider get-min-value))
                                                (= new-max (send inner-slider get-max-value)))
@@ -779,9 +779,9 @@
                            (lambda ()
                              (match an-elt
                                [(struct checkbox-elt (label-f val-f callback enabled?-f inner-css-f))
-                                (let ([new-label (displayable->string (label-f (current-world)))]
-                                      [new-val (val-f (current-world))]
-                                      [new-enabled? (enabled?-f (current-world))])
+                                (let ([new-label (displayable->string (label-f (current-world) an-elt))]
+                                      [new-val (val-f (current-world) an-elt)]
+                                      [new-enabled? (enabled?-f (current-world) an-elt)])
                                   (unless (string=? new-label (get-label))
                                     (set-label new-label))
                                   
@@ -856,7 +856,7 @@
                            (lambda ()
                              (match an-elt
                                [(struct canvas-elt (scene-f callback inner-css-f))
-                                (let ([new-scene (scene-f (current-world))]
+                                (let ([new-scene (scene-f (current-world) an-elt)]
                                       [editor (get-editor)])
                                   (dynamic-wind 
                                    (lambda () 
@@ -888,19 +888,12 @@
          pasteboard
          message
          button
-         button/enabled
          slider
-         slider/enabled
          drop-down
-         drop-down/enabled
          text-field
-         text-field/enabled
          checkbox
-         checkbox/enabled
          canvas
-         canvas/callback
          box-group
-         box-group/enabled
          project/inject/gui)
 
 
