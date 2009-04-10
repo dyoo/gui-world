@@ -64,7 +64,7 @@
 ;; elt->snip: elt alignment-parent<%> eventspace -> alignment
 (define (elt->alignment an-elt parent an-eventspace)
   (match an-elt
-    [(struct row-elt (elts))
+    [(struct row-elt (elts css-f))
      (let ([alignment (new elt:row%
                            [elt an-elt] 
                            [parent parent]
@@ -74,7 +74,7 @@
        alignment)]
     
     
-    [(struct column-elt (elts))
+    [(struct column-elt (elts css-f))
      (let ([alignment (new elt:column%
                            [elt an-elt] 
                            [parent parent]
@@ -84,7 +84,7 @@
        alignment)]
 
     
-    [(struct box-group-elt (label-f sub-elt enabled?-f))
+    [(struct box-group-elt (label-f sub-elt enabled?-f css-f))
      ...
      #;(let ([alignment (new box-group% [elt an-elt] [parent parent])])
        (elt->alignment sub-elt alignment an-eventspace)
@@ -97,20 +97,20 @@
           [eventspace an-eventspace])]
 
     
-    [(struct displayable-elt (s-f))
+    [(struct displayable-elt (s-f css-f))
      (new elt:displayable% 
           [elt an-elt]
           [parent parent]
           [eventspace an-eventspace])]
 
      
-    [(struct button-elt (label-f callback enabled?-f))
+    [(struct button-elt (label-f callback enabled?-f css-f))
      (new elt:button%
           [elt an-elt]
           [parent parent]
           [eventspace an-eventspace])]
     
-    [(struct text-field-elt (v-f callback enabled?-f))
+    [(struct text-field-elt (v-f callback enabled?-f css-f))
      ;; FIXME!
      (new elt:text-field% 
           [an-elt an-elt]
@@ -118,19 +118,19 @@
           [eventspace an-eventspace])]
 
     
-    [(struct drop-down-elt (val-f choices-f callback enabled?-f))
+    [(struct drop-down-elt (val-f choices-f callback enabled?-f css-f))
      ;; FIXME!
      ...]
 
-    [(struct slider-elt (val-f min-f max-f callback enabled?-f))
+    [(struct slider-elt (val-f min-f max-f callback enabled?-f css-f))
      ;; FIXME!
      ...]
 
-    [(struct checkbox-elt (label-f val-f callback enabled?-f))
+    [(struct checkbox-elt (label-f val-f callback enabled?-f css-f))
      ;; FIXME!
      ...]
     
-    [(struct canvas-elt (an-image-snip-f callback))
+    [(struct canvas-elt (an-image-snip-f callback css-f))
      ;; FIXME!
      ...]))
 
@@ -197,11 +197,13 @@
       (queue-on-eventspace 
        eventspace
        (lambda ()
-         (let ([new-label ((displayable-elt-val-f elt) a-world)])
-           (send editor begin-edit-sequence)
-           (send editor erase)
-           (send editor insert new-label)
-           (send editor end-edit-sequence)))))
+         (match elt 
+           [(struct displayable-elt (val-f css-f))
+            (let ([new-label (val-f a-world)])
+              (send editor begin-edit-sequence)
+              (send editor erase)
+              (send editor insert new-label)
+              (send editor end-edit-sequence))]))))
                              
     
     (super-new [snip inner-snip])))
@@ -224,7 +226,7 @@
        eventspace
        (lambda ()
          (match elt
-           [(struct button-elt (val-f callback enabled?-f))
+           [(struct button-elt (val-f callback enabled?-f css-f))
             (send editor begin-edit-sequence)
             (let ([b-label (val-f a-world)]
                   [b-callback (lambda (b e)

@@ -175,7 +175,7 @@
 ;; GUI Events that occur should be run in the context of the given eventspace es.
 (define (render-elt! an-elt a-container an-eventspace a-css)
   (match an-elt
-    [(struct row-elt (elts))
+    [(struct row-elt (elts inner-css-f))
      (let ([row-container 
             (new world-gui:row% 
                  [parent a-container]
@@ -186,7 +186,7 @@
          (render-elt! sub-elt row-container an-eventspace a-css))
        row-container)]
     
-    [(struct column-elt (elts))
+    [(struct column-elt (elts inner-css-f))
      (let ([column-container
             (new world-gui:column% 
                  [parent a-container]
@@ -197,7 +197,7 @@
          (render-elt! sub-elt column-container an-eventspace a-css))
        column-container)]
     
-    [(struct box-group-elt (label-f sub-elt enabled?-f))
+    [(struct box-group-elt (label-f sub-elt enabled?-f inner-css-f))
      (let ([a-group-box
             (new world-gui:group-box%
                  [parent a-container]
@@ -207,7 +207,7 @@
        (render-elt! sub-elt a-group-box an-eventspace a-css)
        a-group-box)]
     
-    [(struct pasteboard-elt (elts-f css-f))
+    [(struct pasteboard-elt (elts-f inner-css-f))
      (let ([a-pasteboard (new world-gui:pasteboard% 
                               [parent a-container]
                               [eventspace an-eventspace])])
@@ -215,14 +215,14 @@
        a-pasteboard)]
     
     
-    [(struct displayable-elt (s-f))
+    [(struct displayable-elt (s-f inner-css-f))
      (new world-gui:string% 
           [label 
            (displayable->string (s-f (current-world)))]
           [parent a-container]
           [eventspace an-eventspace])]
     
-    [(struct button-elt (label-f callback enabled?-f))
+    [(struct button-elt (label-f callback enabled?-f inner-css-f))
      (new world-gui:button% 
           [label (displayable->string (label-f (current-world)))]
           [parent a-container]
@@ -230,7 +230,7 @@
           [enabled (enabled?-f (current-world))]
           [eventspace an-eventspace])]
     
-    [(struct text-field-elt (v-f callback enabled?-f))
+    [(struct text-field-elt (v-f callback enabled?-f inner-css-f))
      (new world-gui:text-field% 
           [label #f]
           [parent a-container]
@@ -239,7 +239,7 @@
           [world-callback callback]
           [eventspace an-eventspace])]
     
-    [(struct drop-down-elt (val-f choices-f callback enabled?-f))
+    [(struct drop-down-elt (val-f choices-f callback enabled?-f inner-css-f))
      (let ([val (displayable->string (val-f (current-world)))]
            [choices (map displayable->string (choices-f (current-world)))])
        (new world-gui:drop-down% 
@@ -253,7 +253,7 @@
             [world-callback callback]
             [eventspace an-eventspace]))]
     
-    [(struct slider-elt (val-f min-f max-f callback enabled?-f))
+    [(struct slider-elt (val-f min-f max-f callback enabled?-f inner-css-f))
      (new world-gui:slider% 
           [label #f]
           [parent a-container]
@@ -264,7 +264,7 @@
           [world-callback callback]
           [eventspace an-eventspace])]
     
-    [(struct checkbox-elt (label-f val-f callback enabled?-f))
+    [(struct checkbox-elt (label-f val-f callback enabled?-f inner-css-f))
      (new world-gui:checkbox%
           [label (displayable->string (label-f (current-world)))]
           [parent a-container]
@@ -273,7 +273,7 @@
           [world-callback callback]
           [eventspace an-eventspace])]
     
-    [(struct canvas-elt (an-image-snip-f callback))
+    [(struct canvas-elt (an-image-snip-f callback inner-css-f))
      (let* ([pasteboard (new pasteboard%)]
             [img-snip (send (an-image-snip-f (current-world)) copy)]
             [canvas (new world-gui:canvas%
@@ -384,7 +384,7 @@
       (queue-on-eventspace eventspace
                            (lambda ()
                              (match an-elt
-                               [(struct box-group-elt (val-f sub-elt enabled?-f))
+                               [(struct box-group-elt (val-f sub-elt enabled?-f inner-css-f))
                                 (let ([new-val (displayable->string (val-f (current-world)))]
                                       [new-enabled? (enabled?-f (current-world))])
                                   (unless (string=? new-val (get-label))
@@ -504,7 +504,7 @@
       (queue-on-eventspace eventspace
                            (lambda ()
                              (match an-elt 
-                               [(struct displayable-elt (val-f))
+                               [(struct displayable-elt (val-f inner-css-f))
                                 (let ([a-str (displayable->string (val-f (current-world)))])
                                   (unless (string=? a-str (get-label))
                                     (set-label a-str)))]))))
@@ -525,7 +525,7 @@
       (queue-on-eventspace eventspace 
                            (lambda ()
                              (match an-elt
-                               [(struct button-elt (val-f callback enabled?-f))
+                               [(struct button-elt (val-f callback enabled?-f inner-css-f))
                                 (let ([new-val (displayable->string (val-f (current-world)))]
                                       [new-enabled? (enabled?-f (current-world))])
                                   (unless (string=? new-val (get-label))
@@ -575,7 +575,7 @@
       (queue-on-eventspace eventspace
                            (lambda ()
                              (match an-elt
-                               [(struct text-field-elt (val-f callback enabled?-f))
+                               [(struct text-field-elt (val-f callback enabled?-f inner-css-f))
                                 (let ([new-text (displayable->string (val-f (current-world)))]
                                       [new-enabled? (enabled?-f (current-world))])
                                   (unless (string=? new-text (get-value))
@@ -633,7 +633,7 @@
       (queue-on-eventspace eventspace
                            (lambda ()
                              (match an-elt
-                               [(struct drop-down-elt (val-f choices-f callback enabled?-f))
+                               [(struct drop-down-elt (val-f choices-f callback enabled?-f inner-css-f))
                                 (let ([new-val (displayable->string (val-f (current-world)))]
                                       [new-choices (map displayable->string (choices-f (current-world)))]
                                       [new-enabled? (enabled?-f (current-world))])
@@ -728,7 +728,7 @@
       (queue-on-eventspace eventspace
                            (lambda ()
                              (match an-elt
-                               [(struct slider-elt (val-f min-f max-f callback enabled?-f))
+                               [(struct slider-elt (val-f min-f max-f callback enabled?-f inner-css-f))
                                 (let* ([new-min (min-f (current-world))]
                                        [new-max (max-f (current-world))]
                                        [new-val (clamp (val-f (current-world)) new-min new-max)]
@@ -776,7 +776,7 @@
       (queue-on-eventspace eventspace
                            (lambda ()
                              (match an-elt
-                               [(struct checkbox-elt (label-f val-f callback enabled?-f))
+                               [(struct checkbox-elt (label-f val-f callback enabled?-f inner-css-f))
                                 (let ([new-label (displayable->string (label-f (current-world)))]
                                       [new-val (val-f (current-world))]
                                       [new-enabled? (enabled?-f (current-world))])
@@ -853,7 +853,7 @@
       (queue-on-eventspace eventspace
                            (lambda ()
                              (match an-elt
-                               [(struct canvas-elt (scene-f callback))
+                               [(struct canvas-elt (scene-f callback inner-css-f))
                                 (let ([new-scene (scene-f (current-world))]
                                       [editor (get-editor)])
                                   (dynamic-wind 

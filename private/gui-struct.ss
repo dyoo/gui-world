@@ -33,19 +33,19 @@
 (define-struct elt () #:prefab)
 ;; An gui element is one of the following:
 
-(define-struct (row-elt elt) (elts) #:prefab)       ;; fixme: elts should be dynamic
-(define-struct (column-elt elt) (elts) #:prefab)    ;; fixme: elts should be dynamic
+(define-struct (row-elt elt) (elts css-f) #:prefab)       ;; fixme: elts should be dynamic
+(define-struct (column-elt elt) (elts css-f) #:prefab)    ;; fixme: elts should be dynamic
 
-(define-struct (box-group-elt elt) (val-f elt enabled?-f) #:prefab)
+(define-struct (box-group-elt elt) (val-f elt enabled?-f css-f) #:prefab)
 (define-struct (pasteboard-elt elt) (elts-f css-f) #:prefab)
 
-(define-struct (displayable-elt elt) (val-f) #:prefab)
-(define-struct (canvas-elt elt) (scene-f callback) #:prefab)
-(define-struct (button-elt elt) (val-f callback enabled?-f) #:prefab)
-(define-struct (drop-down-elt elt) (val-f choices-f callback enabled?-f) #:prefab)
-(define-struct (text-field-elt elt) (val-f callback enabled?-f) #:prefab)
-(define-struct (slider-elt elt) (val-f min-f max-f callback enabled?-f) #:prefab)
-(define-struct (checkbox-elt elt) (label-f val-f callback enabled?-f) #:prefab)
+(define-struct (displayable-elt elt) (val-f css-f) #:prefab)
+(define-struct (canvas-elt elt) (scene-f callback css-f) #:prefab)
+(define-struct (button-elt elt) (val-f callback enabled?-f css-f) #:prefab)
+(define-struct (drop-down-elt elt) (val-f choices-f callback enabled?-f css-f) #:prefab)
+(define-struct (text-field-elt elt) (val-f callback enabled?-f css-f) #:prefab)
+(define-struct (slider-elt elt) (val-f min-f max-f callback enabled?-f css-f) #:prefab)
+(define-struct (checkbox-elt elt) (label-f val-f callback enabled?-f css-f) #:prefab)
 
 
 
@@ -120,105 +120,143 @@
   (raise (make-gui-world-exn (string-append (format "~a: " name) (apply format fmt args))
                              (current-continuation-marks))))
 
-(define (row . elts)
-  (make-row-elt (coerse-primitive-types-to-elts elts)))
+(define (row #:css (css-f (lambda (world css) css)) 
+             . elts)
+  (make-row-elt (coerse-primitive-types-to-elts elts)
+                (wrap-primitive 'row css? css-f)))
 
-(define (col . elts)
-  (make-column-elt (coerse-primitive-types-to-elts elts)))
+
+(define (col #:css (css-f (lambda (world css) css))
+             . elts)
+  (make-column-elt (coerse-primitive-types-to-elts elts)
+                   (wrap-primitive 'col css? css-f)))
+
 
 (define (pasteboard elts-f #:css-f (css-f (lambda (world css) css)))
   (make-pasteboard-elt (wrap-primitive 'pasteboard (flat-contract-predicate (listof elt?))
                                        elts-f)
-                       (wrap-primitive 'pasteboard css? css-f)))
+                       (wrap-primitive 'pasteboard css? css-f)
+                       ))
 
 
-(define (message a-gvalue)
-  (make-displayable-elt (wrap-primitive 'message displayable? a-gvalue)))
+(define (message a-gvalue
+                 #:css (css-f (lambda (world css) css)))
+  (make-displayable-elt (wrap-primitive 'message displayable? a-gvalue)
+                        (wrap-primitive 'message css? css-f)))
 
 
-(define (button/enabled val callback [enabled #t])
+(define (button/enabled val callback [enabled #t]
+                        #:css-f (css-f (lambda (world css) css)))
   (make-button-elt (wrap-primitive 'button/enabled displayable? val)
                    callback
-                   (wrap-primitive 'button/enabled boolean? enabled)))
+                   (wrap-primitive 'button/enabled boolean? enabled)
+                   (wrap-primitive 'button/enabled css? css-f)))
 
-(define (button val callback)
+(define (button val callback
+                #:css (css-f (lambda (world css) css)))
   (make-button-elt (wrap-primitive 'button displayable? val)
                    callback
-                   (wrap-primitive 'button boolean? #t)))
+                   (wrap-primitive 'button boolean? #t)
+                   (wrap-primitive 'button css? css-f)))
 
 
-(define (slider/enabled val min max callback [enabled? #t])
+(define (slider/enabled val min max callback [enabled? #t]
+                        #:css (css-f (lambda (world css) css)))
   (make-slider-elt (wrap-primitive 'slider/enabled number? val)
                    (wrap-primitive 'slider/enabled number? min)
                    (wrap-primitive 'slider/enabled number? max)
                    callback
-                   (wrap-primitive 'slider/enabled boolean? enabled?)))
+                   (wrap-primitive 'slider/enabled boolean? enabled?)
+                   (wrap-primitive 'slider/enabled css? css-f)))
 
-(define (slider val min max callback)
+(define (slider val min max callback
+                #:css (css-f (lambda (world css) css)))
   (make-slider-elt (wrap-primitive 'slider number? val)
                    (wrap-primitive 'slider number? min)
                    (wrap-primitive 'slider number? max)
                    callback
-                   (wrap-primitive 'slider boolean? #t)))
+                   (wrap-primitive 'slider boolean? #t)
+                   (wrap-primitive 'slider css? css-f)))
   
 
-(define (drop-down/enabled val choices callback [enabled? #t])
+(define (drop-down/enabled val choices callback [enabled? #t]
+                           #:css (css-f (lambda (world css) css)))
   (make-drop-down-elt (wrap-primitive 'drop-down/enabled displayable? val)
                       (wrap-primitive 'drop-down/enabled (flat-contract-predicate (listof displayable?))
                                       choices)
                       callback
-                      (wrap-primitive 'drop-down/enabled boolean? enabled?)))
+                      (wrap-primitive 'drop-down/enabled boolean? enabled?)
+                      (wrap-primitive 'drop-down/enabled css? css-f)))
 
-(define (drop-down val choices callback)
+(define (drop-down val choices callback
+                   #:css (css-f (lambda (world css) css)))
   (make-drop-down-elt (wrap-primitive 'drop-down displayable? val)
                       (wrap-primitive 'drop-down (flat-contract-predicate (listof displayable?))
                                       choices)
                       callback
-                      (wrap-primitive 'drop-down boolean? #t)))
+                      (wrap-primitive 'drop-down boolean? #t)
+                      (wrap-primitive 'drop-down css? css-f)))
 
 
 
-(define (text-field/enabled val callback [enabled? #t])
+(define (text-field/enabled val callback [enabled? #t]
+                            #:css (css-f (lambda (world css) css)))
   (make-text-field-elt (wrap-primitive 'text-field/enabled displayable? val)
                        callback
-                       (wrap-primitive 'text-field/enabled boolean? enabled?)))
+                       (wrap-primitive 'text-field/enabled boolean? enabled?)
+                       (wrap-primitive 'text-field/enabled css? css-f)))
 
-(define (text-field val callback)
+(define (text-field val callback
+                    #:css (css-f (lambda (world css) css)))
   (make-text-field-elt (wrap-primitive 'text-field displayable? val)
                        callback
-                       (wrap-primitive 'text-field boolean? #t)))
+                       (wrap-primitive 'text-field boolean? #t)
+                       (wrap-primitive 'text-field css? css-f)))
 
 
-(define (canvas/callback a-scene [callback (lambda (world x y) world)])
-  (make-canvas-elt (wrap-primitive 'canvas/callback scene? a-scene) callback))
+(define (canvas/callback a-scene [callback (lambda (world x y) world)]
+                         #:css (css-f (lambda (world css) css)))
+  (make-canvas-elt (wrap-primitive 'canvas/callback scene? a-scene) 
+                   callback
+                   (wrap-primitive 'canvas/callback css? css-f)))
 
-(define (canvas a-scene)
-  (make-canvas-elt (wrap-primitive 'canvas scene? a-scene) (lambda (world x y) world)))
+(define (canvas a-scene #:css (css-f (lambda (world css) css)))
+  (make-canvas-elt (wrap-primitive 'canvas scene? a-scene) 
+                   (lambda (world x y) world)
+                   (wrap-primitive 'canvas css? css-f)))
 
 
 
-(define (box-group/enabled val a-gui [enabled? #t])
+(define (box-group/enabled val a-gui [enabled? #t]
+                           #:css (css-f (lambda (world css) css)))
   (make-box-group-elt (wrap-primitive 'box-group/enabled displayable? val)
                       (coerse-primitive-to-elt a-gui)
-                      (wrap-primitive 'box-group/enabled boolean? enabled?)))
+                      (wrap-primitive 'box-group/enabled boolean? enabled?)
+                      (wrap-primitive 'box-group/enabled css? css-f)))
 
-(define (box-group val a-gui)
+(define (box-group val a-gui
+                   #:css (css-f (lambda (world css) css)))
   (make-box-group-elt (wrap-primitive 'box-group displayable? val)
                       (coerse-primitive-to-elt a-gui)
-                      (wrap-primitive 'box-group boolean? #t)))
+                      (wrap-primitive 'box-group boolean? #t)
+                      (wrap-primitive 'box-group css? css-f)))
 
 
-(define (checkbox/enabled label val callback [enabled? #t])
+(define (checkbox/enabled label val callback [enabled? #t]
+                          #:css (css-f (lambda (world css) css)))
   (make-checkbox-elt (wrap-primitive 'checkbox/enabled displayable? label)
                      (wrap-primitive 'checkbox/enabled boolean? val)
                      callback
-                     (wrap-primitive 'checkbox/enabled boolean? enabled?)))
+                     (wrap-primitive 'checkbox/enabled boolean? enabled?)
+                     (wrap-primitive 'checkbox/enabled css? css-f)))
 
-(define (checkbox label val callback)
+(define (checkbox label val callback
+                  #:css (css-f (lambda (world css) css)))
   (make-checkbox-elt (wrap-primitive 'checkbox displayable? label)
                      (wrap-primitive 'checkbox boolean? val)
                      callback
-                     (wrap-primitive 'checkbox boolean? #t)))
+                     (wrap-primitive 'checkbox boolean? #t)
+                     (wrap-primitive 'checkbox css? css-f)))
 
 
 
@@ -243,15 +281,15 @@
 ;; Scoping operator on structure.
 (define (project/inject/gui an-elt w->s s->w)
   (match an-elt
-    [(struct row-elt (elts))
+    [(struct row-elt (elts css-f))
      (make-row-elt (map (lambda (a-subelt) (project/inject/gui a-subelt w->s s->w))
                         elts))]
     
-    [(struct column-elt (elts))
+    [(struct column-elt (elts css-f))
      (make-column-elt (map (lambda (a-subelt) (project/inject/gui a-subelt w->s s->w))
                            elts))]
     
-    [(struct box-group-elt (val-f a-subelt enabled?-f))
+    [(struct box-group-elt (val-f a-subelt enabled?-f css-f))
      (make-box-group-elt (project val-f w->s)
                          (project/inject/gui a-subelt w->s s->w)
                          (project enabled?-f w->s))]
@@ -261,37 +299,37 @@
                                elts)
                           (project/inject-1 css-f w->s s->w))]
 
-    [(struct displayable-elt (val-f))
+    [(struct displayable-elt (val-f css-f))
      (make-displayable-elt (project val-f w->s))]
     
-    [(struct canvas-elt (scene-f callback))
+    [(struct canvas-elt (scene-f callback css-f))
      (make-canvas-elt (project scene-f w->s) 
                       (project/inject-2 callback w->s s->w))]
     
-    [(struct button-elt (val-f callback enabled?-f))
+    [(struct button-elt (val-f callback enabled?-f css-f))
      (make-button-elt (project val-f w->s)
                       (project/inject-0 callback w->s s->w)
                       (project enabled?-f w->s))]
     
-    [(struct drop-down-elt (val-f choices-f callback enabled?-f))
+    [(struct drop-down-elt (val-f choices-f callback enabled?-f css-f))
      (make-drop-down-elt (project val-f w->s)
                          (project choices-f w->s)
                          (project/inject-1 callback w->s s->w)
                          (project enabled?-f w->s))]
     
-    [(struct text-field-elt (val-f callback enabled?-f))
+    [(struct text-field-elt (val-f callback enabled?-f css-f))
      (make-text-field-elt (project val-f w->s)
                           (project/inject-1 callback w->s s->w)
                           (project enabled?-f w->s))]
     
-    [(struct slider-elt (val-f min-f max-f callback enabled?-f))
+    [(struct slider-elt (val-f min-f max-f callback enabled?-f css-f))
      (make-slider-elt (project val-f w->s)
                       (project min-f w->s)
                       (project max-f w->s)
                       (project/inject-1 callback w->s s->w)
                       (project enabled?-f w->s))]
   
-    [(struct checkbox-elt (label-f val-f callback enabled?-f))
+    [(struct checkbox-elt (label-f val-f callback enabled?-f css-f))
      (make-checkbox-elt (project label-f w->s)
                         (project val-f w->s)
                         (project/inject-1 callback w->s s->w)
@@ -345,47 +383,58 @@
 
 (provide/contract [struct elt ()]
                   
-                  [struct (row-elt elt) ([elts (listof elt?)])]
+                  [struct (row-elt elt) ([elts (listof elt?)]
+                                         [css-f (gcallbackof css?)])]
                   
-                  [struct (column-elt elt) ([elts (listof elt?)])]
+                  [struct (column-elt elt) ([elts (listof elt?)]
+                                            [css-f (gcallbackof css?)])]
                   
                   [struct (box-group-elt elt) ([val-f (gvalueof displayable?)]
                                                [elt elt?]
-                                               [enabled?-f (gvalueof boolean?)])]
+                                               [enabled?-f (gvalueof boolean?)]
+                                               [css-f (gcallbackof css?)])]
 
                   [struct (pasteboard-elt elt) ([elts-f (gvalueof (listof elt?))]
                                                 ;; slightly abusing the contract...
                                                 ;; 
-                                                [css-f (gcallbackof css?)])]
+                                                [css-f (gcallbackof css?)]
+                                                )]
                   
-                  [struct (displayable-elt elt) ([val-f (gvalueof displayable?)])]
+                  [struct (displayable-elt elt) ([val-f (gvalueof displayable?)]
+                                                 [css-f (gcallbackof css?)])]
                   
                   [struct (canvas-elt elt) ([scene-f (gvalueof scene?)]
-                                            [callback (gcallbackof-2 number? number?)])]
+                                            [callback (gcallbackof-2 number? number?)]
+                                            [css-f (gcallbackof css?)])]
                   
                   [struct (button-elt elt) ([val-f (gvalueof displayable?)]
                                             [callback callback/c]
-                                            [enabled?-f (gvalueof boolean?)])]
+                                            [enabled?-f (gvalueof boolean?)]
+                                            [css-f (gcallbackof css?)])]
                   
                   [struct (drop-down-elt elt) ([val-f (gvalueof displayable?)]
                                                [choices-f (gvalueof (listof displayable?))]
                                                [callback (gcallbackof displayable?)]
-                                               [enabled?-f (gvalueof boolean?)])]
+                                               [enabled?-f (gvalueof boolean?)]
+                                               [css-f (gcallbackof css?)])]
                   
                   [struct (text-field-elt elt) ([val-f (gvalueof displayable?)]
                                                 [callback (gcallbackof displayable?)]
-                                                [enabled?-f (gvalueof boolean?)])]
+                                                [enabled?-f (gvalueof boolean?)]
+                                                [css-f (gcallbackof css?)])]
                   
                   [struct (slider-elt elt) ([val-f (gvalueof number?)]
                                             [min-f (gvalueof number?)]
                                             [max-f (gvalueof number?)]
                                             [callback (gcallbackof number?)]
-                                            [enabled?-f (gvalueof boolean?)])]
+                                            [enabled?-f (gvalueof boolean?)]
+                                            [css-f (gcallbackof css?)])]
                   
                   [struct (checkbox-elt elt) ([label-f (gvalueof displayable?)]
                                               [val-f (gvalueof boolean?)]
                                               [callback (gcallbackof boolean?)]
-                                              [enabled?-f (gvalueof boolean?)])]
+                                              [enabled?-f (gvalueof boolean?)]
+                                              [css-f (gcallbackof css?)])]
                   
                   [displayable? (any/c . -> . boolean?)]
                   [displayable->string (displayable? . -> . displayable?)]
