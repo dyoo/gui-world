@@ -9,7 +9,7 @@
 
 
 ;; A block currently consists of the abstract gui element and a position.
-(define-struct block (elt    ;; a row
+(define-struct block (elt    ;; a col
                       posn   ;; posn
                       ))
 
