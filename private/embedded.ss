@@ -186,24 +186,33 @@
     (init-field elt)
     (init-field eventspace)
     
-    (define editor (new text%))
+    (define editor 
+      (new (class text%
+             (super-new))))
+    (send editor lock #t)
+    (send editor hide-caret #t)
+    
     (define inner-snip (new editor-snip% 
                             [editor editor]
                             [with-border? #f]))
 
-    (send editor insert "uninitialized")
-    
     (define/public (refresh a-world a-css)
       (queue-on-eventspace 
        eventspace
        (lambda ()
          (match elt 
            [(struct displayable-elt (val-f css-f))
-            (let ([new-label (val-f a-world)])
-              (send editor begin-edit-sequence)
-              (send editor erase)
-              (send editor insert new-label)
-              (send editor end-edit-sequence))]))))
+            (dynamic-wind
+             (lambda ()
+               (send editor lock #f))
+             (lambda ()
+               (let ([new-label (val-f a-world)])
+                 (send editor begin-edit-sequence)
+                 (send editor erase)
+                 (send editor insert new-label)
+                 (send editor end-edit-sequence)))
+             (lambda ()
+               (send editor lock #t)))]))))
                              
     
     (super-new [snip inner-snip])))
@@ -247,7 +256,29 @@
   (class snip-wrapper%
     (init-field elt)
     (init-field eventspace)
-    (super-new [snip (new editor-snip% [editor (new text%)])])))
+    
+    (define editor 
+      (new (class text%
+             (super-new))))
+    (define inner-snip (new editor-snip% 
+                            [editor editor]
+                            [with-border? #f]))
+
+    (define/public (refresh a-world a-css)
+      (queue-on-eventspace 
+       eventspace
+       (lambda ()
+         (match elt 
+           [(struct displayable-elt (val-f css-f))
+            (let ([new-label (val-f a-world)])
+              (send editor begin-edit-sequence)
+              (send editor erase)
+              (send editor insert new-label)
+              (send editor end-edit-sequence))]))))
+                             
+    
+    (super-new [snip inner-snip])))
+
 
 
 (define (test-1)
