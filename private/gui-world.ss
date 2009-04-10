@@ -183,7 +183,7 @@
                  [stretchable-height #f]
                  [eventspace an-eventspace])])
        (for ([sub-elt elts])
-         (render-elt! sub-elt row-container an-eventspace (inner-css-f (current-world) a-css)))
+         (render-elt! sub-elt row-container an-eventspace (inner-css-f (current-world) an-elt a-css)))
        row-container)]
     
     [(struct column-elt (elts inner-css-f))
@@ -194,7 +194,7 @@
                  [stretchable-height #f]
                  [eventspace an-eventspace])])
        (for ([sub-elt elts])
-         (render-elt! sub-elt column-container an-eventspace (inner-css-f (current-world) a-css)))
+         (render-elt! sub-elt column-container an-eventspace (inner-css-f (current-world) an-elt a-css)))
        column-container)]
     
     [(struct box-group-elt (label-f sub-elt enabled?-f inner-css-f))
@@ -204,14 +204,14 @@
                  [label (displayable->string (label-f (current-world)))]
                  [enabled (enabled?-f (current-world))]
                  [eventspace an-eventspace])])
-       (render-elt! sub-elt a-group-box an-eventspace (inner-css-f (current-world) a-css))
+       (render-elt! sub-elt a-group-box an-eventspace (inner-css-f (current-world) an-elt a-css))
        a-group-box)]
     
     [(struct pasteboard-elt (elts-f inner-css-f))
      (let ([a-pasteboard (new world-gui:pasteboard% 
                               [parent a-container]
                               [eventspace an-eventspace])])
-       (send a-pasteboard update-with! an-elt (inner-css-f (current-world) a-css))
+       (send a-pasteboard update-with! an-elt (inner-css-f (current-world) an-elt a-css))
        a-pasteboard)]
     
     
@@ -444,7 +444,7 @@
                     (map (lambda (elt)
                            (elt->snip elt eventspace))
                          (elts-f (current-world)))]
-                   [css (css-f (current-world) a-css)])
+                   [css (css-f (current-world) an-elt a-css)])
 
               ;; Delete all the children of the pasteboard that don't
               ;; correspond to an element, and insert all the children of the pasteboard that 
@@ -457,8 +457,8 @@
                             
               ;; Next, refresh everyone.
               (for ([snip (pasteboard-children editor)])
-                (let ([extended-css ((elt-css-f (get-elt snip))
-                                     (current-world) css)])
+                (let* ([css-f (elt-css-f (get-elt snip))]
+                       [extended-css (css-f (current-world) (get-elt snip) css)])
                   (send editor move-to snip (snip-left snip extended-css) (snip-top snip extended-css))
                   ;; Relocate the snip where it should go.
                   (send snip refresh (current-world) extended-css))))]))))
