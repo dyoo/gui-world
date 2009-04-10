@@ -188,7 +188,6 @@
                    (wrap-css 'col css-f)))
 
 
-
 (define (pasteboard elts-f #:css-f (css-f default-css-f))
   (make-pasteboard-elt (wrap-primitive 'pasteboard (flat-contract-predicate (listof elt?))
                                        elts-f)
@@ -202,23 +201,18 @@
                         (wrap-css 'message css-f)))
 
 
-(define (button/enabled val callback [enabled #t]
-                        #:css-f (css-f default-css-f))
+(define (button val callback 
+                #:enabled [enabled #t]
+                #:css-f (css-f default-css-f))
   (make-button-elt (wrap-primitive 'button/enabled displayable? val)
                    callback
                    (wrap-primitive 'button/enabled boolean? enabled)
                    (wrap-css 'button/enabled css-f)))
 
-(define (button val callback
+
+(define (slider val min max callback
+                #:enabled [enabled? #t]
                 #:css (css-f default-css-f))
-  (make-button-elt (wrap-primitive 'button displayable? val)
-                   callback
-                   (wrap-primitive 'button boolean? #t)
-                   (wrap-css 'button css-f)))
-
-
-(define (slider/enabled val min max callback [enabled? #t]
-                        #:css (css-f default-css-f))
   (make-slider-elt (wrap-primitive 'slider/enabled number? val)
                    (wrap-primitive 'slider/enabled number? min)
                    (wrap-primitive 'slider/enabled number? max)
@@ -226,18 +220,10 @@
                    (wrap-primitive 'slider/enabled boolean? enabled?)
                    (wrap-css 'slider/enabled css-f)))
 
-(define (slider val min max callback
-                #:css (css-f default-css-f))
-  (make-slider-elt (wrap-primitive 'slider number? val)
-                   (wrap-primitive 'slider number? min)
-                   (wrap-primitive 'slider number? max)
-                   callback
-                   (wrap-primitive 'slider boolean? #t)
-                   (wrap-css 'slider css-f)))
-  
 
-(define (drop-down/enabled val choices callback [enabled? #t]
-                           #:css (css-f default-css-f))
+(define (drop-down val choices callback
+                   #:enabled [enabled? #t]
+                   #:css (css-f default-css-f))
   (make-drop-down-elt (wrap-primitive 'drop-down/enabled displayable? val)
                       (wrap-primitive 'drop-down/enabled (flat-contract-predicate (listof displayable?))
                                       choices)
@@ -245,76 +231,43 @@
                       (wrap-primitive 'drop-down/enabled boolean? enabled?)
                       (wrap-css 'drop-down/enabled css-f)))
 
-(define (drop-down val choices callback
-                   #:css (css-f default-css-f))
-  (make-drop-down-elt (wrap-primitive 'drop-down displayable? val)
-                      (wrap-primitive 'drop-down (flat-contract-predicate (listof displayable?))
-                                      choices)
-                      callback
-                      (wrap-primitive 'drop-down boolean? #t)
-                      (wrap-css 'drop-down css-f)))
 
-
-
-(define (text-field/enabled val callback [enabled? #t]
-                            #:css (css-f default-css-f))
+(define (text-field val callback
+                    #:enabled [enabled? #t]
+                    #:css (css-f default-css-f))
   (make-text-field-elt (wrap-primitive 'text-field/enabled displayable? val)
                        callback
                        (wrap-primitive 'text-field/enabled boolean? enabled?)
                        (wrap-css 'text-field/enabled css-f)))
 
-(define (text-field val callback
-                    #:css (css-f default-css-f))
-  (make-text-field-elt (wrap-primitive 'text-field displayable? val)
-                       callback
-                       (wrap-primitive 'text-field boolean? #t)
-                       (wrap-css 'text-field css-f)))
 
-
-(define (canvas/callback a-scene [callback (lambda (world x y) world)]
-                         #:css (css-f default-css-f))
+(define (canvas a-scene 
+                #:callback (callback (lambda (world x y) world))
+                #:css (css-f default-css-f))
   (make-canvas-elt (wrap-primitive 'canvas/callback scene? a-scene) 
                    callback
                    (wrap-css 'canvas/callback css-f)))
 
-(define (canvas a-scene #:css (css-f default-css-f))
-  (make-canvas-elt (wrap-primitive 'canvas scene? a-scene) 
-                   (lambda (world x y) world)
-                   (wrap-css 'canvas css-f)))
 
 
-
-(define (box-group/enabled val a-gui [enabled? #t]
-                           #:css (css-f default-css-f))
+(define (box-group val a-gui
+                   #:enabled [enabled? #t]
+                   #:css (css-f default-css-f))
   (make-box-group-elt (wrap-primitive 'box-group/enabled displayable? val)
                       (coerse-primitive-to-elt a-gui)
                       (wrap-primitive 'box-group/enabled boolean? enabled?)
                       (wrap-css 'box-group/enabled css-f)))
 
-(define (box-group val a-gui
-                   #:css (css-f default-css-f))
-  (make-box-group-elt (wrap-primitive 'box-group displayable? val)
-                      (coerse-primitive-to-elt a-gui)
-                      (wrap-primitive 'box-group boolean? #t)
-                      (wrap-css 'box-group css-f)))
 
 
-(define (checkbox/enabled label val callback [enabled? #t]
-                          #:css (css-f default-css-f))
+(define (checkbox label val callback 
+                  #:enabled [enabled? #t]
+                  #:css (css-f default-css-f))
   (make-checkbox-elt (wrap-primitive 'checkbox/enabled displayable? label)
                      (wrap-primitive 'checkbox/enabled boolean? val)
                      callback
                      (wrap-primitive 'checkbox/enabled boolean? enabled?)
                      (wrap-css 'checkbox/enabled css-f)))
-
-(define (checkbox label val callback
-                  #:css (css-f default-css-f))
-  (make-checkbox-elt (wrap-primitive 'checkbox displayable? label)
-                     (wrap-primitive 'checkbox boolean? val)
-                     callback
-                     (wrap-primitive 'checkbox boolean? #t)
-                     (wrap-css 'checkbox css-f)))
-
 
 
 
@@ -322,6 +275,7 @@
 ;; Helper to turn displayables into displayable-elts, and images into image-elts.
 (define (coerse-primitive-types-to-elts elts)
   (map coerse-primitive-to-elt elts))
+
 
 ;; coerse-primitive-type-to-elt: (or/c elt displayable scene) -> elt
 (define (coerse-primitive-to-elt an-elt)
@@ -422,19 +376,12 @@
          pasteboard
          message 
          button
-         button/enabled
          slider 
-         slider/enabled 
          drop-down 
-         drop-down/enabled
          text-field
-         text-field/enabled
          checkbox
-         checkbox/enabled
          canvas
-         canvas/callback
          box-group
-         box-group/enabled
          project/inject/gui)
 
 
