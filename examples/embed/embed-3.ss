@@ -7,11 +7,14 @@
 ;; A world is a list of blocks.
 (define INITIAL-WORLD (list))
 
+
+;; A block currently consists of the abstract gui element and a position.
 (define-struct block (elt    ;; a row
                       posn   ;; posn
                       ))
 
 
+;; The button, when pressed, will add a new block to the world.
 (define a-button 
   (button "Press me"
           (lambda (w)
@@ -19,6 +22,7 @@
 
 
 ;; new-block: world -> block
+;; Creates a new block that should be added to the world.
 (define (new-block w)
   ;; Fixme: revision 4 needs to avoid the circularity introduced by the use
   ;; of letrec.  We'll cut the recursive knot by having all handlers take in the
