@@ -56,6 +56,8 @@
     (define/override (copy)
       (elt->snip element eventspace))
 
+      
+    
     (super-new)))
 
 

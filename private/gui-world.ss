@@ -183,7 +183,7 @@
                  [stretchable-height #f]
                  [eventspace an-eventspace])])
        (for ([sub-elt elts])
-         (render-elt! sub-elt row-container an-eventspace a-css))
+         (render-elt! sub-elt row-container an-eventspace (inner-css-f (current-world) a-css)))
        row-container)]
     
     [(struct column-elt (elts inner-css-f))
@@ -194,7 +194,7 @@
                  [stretchable-height #f]
                  [eventspace an-eventspace])])
        (for ([sub-elt elts])
-         (render-elt! sub-elt column-container an-eventspace a-css))
+         (render-elt! sub-elt column-container an-eventspace (inner-css-f (current-world) a-css)))
        column-container)]
     
     [(struct box-group-elt (label-f sub-elt enabled?-f inner-css-f))
@@ -204,14 +204,14 @@
                  [label (displayable->string (label-f (current-world)))]
                  [enabled (enabled?-f (current-world))]
                  [eventspace an-eventspace])])
-       (render-elt! sub-elt a-group-box an-eventspace a-css)
+       (render-elt! sub-elt a-group-box an-eventspace (inner-css-f (current-world) a-css))
        a-group-box)]
     
     [(struct pasteboard-elt (elts-f inner-css-f))
      (let ([a-pasteboard (new world-gui:pasteboard% 
                               [parent a-container]
                               [eventspace an-eventspace])])
-       (send a-pasteboard update-with! an-elt a-css)
+       (send a-pasteboard update-with! an-elt (inner-css-f (current-world) a-css))
        a-pasteboard)]
     
     
@@ -457,9 +457,11 @@
                             
               ;; Next, refresh everyone.
               (for ([snip (pasteboard-children editor)])
-                (send editor move-to snip (snip-left snip css) (snip-top snip css))
-                ;; Relocate the snip where it should go.
-                (send snip refresh (current-world) css)))]))))
+                (let ([extended-css ((elt-css-f (get-elt snip))
+                                     (current-world) css)])
+                  (send editor move-to snip (snip-left snip extended-css) (snip-top snip extended-css))
+                  ;; Relocate the snip where it should go.
+                  (send snip refresh (current-world) extended-css))))]))))
 
     
     ;; pasteboard-children: pasteboard -> (listof snip)

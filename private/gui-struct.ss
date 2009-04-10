@@ -49,6 +49,36 @@
 
 
 
+;; elt-css-f: elt -> (world css -> css)
+(define (elt-css-f an-elt)
+  (match an-elt
+    [(struct row-elt (elts css-f))
+     css-f]
+    [(struct column-elt (elts css-f)) 
+     css-f]
+    [(struct box-group-elt (val-f elt enabled?-f css-f))
+     css-f]
+    [(struct pasteboard-elt  (elts-f css-f))
+     css-f]
+    [(struct displayable-elt (val-f css-f))
+     css-f]
+    [(struct canvas-elt (scene-f callback css-f))
+     css-f]
+    [(struct button-elt  (val-f callback enabled?-f css-f))
+     css-f]
+    [(struct drop-down-elt  (val-f choices-f callback enabled?-f css-f))
+     css-f]
+    [(struct text-field-elt (val-f callback enabled?-f css-f))
+     css-f]
+    [(struct slider-elt (val-f min-f max-f callback enabled?-f css-f))
+     css-f]
+    [(struct checkbox-elt (label-f val-f callback enabled?-f css-f))
+     css-f]))
+
+
+
+
+
 (define world/c any/c)
 (define subworld/c any/c)
 
@@ -444,4 +474,7 @@
                   [css-lookup
                    ((css? elt? symbol?) ((-> any/c)) . ->* . any)]
                   [css-update
-                   (css? elt? symbol? any/c . -> . css?)])
+                   (css? elt? symbol? any/c . -> . css?)]
+                  [elt-css-f
+                   (elt? . -> . (any/c css? . -> . css?))]
+                  )
