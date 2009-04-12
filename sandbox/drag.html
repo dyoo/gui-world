@@ -1,0 +1,37 @@
+<html><head>
+<meta name="viewport" content="width=320;height=420;user-scalable=no;initial-scale=1.0">
+
+<script lang="javascript">
+
+function startup() {
+
+  var elt = document.getElementById("d");
+  elt.ontouchmove = function(event) {
+    event.preventDefault();
+    if (event.touches.length == 1) {
+      var touch = event.touches[0];
+      elt.style.left = touch.pageX + "px";
+      elt.style.top = touch.pageY + "px";
+    }
+  }
+
+  document.ontouchstart = function(e) {
+    e.preventDefault();
+  }
+}
+
+</script>
+
+</head>
+
+
+
+
+
+<body onload="startup()">
+<div id="d"
+     style="position:absolute;left:100px;top:170px;background-color:rgb(200, 200, 200)">
+     I am a div.
+</div>
+</body>
+</html>
