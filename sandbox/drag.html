@@ -1,10 +1,25 @@
 <html><head>
 <meta name="viewport" content="width=320;height=420;user-scalable=no;initial-scale=1.0">
 
-<script lang="javascript">
+
+<!-- Load up the detection libraries. -->
+<script type="text/javascript" src="mdetect.js"</script>
+
+
+
+<script lang="text/javascript">
 
 function startup() {
+  if (DetectIphoneOrIpod()) {
+    startupIphone();
+  } elseif (DetectAndroidWebKit()) {
+    startupAndroid();
+  }
+}
 
+
+
+function startupIphone() {
   var elt = document.getElementById("d");
   elt.ontouchmove = function(event) {
     event.preventDefault();
@@ -16,9 +31,17 @@ function startup() {
   }
 
   document.ontouchstart = function(e) {
+    // Keep the document from sliding.
     e.preventDefault();
   }
 }
+
+
+function startupAndroid() {
+  // fill me in.
+}
+
+
 
 </script>
 
