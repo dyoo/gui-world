@@ -12,10 +12,11 @@
 function startup() {
   if (DetectIphoneOrIpod()) {
     startupIphone();
-  } elseif (DetectAndroidWebKit()) {
+  } else {
     startupAndroid();
   }
 }
+
 
 
 
@@ -37,8 +38,28 @@ function startupIphone() {
 }
 
 
+
 function startupAndroid() {
-  // fill me in.
+  function move(event) {
+     event.preventDefault();
+     var elt = document.getElementById("d");
+     elt.style.left = event.clientX;
+     elt.style.top = event.clientY;
+  }
+
+  function stop(event) {
+     document.removeEventListener("mousemove", move, true);
+     document.removeEventListener("up", stop, true);
+  }
+
+  function down(event) {
+    event.preventDefault();
+    document.addEventListener("mousemove", move, true);
+    document.addEventListener("mouseup", stop, true);
+  }
+
+  var elt = document.getElementById("d");
+  elt.onmousedown = down;
 }
 
 
