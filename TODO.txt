@@ -1,0 +1,37 @@
+* Support dialog as a toplevel gui element, so we can do
+  alert-style dialog boxes.
+
+
+
+Add more robust error trapping to the gvalueof and gcallback functions.
+
+
+Figure out better names for the constructors.  (enabled/callback stuff is weird.)
+
+
+Write documentation.
+
+Make animations of the example programs.
+
+Shriram asks: My question was whether you could use
+your infrastructure to test ITSELF.  That is, you have written some
+GUI world code to implement something -- a graph-drawing routine.  the
+graph-drawing routine needs a test suite because all code needs test
+suites.  As I've indicated above, a graph drawn with GUI world is
+itself a test suite.  So, can you use the graph-drawing routine to
+create a  test suite for the graph-drawing routine?
+
+function-graph:
+
+Investigate text rendering on dynamic text for gui-world.  Shriram says the following:
+     Something is very broken w/ the text rendering.
+
+         - After the first time, in creation mode, the text just says "Creating
+         a new".
+
+         - If I select a pair and click on "Change output", the "Updating the
+         input" becomes "Updating the        .t" where "." is the right half of
+         "u".
+
+         I expect this is a general GUI-world problem that this example is
+         exercising.  This is on Windows.
